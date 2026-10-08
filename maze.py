@@ -60,6 +60,8 @@ def connections_to_char(connections: set[direction]):
         if d == direction.RIGHT: c = add_right[c]
     return c
 
+type maze = list[list[Room | None]]
+
 class Pos:
     def __init__(self, x: int = 0, y: int = 0):
         self.x = x
@@ -72,7 +74,7 @@ class Pos:
             return Pos(self.x + other.value[0], self.y + other.value[1])
         return NotImplemented
 
-def pretty_print(maze: list[list[Room | None]]):
+def pretty_print(maze: maze):
     for row in maze:
         for r in row:
             if not isinstance(r, Room):
@@ -88,42 +90,93 @@ def gen_main_path(startPos: Pos, maxSteps: int):
         maze.append([None] * 10)
     currentPos = startPos
     maze[currentPos.y][currentPos.x] = StartRoom()
-    i = 0
-    while True:
-        i += 1
-        # move in random direction
-        moveDirection = random.choice(list(direction))
-        newPos = currentPos + moveDirection
-        if newPos.x < 0 or newPos.x >= 10 or newPos.y < 0 or newPos.y >= 10:
-            continue
-        if maze[newPos.y][newPos.x] is None:
-            # make connections between rooms
-            maze[newPos.y][newPos.x] = Room(connections={moveDirection.opposite()})
+    branch_positions: list[Pos] = []
+    # i = 0
+    done = False
+    for i in range(maxSteps):
+        if done:
+            break
+        options = list(direction)
+        while True:
+            # i += 1
+            # move in random direction
+            if len(options) <= 0:
+                done = True
+                break
+            moveDirection = random.choice(options)
+            newPos = currentPos + moveDirection
+            if newPos.x < 0 or newPos.x >= 10 or newPos.y < 0 or newPos.y >= 10:
+                continue
             currentRoom = maze[currentPos.y][currentPos.x]
-            assert isinstance(currentRoom, Room)
-            currentRoom.make_connection(moveDirection)
-            currentPos = newPos
-        else:
-            if i > 10:
-                maze[currentPos.y][currentPos.x] = EndRoom(maze[currentPos.y][currentPos.x].connections)
+            if maze[newPos.y][newPos.x] is None:
+                # make connections between rooms
+                maze[newPos.y][newPos.x] = Room(connections={moveDirection.opposite()})
+                assert isinstance(currentRoom, Room)
+                currentRoom.make_connection(moveDirection)
+                currentPos = newPos
+                branch_positions.append(currentPos)
+            else:
+                options.remove(moveDirection)
+                break
+                # if i > 10:
+                #     assert isinstance(currentRoom, Room)
+                #     maze[currentPos.y][currentPos.x] = EndRoom(currentRoom.connections)
+                #     if currentPos in branch_positions:
+                #         branch_positions.remove(currentPos)
+                #     return gen_branches(maze, branch_positions, 5)
+                # continue
+
+            # # hard cap length
+            # if i >= maxSteps:
+            #     assert isinstance(currentRoom, Room)
+            #     maze[currentPos.y][currentPos.x] = EndRoom(currentRoom.connections)
+            #     if currentPos in branch_positions:
+            #         branch_positions.remove(currentPos)
+            #     return maze
+
+            # # random length - shorter more often
+            # if random.random() > 1 - (i / maxSteps):
+            #     return maze
+    currentRoom = maze[currentPos.y][currentPos.x]
+    assert isinstance(currentRoom, Room)
+    maze[currentPos.y][currentPos.x] = EndRoom(currentRoom.connections)
+    if currentPos in branch_positions:
+        branch_positions.remove(currentPos)
+    return gen_branches(maze, branch_positions, 5)
+
+
+def gen_branches(maze: maze, positions: list[Pos], maxBranches: int) -> maze:
+    options = random.choices(positions, k = maxBranches)
+    for pos in options:
+        maze = gen_branch(maze, pos, 3)
+    return maze
+        
+
+
+def gen_branch(maze: maze, pos: Pos, maxBranchLength: int):
+    currentPos = pos
+    for i in range(maxBranchLength):
+        options = list(direction)
+        while True:
+            if len(options) > 0:
+                moveDirection = random.choice(options)
+                newPos = currentPos + moveDirection
+                if newPos.x < 0 or newPos.x >= 10 or newPos.y < 0 or newPos.y >= 10:
+                        options.remove(moveDirection)
+                        continue
+                if maze[newPos.y][newPos.x] is None:
+                    maze[newPos.y][newPos.x] = Room(connections={moveDirection.opposite()})
+                    currentRoom = maze[currentPos.y][currentPos.x]
+                    assert isinstance(currentRoom, Room)
+                    currentRoom.make_connection(moveDirection)
+                    maze[currentPos.y][currentPos.x] = currentRoom
+                    currentPos = newPos
+                    break
+                else:
+                    options.remove(moveDirection)
+            else:
                 return maze
-            continue
-
-        # hard cap length
-        if i >= maxSteps:
-            maze[currentPos.y][currentPos.x] = EndRoom(maze[currentPos.y][currentPos.x].connections)
-            return maze
-
-        # # random length - shorter more often
-        # if random.random() > 1 - (i / maxSteps):
-        #     return maze
-
-
-
-
-
-def gen_branch(maze, pos, dir):
-    ...
+    return maze
 
 def generate_maze(width: int, height: int):
     ...
