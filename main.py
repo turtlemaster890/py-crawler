@@ -1,5 +1,7 @@
 from maze import Pos, gen_main_path, pretty_print, direction, Room
 from player import Player
+from enemy import enemy
+from combatHandler import CombatHandler
 
 input_to_direction = {
     "u": direction.UP,
@@ -9,19 +11,34 @@ input_to_direction = {
 }
 
 def main():
-    player = Player(Pos(5, 5))
-    mz = gen_main_path(Pos(5, 5), 10)
-    discovered = {player.pos}
+
+    player1 = Player(Pos(5, 5))
+    player2 = Player(Pos(5, 5))
+    player3 = Player(Pos(5, 5))
+    player4 = Player(Pos(5, 5))
+    enemy1 = enemy()
+    enemy2 = enemy()
+    combat_handler = CombatHandler([player1, player2, player3, player4], [enemy1, enemy2])
     while True:
-        pretty_print(mz, discovered, player.pos)
-        dir = input_to_direction[input("Enter a movement direction (U, D, L, R): ").lower()]
-        newPos = player.pos + dir
-        currentRoom = mz[player.pos.y][player.pos.x]
-        assert isinstance(currentRoom, Room)
-        newRoom = mz[newPos.y][newPos.x]
-        if isinstance(newRoom, Room) and currentRoom.has_connection(dir):
-            discovered.add(newPos)
-            player.pos = newPos
+        combat_handler.combat_turn()
+        input()  
+
+    # player = Player(Pos(5, 5))
+    # mz = gen_main_path(Pos(5, 5), 10)
+    # discovered = {player.pos}
+    
+    # while True:
+    #     pretty_print(mz, discovered, player.pos)
+    #     dir = input_to_direction[input("Enter a movement direction (U, D, L, R): ").lower()]
+    #     newPos = player.pos + dir
+    #     currentRoom = mz[player.pos.y][player.pos.x]
+    #     assert isinstance(currentRoom, Room)
+    #     newRoom = mz[newPos.y][newPos.x]
+    #     if isinstance(newRoom, Room) and currentRoom.has_connection(dir):
+    #         discovered.add(newPos)
+    #         player.pos = newPos
+
+    
 
 if __name__ == "__main__":
     main()
