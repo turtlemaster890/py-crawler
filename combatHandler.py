@@ -1,7 +1,9 @@
+
+
 class CombatHandler:
     def __init__(self, player=None, enemy=None):
-        self.player = [player] if player else []
-        self.enemy = [enemy] if enemy else []
+        self.player = player if player else []
+        self.enemy = enemy if enemy else []
         self.turn_order = []
         for ally in self.player:
             self.turn_order.append(ally.speed, ally)
