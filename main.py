@@ -12,8 +12,7 @@ input_to_direction = {
 
 def main():
 
-    print("start", end="")
-    player1 = Player(Pos(5, 5), name="Player1", speed=123)
+    player1 = Player(Pos(5, 5), name="Player1", speed=250)
     player2 = Player(Pos(5, 5), name="Player2", speed=94)
     player3 = Player(Pos(5, 5), name="Player3", speed=85)
     player4 = Player(Pos(5, 5), name="Player4", speed=140)
@@ -22,7 +21,6 @@ def main():
     combat_handler = CombatHandler([player1, player2, player3, player4], [enemy1, enemy2])
     while True:
         combat_handler.combat_turn()
-        input()  
 
     # player = Player(Pos(5, 5))
     # mz = gen_main_path(Pos(5, 5), 10)
