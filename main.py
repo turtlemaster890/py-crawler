@@ -20,22 +20,22 @@ def main():
     enemy2 = enemy(name="Enemy2", speed=90)
     combat_handler = CombatHandler([player1, player2, player3, player4], [enemy1, enemy2])
     while True:
-        combat_handler.combat_turn()
+        combat_handler.combat()
 
-    # player = Player(Pos(5, 5))
-    # mz = gen_main_path(Pos(5, 5), 10)
-    # discovered = {player.pos}
+    player = Player(Pos(5, 5))
+    mz = gen_main_path(Pos(5, 5), 10)
+    discovered = {player.pos}
     
-    # while True:
-    #     pretty_print(mz, discovered, player.pos)
-    #     dir = input_to_direction[input("Enter a movement direction (U, D, L, R): ").lower()]
-    #     newPos = player.pos + dir
-    #     currentRoom = mz[player.pos.y][player.pos.x]
-    #     assert isinstance(currentRoom, Room)
-    #     newRoom = mz[newPos.y][newPos.x]
-    #     if isinstance(newRoom, Room) and currentRoom.has_connection(dir):
-    #         discovered.add(newPos)
-    #         player.pos = newPos
+    while True:
+        pretty_print(mz, discovered, player.pos)
+        dir = input_to_direction[input("Enter a movement direction (U, D, L, R): ").lower()]
+        newPos = player.pos + dir
+        currentRoom = mz[player.pos.y][player.pos.x]
+        assert isinstance(currentRoom, Room)
+        newRoom = mz[newPos.y][newPos.x]
+        if isinstance(newRoom, Room) and currentRoom.has_connection(dir):
+            discovered.add(newPos)
+            player.pos = newPos
 
     
 

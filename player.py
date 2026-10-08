@@ -11,5 +11,5 @@ class Player:
         self.name = name
 
     def turnStart(self):
-        self.stamina = self.max_stamina
+        input()
         
