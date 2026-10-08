@@ -1,5 +1,6 @@
 from maze import maze, pretty_print, direction, Room
 from party import Party
+from combatHandler import CombatHandler
 import inputController
 from pynput.keyboard import Key
 
@@ -27,6 +28,9 @@ class mazeController:
         if isinstance(newRoom, Room) and currentRoom.has_connection(moveDirection):
             self.discovered_rooms.add(newPos)
             self.party.pos = newPos
+            if newRoom.enemies:
+                return CombatHandler(self.party.members, newRoom.enemies)
+        return None
 
     def tick(self):
         pretty_print(self.maze, self.discovered_rooms, self.party.pos)
@@ -34,6 +38,9 @@ class mazeController:
             key = inputController.getKey()
             # print(key)
             if key in key_to_direction:
-                self.move(key_to_direction[key])
+                combat_handler = self.move(key_to_direction[key])
+                if combat_handler is not None:
+                    return combat_handler
                 break
+        return
         
