@@ -16,15 +16,17 @@ def main():
     player2 = Player(Pos(5, 5), name="Player2", speed=94)
     player3 = Player(Pos(5, 5), name="Player3", speed=85)
     player4 = Player(Pos(5, 5), name="Player4", speed=140)
-    enemy1 = enemy(name="Enemy1", speed=78)
+    enemy1 = enemy(name="Enemy1", speed=70)
     enemy2 = enemy(name="Enemy2", speed=90)
     combat_handler = CombatHandler([player1, player2, player3, player4], [enemy1, enemy2])
-    while True:
-        combat_handler.combat()
 
     player = Player(Pos(5, 5))
     mz = gen_main_path(Pos(5, 5), 10)
     discovered = {player.pos}
+
+    while True:  
+        pretty_print(mz, discovered, player.pos)
+        combat_handler.combat()
     
     while True:
         pretty_print(mz, discovered, player.pos)
