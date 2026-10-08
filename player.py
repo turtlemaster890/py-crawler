@@ -1,4 +1,4 @@
-from types import Pos
+from maze import Pos
 
 class Player:
     def __init__(self, pos: Pos):

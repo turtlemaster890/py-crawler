@@ -74,13 +74,32 @@ class Pos:
             return Pos(self.x + other.value[0], self.y + other.value[1])
         return NotImplemented
 
-def pretty_print(maze: maze):
-    for row in maze:
-        for r in row:
-            if not isinstance(r, Room):
+    def __str__(self):
+        return f"P({self.x}, {self.y})"
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Pos):
+            return self.x == other.x and self.y == other.y
+        return False
+
+    def __key(self):
+        return (self.x, self.y)
+
+    def __hash__(self):
+        return hash(self.__key())
+
+
+def pretty_print(maze: maze, discovered_positions: set[Pos], current_position: Pos):
+    for y, row in enumerate(maze):
+        for x, r in enumerate(row):
+            if not isinstance(r, Room) or Pos(x, y) not in discovered_positions:
                 print(" ", end="")
             else:
-                print(r.colour + connections_to_char(r.connections), end = "")
+                # if current_position == Pos(x, y):
+                #     print("C", end="")
+                #     continue
+                print((r.selectedColour if current_position == Pos(x, y) else r.colour) + connections_to_char(r.connections), end = "")
+                # print(r.colour + connections_to_char(r.connections), end = "")
         print()
 
 # step 1: generate path to boss room
@@ -201,7 +220,8 @@ class Room:
         if connections is None:
             connections = set()
         self.connections = connections
-        self.colour = Fore.WHITE
+        self.colour = Fore.LIGHTBLACK_EX
+        self.selectedColour = Fore.WHITE
 
     def has_connection(self, direction: direction):
         return direction in self.connections
@@ -215,12 +235,14 @@ class Room:
 class StartRoom(Room):
     def __init__(self, connections: set[direction] | None = None):
         super().__init__(connections)
-        self.colour = Fore.LIGHTGREEN_EX
+        self.colour = Fore.GREEN
+        self.selectedColour = Fore.LIGHTGREEN_EX
 
 class EndRoom(Room):
     def __init__(self, connections: set[direction] | None = None):
         super().__init__(connections)
-        self.colour = Fore.LIGHTRED_EX
+        self.colour = Fore.RED
+        self.selectedColour = Fore.LIGHTRED_EX
 
 
 class Maze:
