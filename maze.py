@@ -95,7 +95,7 @@ def pretty_print(maze: maze, discovered_positions: set[Pos], current_position: P
             if not isinstance(r, Room) or Pos(x, y) not in discovered_positions:
                 print(" ", end=Style.RESET_ALL)
             else:
-                print((r.selectedColour if current_position == Pos(x, y) else r.colour) + connections_to_char(r.connections), end = Style.RESET_ALL)
+                print((r.selectedColour if current_position == Pos(x, y) else (Style.DIM + r.colour)) + connections_to_char(r.connections), end = Style.RESET_ALL)
         print()
 
 # step 1: generate path to boss room
