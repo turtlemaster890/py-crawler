@@ -93,13 +93,9 @@ def pretty_print(maze: maze, discovered_positions: set[Pos], current_position: P
     for y, row in enumerate(maze):
         for x, r in enumerate(row):
             if not isinstance(r, Room) or Pos(x, y) not in discovered_positions:
-                print(" ", end="")
+                print(" ", end=Style.RESET_ALL)
             else:
-                # if current_position == Pos(x, y):
-                #     print("C", end="")
-                #     continue
-                print((r.selectedColour if current_position == Pos(x, y) else r.colour) + connections_to_char(r.connections), end = "")
-                # print(r.colour + connections_to_char(r.connections), end = "")
+                print((r.selectedColour if current_position == Pos(x, y) else r.colour) + connections_to_char(r.connections), end = Style.RESET_ALL)
         print()
 
 # step 1: generate path to boss room
