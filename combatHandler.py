@@ -1,4 +1,5 @@
 from maze import pretty_print
+from utils import clear
 
 class CombatHandler:
     def __init__(self, player=None, enemy=None):
@@ -14,6 +15,7 @@ class CombatHandler:
         self.turn_order[0][0] = 0
 
     def combat(self):
+        clear()
         self.print_turn_order()
         print(self.turn_order[0][1].name, "is taking their turn.")
         self.turn_order[0][1].turnStart()
@@ -31,9 +33,11 @@ class CombatHandler:
         self.turn_order[0][0] = 0
 
     def print_turn_order(self):
-        print("┌──────────────────────────┐")
-        print("│        TURN ORDER        │")
-        print("├──────────────────────────┤")
+        longestName = max([len(n.name) for av, n in self.turn_order])
+        additionalChars = max(0, longestName - 15)
+        print("┌──────────────────────────" + "─" * additionalChars + "┐")
+        print("│" + "TURN ORDER".center(26 + additionalChars) + "│")
+        print("├──────────────────────────" + "─" * additionalChars + "┤")
         for av, char in self.turn_order:
-            print(f"│ {char.name:<15} │ {av:<3.0f} AV │")
-        print("└──────────────────────────┘")
+            print(f"│ {char.name.ljust(15 + additionalChars)} │ {av:<3.0f} AV │")
+        print("└──────────────────────────" + "─" * additionalChars + "┘")

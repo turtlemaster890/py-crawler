@@ -12,24 +12,27 @@ input_to_direction = {
     "r": direction.RIGHT
 }
 
+combat_handler: CombatHandler | None = None
+
 def main():
+    global combat_handler
 
     player1 = Player(Pos(5, 5), name="Player1", speed=250)
     player2 = Player(Pos(5, 5), name="Player2", speed=94)
     player3 = Player(Pos(5, 5), name="Player3", speed=85)
     player4 = Player(Pos(5, 5), name="Player4", speed=140)
-    enemy1 = enemy(name="Enemy1", enemy_type="goblin")
-    enemy2 = enemy(name="Enemy2", enemy_type="goblin")
+    enemy1 = enemy(name="Enemy1", speed=70)
+    enemy2 = enemy(name="Enemy2", speed=90)
     combat_handler = CombatHandler([player1, player2, player3, player4], [enemy1, enemy2])
 
-    party = Party(Pos(5, 5))
+    party = Party(Pos(5, 5), [player1, player2, player3, player4])
     mz = gen_main_path(Pos(5, 5), 10)
     mController = mazeController(mz, party)
     
     while True:
-        mController.tick()
-        
-
+        combat_handler = mController.tick()
+        while combat_handler:
+            combat_handler.combat()
     
 
 if __name__ == "__main__":

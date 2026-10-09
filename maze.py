@@ -1,5 +1,6 @@
 from enum import Enum
 import random
+from enemy import enemy
 
 from colorama import init as colorama_init
 from colorama import Fore
@@ -212,10 +213,13 @@ class direction(Enum):
 
 
 class Room:
-    def __init__(self, connections: set[direction] | None = None):
+    def __init__(self, connections: set[direction] | None = None, enemies: list[enemy] | None = None):
         if connections is None:
             connections = set()
+        if enemies is None:
+            enemies = []
         self.connections = connections
+        self.enemies = enemies
         self.colour = Fore.LIGHTBLACK_EX
         self.selectedColour = Fore.WHITE
 
@@ -231,14 +235,23 @@ class Room:
 class StartRoom(Room):
     def __init__(self, connections: set[direction] | None = None):
         super().__init__(connections)
+        self.enemies = []
         self.colour = Fore.GREEN
         self.selectedColour = Fore.LIGHTGREEN_EX
 
 class EndRoom(Room):
     def __init__(self, connections: set[direction] | None = None):
         super().__init__(connections)
+        self.enemies = [enemy("Super Scary Bob AAA", 100)]
         self.colour = Fore.RED
         self.selectedColour = Fore.LIGHTRED_EX
+
+class ShopRoom(Room):
+    def __init__(self, connections: set[direction] | None = None):
+        super().__init__(connections)
+        self.enemies = []
+        self.colour = Fore.YELLOW
+        self.selectedColour = Fore.LIGHTYELLOW_EX
 
 
 class Maze:
