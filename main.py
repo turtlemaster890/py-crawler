@@ -28,6 +28,7 @@ def main():
     combat_handler = CombatHandler([player1, player2, player3, player4], [enemy1, enemy2])
 
     party = Party(Pos(5, 5), [player1, player2, player3, player4])
+    party.funds = 900
 
     # party.inventory.add(Weapon("Eye of vishnu"))
     # print(party.inventory.items)

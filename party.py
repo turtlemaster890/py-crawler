@@ -9,6 +9,7 @@ class Party:
         self.pos = pos
         self.members = members
         self.inventory = Inventory()
+        self.funds = 0
 
     def moveItemToMember(self, member: Player, item: Item) -> bool:
         if item not in self.inventory: return False
