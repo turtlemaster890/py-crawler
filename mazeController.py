@@ -24,10 +24,10 @@ class mazeController:
             self.discovered_rooms.add(startPos + connection)
         inputController.start()
 
-    def move(self, moveDirection: direction):
+    def move(self, moveDirection: direction) -> tuple[CombatHandler | None, bool]:
         newPos = self.party.pos + moveDirection
         if newPos.x < 0 or newPos.x >= 10 or newPos.y < 0 or newPos.y >= 10:
-            return
+            return None, False
         currentRoom = self.maze[self.party.pos.y][self.party.pos.x]
         assert isinstance(currentRoom, Room)
         newRoom = self.maze[newPos.y][newPos.x]
@@ -37,8 +37,9 @@ class mazeController:
                 self.discovered_rooms.add(newPos + connection)
             self.party.pos = newPos
             if newRoom.enemies:
-                return CombatHandler(self.party.members, newRoom.enemies)
-        return None
+                return CombatHandler(self.party.members, newRoom.enemies), True
+            return None, True
+        return None, False
 
     def tick(self):
         clear()
@@ -47,7 +48,9 @@ class mazeController:
             key = inputController.getKey()
             # print(key)
             if key in key_to_direction:
-                combat_handler = self.move(key_to_direction[key])
+                combat_handler, success = self.move(key_to_direction[key])
+                if not success:
+                    continue
                 if combat_handler is not None:
                     return combat_handler
                 break
