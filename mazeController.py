@@ -1,4 +1,4 @@
-from maze import maze, pretty_print, direction, Room
+from maze import maze, pretty_print, direction, Room, Pos
 from party import Party
 from combatHandler import CombatHandler
 import inputController
@@ -13,10 +13,15 @@ key_to_direction = {
 }
 
 class mazeController:
-    def __init__(self, maze: maze, party: Party):
+    def __init__(self, maze: maze, party: Party, startPos: Pos = Pos(5, 5)):
         self.maze = maze
         self.party = party
         self.discovered_rooms = {party.pos}
+
+        startRoom = maze[startPos.y][startPos.x]
+        assert isinstance(startRoom, Room)
+        for connection in startRoom.connections:
+            self.discovered_rooms.add(startPos + connection)
         inputController.start()
 
     def move(self, moveDirection: direction):
@@ -28,6 +33,8 @@ class mazeController:
         newRoom = self.maze[newPos.y][newPos.x]
         if isinstance(newRoom, Room) and currentRoom.has_connection(moveDirection):
             self.discovered_rooms.add(newPos)
+            for connection in newRoom.connections:
+                self.discovered_rooms.add(newPos + connection)
             self.party.pos = newPos
             if newRoom.enemies:
                 return CombatHandler(self.party.members, newRoom.enemies)
