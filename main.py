@@ -18,8 +18,8 @@ def main():
     player2 = Player(Pos(5, 5), name="Player2", speed=94)
     player3 = Player(Pos(5, 5), name="Player3", speed=85)
     player4 = Player(Pos(5, 5), name="Player4", speed=140)
-    enemy1 = enemy(name="Enemy1", speed=70)
-    enemy2 = enemy(name="Enemy2", speed=90)
+    enemy1 = enemy(name="Enemy1", enemy_type="goblin")
+    enemy2 = enemy(name="Enemy2", enemy_type="goblin")
     combat_handler = CombatHandler([player1, player2, player3, player4], [enemy1, enemy2])
 
     party = Party(Pos(5, 5))

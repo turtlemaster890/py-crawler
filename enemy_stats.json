@@ -1,0 +1,16 @@
+{
+    "goblin": {
+        "speed": 80,
+        "health": 30,
+        "actions":{
+            "attack": {
+                "weight":1,
+                "damage": 5
+            },
+            "rob": {
+                "weight":1,
+                "damage": 0
+            }
+        }
+    }
+}
