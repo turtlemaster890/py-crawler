@@ -246,6 +246,13 @@ class EndRoom(Room):
         self.colour = Fore.RED
         self.selectedColour = Fore.LIGHTRED_EX
 
+class ShopRoom(Room):
+    def __init__(self, connections: set[direction] | None = None):
+        super().__init__(connections)
+        self.enemies = []
+        self.colour = Fore.YELLOW
+        self.selectedColour = Fore.LIGHTYELLOW_EX
+
 
 class Maze:
     def __init__(self, width: int, height: int):

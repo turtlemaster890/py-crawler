@@ -1,4 +1,5 @@
 from maze import pretty_print
+from utils import clear
 
 class CombatHandler:
     def __init__(self, player=None, enemy=None):
@@ -14,6 +15,7 @@ class CombatHandler:
         self.turn_order[0][0] = 0
 
     def combat(self):
+        clear()
         self.print_turn_order()
         print(self.turn_order[0][1].name, "is taking their turn.")
         self.turn_order[0][1].turnStart()

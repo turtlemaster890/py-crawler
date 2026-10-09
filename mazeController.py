@@ -3,6 +3,7 @@ from party import Party
 from combatHandler import CombatHandler
 import inputController
 from pynput.keyboard import Key
+from utils import clear
 
 key_to_direction = {
     Key.left: direction.LEFT,
@@ -33,6 +34,7 @@ class mazeController:
         return None
 
     def tick(self):
+        clear()
         pretty_print(self.maze, self.discovered_rooms, self.party.pos)
         while True:
             key = inputController.getKey()
