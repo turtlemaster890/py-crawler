@@ -33,9 +33,11 @@ class CombatHandler:
         self.turn_order[0][0] = 0
 
     def print_turn_order(self):
-        print("┌──────────────────────────┐")
-        print("│        TURN ORDER        │")
-        print("├──────────────────────────┤")
+        longestName = max([len(n.name) for av, n in self.turn_order])
+        additionalChars = max(0, longestName - 15)
+        print("┌──────────────────────────" + "─" * additionalChars + "┐")
+        print("│" + "TURN ORDER".center(26 + additionalChars) + "│")
+        print("├──────────────────────────" + "─" * additionalChars + "┤")
         for av, char in self.turn_order:
-            print(f"│ {char.name:<15} │ {av:<3.0f} AV │")
-        print("└──────────────────────────┘")
+            print(f"│ {char.name.ljust(15 + additionalChars)} │ {av:<3.0f} AV │")
+        print("└──────────────────────────" + "─" * additionalChars + "┘")
