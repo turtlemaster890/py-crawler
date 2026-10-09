@@ -4,6 +4,8 @@ from party import Party
 from enemy import enemy
 from combatHandler import CombatHandler
 from mazeController import mazeController
+from item import Item, Weapon
+from shop import Shop
 
 input_to_direction = {
     "u": direction.UP,
@@ -26,8 +28,18 @@ def main():
     combat_handler = CombatHandler([player1, player2, player3, player4], [enemy1, enemy2])
 
     party = Party(Pos(5, 5), [player1, player2, player3, player4])
+
+    # party.inventory.add(Weapon("Eye of vishnu"))
+    # print(party.inventory.items)
+    # print(party.members[0].inventory.items)
+    # print(party.moveItemToMember(party.members[0], party.inventory[0]))
+    # print(party.inventory.items)
+    # print(party.members[0].inventory.items)
     mz = gen_main_path(Pos(5, 5), 10)
     mController = mazeController(mz, party)
+
+    s = Shop([(Item("Joe's Toe"), 5), (Item("Bob's Job"), 60), (Item("Cool"), 720)])
+    s.displayShop(party)
     
     while True:
         combat_handler = mController.tick()

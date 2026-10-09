@@ -1,6 +1,10 @@
 from enum import Enum
 import random
 from enemy import enemy
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from party import Party
 
 from colorama import init as colorama_init
 from colorama import Fore
@@ -223,6 +227,9 @@ class Room:
         self.colour = Fore.LIGHTBLACK_EX
         self.selectedColour = Fore.WHITE
 
+    def enter_room(self, party: Party):
+        pass
+
     def has_connection(self, direction: direction):
         return direction in self.connections
 
@@ -252,6 +259,10 @@ class ShopRoom(Room):
         self.enemies = []
         self.colour = Fore.YELLOW
         self.selectedColour = Fore.LIGHTYELLOW_EX
+
+    def enter_room(self, party: Party):
+        super().enter_room(party)
+
 
 
 class Maze:
