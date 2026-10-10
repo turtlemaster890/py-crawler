@@ -1,11 +1,11 @@
-from maze import maze, pretty_print, pretty_print_list, direction, Room, Pos
+from direction import direction
+from maze import maze, pretty_print, pretty_print_list, Room, Pos
 from party import Party
 from combatHandler import CombatHandler
 import inputController
 from pynput.keyboard import Key
 # from utils import clear
 import terminalDisplay
-import utils
 
 key_to_direction = {
     Key.left: direction.LEFT,
@@ -44,6 +44,7 @@ class mazeController:
             for connection in newRoom.connections:
                 self.discovered_rooms.add(newPos + connection)
             self.party.pos = newPos
+            newRoom.enter_room(self.party)
             if newRoom.enemies:
                 return CombatHandler(self.party, self.party.members, newRoom.enemies), True
             return None, True

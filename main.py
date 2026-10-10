@@ -1,4 +1,5 @@
-from maze import Pos, gen_main_path, pretty_print, direction, Room
+from maze import Pos, gen_main_path, pretty_print, Room
+from direction import direction
 from player import Player
 from party import Party
 from enemy import enemy
@@ -52,8 +53,8 @@ def main():
     mz = gen_main_path(party.pos, 50, 28, 13)
     mController = mazeController(mz, 28, 13, party)
 
-    s = Shop([(Item("Joe's Toe"), 5), (Item("Bob's Job"), 60), (Item("Cool"), 720)])
-    s.displayShop(party)
+    # s = Shop([(Item("Joe's Toe"), 5), (Item("Bob's Job"), 60), (Item("Cool"), 720)])
+    # s.displayShop(party)
     
     while True:
         combat_handler = mController.tick()

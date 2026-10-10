@@ -1,9 +1,5 @@
-from maze import pretty_print
-# from utils import clear
-import utils
 import terminalDisplay
 from typing import TYPE_CHECKING
-from dataclasses import dataclass
 from turnEntry import TurnEntry
 if TYPE_CHECKING:
     from player import Player

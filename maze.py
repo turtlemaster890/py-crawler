@@ -1,6 +1,8 @@
-from enum import Enum
+from direction import direction
 import random
 import enemy
+from item import Item
+from shop import Shop
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -173,7 +175,13 @@ def gen_main_path(startPos: Pos, maxSteps: int, x: int, y: int):
     maze[currentPos.y][currentPos.x] = EndRoom(currentRoom.connections)
     if currentPos in branch_positions:
         branch_positions.remove(currentPos)
-    return gen_branches(maze, branch_positions, x, y, 12)
+    to_return = gen_branches(maze, branch_positions, x, y, 12)
+    open_room_spots = [(x, y) for y in range(len(maze)) for x in range(len(maze[y])) if type(maze[y][x]) == Room]
+    shopRoomSpot = random.choice(open_room_spots)
+    shopRoomSpotRoom = maze[shopRoomSpot[1]][shopRoomSpot[0]]
+    assert isinstance(shopRoomSpotRoom, Room)
+    maze[shopRoomSpot[1]][shopRoomSpot[0]] = ShopRoom(shopRoomSpotRoom.connections)
+    return maze
 
 
 def gen_branches(maze: maze, positions: list[Pos], width: int, height: int, maxBranches: int, d = 1) -> maze:
@@ -220,19 +228,7 @@ def gen_branch(maze: maze, pos: Pos, width: int, height: int, maxBranchLength: i
 def generate_maze(width: int, height: int):
     ...
 
-class direction(Enum):
-    UP = (0, -1)
-    DOWN = (0, 1)
-    LEFT = (-1, 0)
-    RIGHT = (1, 0)
 
-    def opposite(self):
-        return {
-            direction.UP: direction.DOWN,
-            direction.DOWN: direction.UP,
-            direction.LEFT: direction.RIGHT,
-            direction.RIGHT: direction.LEFT
-        }[self]
 
 
 class Room:
@@ -275,11 +271,14 @@ class ShopRoom(Room):
     def __init__(self, connections: set[direction] | None = None):
         super().__init__(connections)
         self.enemies = []
+        self.shop = Shop([(Item("Joe's Toe"), 50), (Item("Bob's Job"), 100), (Item("Floop's Goop"), 500)])
         self.colour = Fore.YELLOW
         self.selectedColour = Fore.LIGHTYELLOW_EX
 
     def enter_room(self, party: Party):
         super().enter_room(party)
+        self.shop.displayShop(party)
+
 
 
 

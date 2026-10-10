@@ -1,5 +1,4 @@
 import pynput
-from maze import direction
 
 lastKey = None
 held_keys = set()

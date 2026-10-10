@@ -1,6 +1,7 @@
-from item import Item
-from party import Party
-import utils
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from item import Item
+    from party import Party
 import inputController
 import terminalDisplay
 from pynput.keyboard import Key
