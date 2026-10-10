@@ -12,5 +12,39 @@
                 "damage": 0
             }
         }
+    },
+    "skeleton": {
+        "speed": 75,
+        "health": 20,
+        "actions": {
+            "attack": {
+                "weight": 1,
+                "damage": 7
+            }
+        }
+    },
+    "small_slime": {
+        "speed": 30,
+        "health": 5,
+        "actions": {
+            "attack": {
+                "weight": 1,
+                "damage": 2
+            }
+        }
+    },
+    "large_slime": {
+        "speed": 100,
+        "health": 55,
+        "actions": {
+            "attack": {
+                "weight": 1,
+                "damage": 5
+            },
+            "split": {
+                "weight": 0,
+                "damage": 0
+            }
+        }
     }
 }

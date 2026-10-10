@@ -4,6 +4,7 @@ from item import Item
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:   
     from party import Party
+    from combatHandler import CombatHandler
 
 class Player:
     def __init__(self, pos: Pos, name: str = "Player", speed: int = 100):
@@ -16,7 +17,7 @@ class Player:
         self.name = name
         self.inventory = PlayerInventory()
 
-    def turnStart(self):
+    def turnStart(self, handler: CombatHandler):
         input()
 
     def moveItemToParty(self, party: Party, item: Item) -> bool:

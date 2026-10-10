@@ -6,6 +6,9 @@ from combatHandler import CombatHandler
 from mazeController import mazeController
 from item import Item, Weapon
 from shop import Shop
+import terminalDisplay
+import utils
+import colorama
 
 input_to_direction = {
     "u": direction.UP,
@@ -17,15 +20,25 @@ input_to_direction = {
 combat_handler: CombatHandler | None = None
 
 def main():
+    colorama.init(autoreset=True)
+    # utils.clear()
+    # d1 = terminalDisplay.DisplayArea(0, 0, 10, 10)
+    # d2 = terminalDisplay.DisplayArea(12, 0, 15, 15)
+    # d1.print(["Hi!","This is in display 1.","That msg","was cutoff"])
+    # # d2.print(["Whoa beside!","This is cool"])
+    # input()
+
+    # return
+
     global combat_handler
 
     player1 = Player(Pos(5, 5), name="Player1", speed=250)
     player2 = Player(Pos(5, 5), name="Player2", speed=94)
     player3 = Player(Pos(5, 5), name="Player3", speed=85)
     player4 = Player(Pos(5, 5), name="Player4", speed=140)
-    enemy1 = enemy(name="Enemy1", enemy_type="goblin")
-    enemy2 = enemy(name="Enemy2", enemy_type="goblin")
-    combat_handler = CombatHandler([player1, player2, player3, player4], [enemy1, enemy2])
+    # enemy1 = enemy(name="Enemy1", enemy_type="goblin")
+    # enemy2 = enemy(name="Enemy2", enemy_type="goblin")
+    # combat_handler = CombatHandler([player1, player2, player3, player4], [enemy1, enemy2])
 
     party = Party(Pos(5, 5), [player1, player2, player3, player4])
     party.funds = 900

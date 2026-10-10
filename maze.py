@@ -1,16 +1,16 @@
 from enum import Enum
 import random
-from enemy import enemy
+import enemy
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from party import Party
 
-from colorama import init as colorama_init
+# from colorama import init as colorama_init
 from colorama import Fore
 from colorama import Style
 
-colorama_init()
+# colorama_init()
 
 add_up = {
     "·": "╵",
@@ -102,6 +102,25 @@ def pretty_print(maze: maze, discovered_positions: set[Pos], current_position: P
             else:
                 print((r.selectedColour if current_position == Pos(x, y) else (Style.DIM + r.colour)) + connections_to_char(r.connections), end = Style.RESET_ALL)
         print()
+
+def pretty_print_list(w: int, h: int, maze: maze, discovered_positions: set[Pos], current_position: Pos) -> list[str]:
+    out = []
+    for y, row in enumerate(maze):
+        if y >= h:
+            break
+
+        line_chars = []
+        for x, r in enumerate(row):
+            if x >= w:
+                break
+            if not isinstance(r, Room) or Pos(x, y) not in discovered_positions:
+                line_chars.append(" ")
+            else:
+                colour = r.selectedColour if current_position == Pos(x, y) else (Style.DIM + r.colour)
+                char = connections_to_char(r.connections)
+                line_chars.append(f"{colour}{char}{Style.RESET_ALL}")
+        out.append("".join(line_chars))
+    return out
 
 # step 1: generate path to boss room
 def gen_main_path(startPos: Pos, maxSteps: int):
@@ -217,7 +236,7 @@ class direction(Enum):
 
 
 class Room:
-    def __init__(self, connections: set[direction] | None = None, enemies: list[enemy] | None = None):
+    def __init__(self, connections: set[direction] | None = None, enemies: list[enemy.enemy] | None = None):
         if connections is None:
             connections = set()
         if enemies is None:
@@ -248,8 +267,7 @@ class StartRoom(Room):
 
 class EndRoom(Room):
     def __init__(self, connections: set[direction] | None = None):
-        super().__init__(connections)
-        self.enemies = [enemy(name="Super Scary Bob AAA", enemy_type="goblin")]
+        super().__init__(connections, enemies=[enemy.Goblin(name="Super Scary Bob AAA")])
         self.colour = Fore.RED
         self.selectedColour = Fore.LIGHTRED_EX
 

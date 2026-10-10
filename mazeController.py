@@ -1,9 +1,11 @@
-from maze import maze, pretty_print, direction, Room, Pos
+from maze import maze, pretty_print, pretty_print_list, direction, Room, Pos
 from party import Party
 from combatHandler import CombatHandler
 import inputController
 from pynput.keyboard import Key
-from utils import clear
+# from utils import clear
+import terminalDisplay
+import utils
 
 key_to_direction = {
     Key.left: direction.LEFT,
@@ -23,6 +25,8 @@ class mazeController:
         for connection in startRoom.connections:
             self.discovered_rooms.add(startPos + connection)
         inputController.start()
+        # utils.addPrintFunction("maze", lambda: pretty_print(self.maze, self.discovered_rooms, self.party.pos), 0)
+        terminalDisplay.mazeDisplay.messageProvider = lambda x, y: pretty_print_list(x, y, self.maze, self.discovered_rooms, self.party.pos)
 
     def move(self, moveDirection: direction) -> tuple[CombatHandler | None, bool]:
         newPos = self.party.pos + moveDirection
@@ -37,13 +41,15 @@ class mazeController:
                 self.discovered_rooms.add(newPos + connection)
             self.party.pos = newPos
             if newRoom.enemies:
-                return CombatHandler(self.party.members, newRoom.enemies), True
+                return CombatHandler(self.party, self.party.members, newRoom.enemies), True
             return None, True
         return None, False
 
     def tick(self):
-        clear()
-        pretty_print(self.maze, self.discovered_rooms, self.party.pos)
+        # clear()
+        # pretty_print(self.maze, self.discovered_rooms, self.party.pos)
+        # utils.printSequences()
+        terminalDisplay.updateDisplays()
         while True:
             key = inputController.getKey()
             # print(key)
