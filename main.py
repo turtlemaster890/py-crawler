@@ -40,7 +40,7 @@ def main():
     # enemy2 = enemy(name="Enemy2", enemy_type="goblin")
     # combat_handler = CombatHandler([player1, player2, player3, player4], [enemy1, enemy2])
 
-    party = Party(Pos(5, 5), [player1, player2, player3, player4])
+    party = Party(Pos(14, 6), [player1, player2, player3, player4])
     party.funds = 900
 
     # party.inventory.add(Weapon("Eye of vishnu"))
@@ -49,8 +49,8 @@ def main():
     # print(party.moveItemToMember(party.members[0], party.inventory[0]))
     # print(party.inventory.items)
     # print(party.members[0].inventory.items)
-    mz = gen_main_path(Pos(5, 5), 10)
-    mController = mazeController(mz, party)
+    mz = gen_main_path(party.pos, 50, 28, 13)
+    mController = mazeController(mz, 28, 13, party)
 
     s = Shop([(Item("Joe's Toe"), 5), (Item("Bob's Job"), 60), (Item("Cool"), 720)])
     s.displayShop(party)

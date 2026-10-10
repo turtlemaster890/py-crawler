@@ -104,29 +104,39 @@ def pretty_print(maze: maze, discovered_positions: set[Pos], current_position: P
         print()
 
 def pretty_print_list(w: int, h: int, maze: maze, discovered_positions: set[Pos], current_position: Pos) -> list[str]:
-    out = []
-    for y, row in enumerate(maze):
-        if y >= h:
-            break
+    content_width = w - 2
+    content_height = h - 2
 
-        line_chars = []
-        for x, r in enumerate(row):
-            if x >= w:
-                break
-            if not isinstance(r, Room) or Pos(x, y) not in discovered_positions:
-                line_chars.append(" ")
-            else:
-                colour = r.selectedColour if current_position == Pos(x, y) else (Style.DIM + r.colour)
-                char = connections_to_char(r.connections)
-                line_chars.append(f"{colour}{char}{Style.RESET_ALL}")
-        out.append("".join(line_chars))
+    out = ["┌" + "─" * content_width + "┐"]
+    for y in range(content_height):
+        if y < len(maze):
+            row = maze[y]
+            line_chars = []
+            for x in range(content_width):
+                if x < len(row):
+                    r = row[x]
+                    if not isinstance(r, Room) or Pos(x, y) not in discovered_positions:
+                        line_chars.append(" ")
+                    else:
+                        colour = r.selectedColour if current_position == Pos(x, y) else (Style.DIM + r.colour)
+                        char = connections_to_char(r.connections)
+                        line_chars.append(f"{colour}{char}{Style.RESET_ALL}")
+                else:
+                    line_chars.append(" ")
+            row_str = "".join(line_chars)
+        else:
+            row_str = " " * content_width
+
+        out.append(f"│{row_str}│")
+
+    out.append("└" + "─" * content_width + "┘")
     return out
 
 # step 1: generate path to boss room
-def gen_main_path(startPos: Pos, maxSteps: int):
+def gen_main_path(startPos: Pos, maxSteps: int, x: int, y: int):
     maze: list[list[Room | None]] = []
-    for _ in range(10):
-        maze.append([None] * 10)
+    for _ in range(y):
+        maze.append([None] * x)
     currentPos = startPos
     maze[currentPos.y][currentPos.x] = StartRoom()
     branch_positions: list[Pos] = []
@@ -144,7 +154,7 @@ def gen_main_path(startPos: Pos, maxSteps: int):
                 break
             moveDirection = random.choice(options)
             newPos = currentPos + moveDirection
-            if newPos.x < 0 or newPos.x >= 10 or newPos.y < 0 or newPos.y >= 10:
+            if newPos.x < 0 or newPos.x >= x or newPos.y < 0 or newPos.y >= y:
                 continue
             currentRoom = maze[currentPos.y][currentPos.x]
             if maze[newPos.y][newPos.x] is None:
@@ -157,50 +167,35 @@ def gen_main_path(startPos: Pos, maxSteps: int):
             else:
                 options.remove(moveDirection)
                 break
-                # if i > 10:
-                #     assert isinstance(currentRoom, Room)
-                #     maze[currentPos.y][currentPos.x] = EndRoom(currentRoom.connections)
-                #     if currentPos in branch_positions:
-                #         branch_positions.remove(currentPos)
-                #     return gen_branches(maze, branch_positions, 5)
-                # continue
 
-            # # hard cap length
-            # if i >= maxSteps:
-            #     assert isinstance(currentRoom, Room)
-            #     maze[currentPos.y][currentPos.x] = EndRoom(currentRoom.connections)
-            #     if currentPos in branch_positions:
-            #         branch_positions.remove(currentPos)
-            #     return maze
-
-            # # random length - shorter more often
-            # if random.random() > 1 - (i / maxSteps):
-            #     return maze
     currentRoom = maze[currentPos.y][currentPos.x]
     assert isinstance(currentRoom, Room)
     maze[currentPos.y][currentPos.x] = EndRoom(currentRoom.connections)
     if currentPos in branch_positions:
         branch_positions.remove(currentPos)
-    return gen_branches(maze, branch_positions, 5)
+    return gen_branches(maze, branch_positions, x, y, 12)
 
 
-def gen_branches(maze: maze, positions: list[Pos], maxBranches: int) -> maze:
+def gen_branches(maze: maze, positions: list[Pos], width: int, height: int, maxBranches: int, d = 1) -> maze:
     options = random.choices(positions, k = maxBranches)
     for pos in options:
-        maze = gen_branch(maze, pos, 3)
+        maze = gen_branch(maze, pos, width, height, 9, d)
     return maze
         
 
 
-def gen_branch(maze: maze, pos: Pos, maxBranchLength: int):
+def gen_branch(maze: maze, pos: Pos, width: int, height: int, maxBranchLength: int, d: int = 3):
+    # if d > 3:
+    #     return maze
     currentPos = pos
+    branchOptions: list[Pos] = []
     for i in range(maxBranchLength):
         options = list(direction)
         while True:
             if len(options) > 0:
                 moveDirection = random.choice(options)
                 newPos = currentPos + moveDirection
-                if newPos.x < 0 or newPos.x >= 10 or newPos.y < 0 or newPos.y >= 10:
+                if newPos.x < 0 or newPos.x >= width or newPos.y < 0 or newPos.y >= height:
                         options.remove(moveDirection)
                         continue
                 if maze[newPos.y][newPos.x] is None:
@@ -210,11 +205,16 @@ def gen_branch(maze: maze, pos: Pos, maxBranchLength: int):
                     currentRoom.make_connection(moveDirection)
                     maze[currentPos.y][currentPos.x] = currentRoom
                     currentPos = newPos
+                    branchOptions.append(currentPos)
                     break
                 else:
                     options.remove(moveDirection)
             else:
+                if branchOptions:
+                    return gen_branches(maze, branchOptions, width, height, 2, d + 1)
                 return maze
+    if branchOptions:
+        return gen_branches(maze, branchOptions, width, height, 2, d + 1)
     return maze
 
 def generate_maze(width: int, height: int):

@@ -15,10 +15,14 @@ key_to_direction = {
 }
 
 class mazeController:
-    def __init__(self, maze: maze, party: Party, startPos: Pos = Pos(5, 5)):
+    def __init__(self, maze: maze, width: int, height: int, party: Party, startPos: Pos | None = None):
         self.maze = maze
+        self.width = width
+        self.height = height
         self.party = party
         self.discovered_rooms = {party.pos}
+
+        startPos = startPos or party.pos
 
         startRoom = maze[startPos.y][startPos.x]
         assert isinstance(startRoom, Room)
@@ -30,7 +34,7 @@ class mazeController:
 
     def move(self, moveDirection: direction) -> tuple[CombatHandler | None, bool]:
         newPos = self.party.pos + moveDirection
-        if newPos.x < 0 or newPos.x >= 10 or newPos.y < 0 or newPos.y >= 10:
+        if newPos.x < 0 or newPos.x >= self.width or newPos.y < 0 or newPos.y >= self.height:
             return None, False
         currentRoom = self.maze[self.party.pos.y][self.party.pos.x]
         assert isinstance(currentRoom, Room)

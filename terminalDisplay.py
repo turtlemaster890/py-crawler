@@ -18,11 +18,11 @@ class DisplayArea:
             if i < len(text):
                 print(text[i], end="", flush=True)
 
-mazeDisplay = DisplayArea(0, 0, 15, 15)
+mazeDisplay = DisplayArea(0, 0, 30, 15)
 
-combatDisplay = DisplayArea(16, 0, 25, 15)
+combatDisplay = DisplayArea(31, 0, 25, 15)
 
-contextDisplay = DisplayArea(0, 16, 20, 10)
+contextDisplay = DisplayArea(0, 15, 30, 10)
 
 displays = [mazeDisplay, combatDisplay, contextDisplay]
 def updateDisplays():
