@@ -1,3 +1,4 @@
+import json
 from maze import Pos
 from inventory import PlayerInventory
 from item import Item
@@ -11,16 +12,26 @@ if TYPE_CHECKING:
     from combatHandler import CombatHandler
 
 class Player:
-    def __init__(self, pos: Pos, name: str = "Player", speed: int = 100):
+    def __init__(self, pos: Pos, name: str = "Player", class_type: str = "warrior"):
         self.pos = pos
-        self.speed = speed
-        self.max_health = 100
-        self.health = self.max_health
-        self.max_stamina = 100
-        self.stamina = self.max_stamina
         self.name = name
+        self.class_type = class_type
         self.inventory = PlayerInventory()
 
+        with open("player_stats.json", "r") as f:
+            all_stats: dict[str, dict[str, int]] = json.load(f)
+            self.stats = all_stats[self.class_type]
+
+        self.speed = self.stats["base_stats"]["speed"]
+        self.max_health = self.stats["base_stats"]["health"]
+        self.health = self.max_health
+        self.max_stamina = self.stats["base_stats"]["stamina"]
+        self.stamina = self.max_stamina
+        self.inventory.equip(self.stats["starting_items"]["weapon"])
+        self.inventory.equip(self.stats["starting_items"]["armor"])
+        for item in self.stats["starting_items"]["items"]:
+            self.inventory.add(Item(item))
+    
     def getTurnOptions(self) -> list[tuple[str, Callable]]:
         return [("attack", lambda: None)]
 
@@ -60,4 +71,3 @@ class Player:
             self.inventory.add(item)
             return False
         return True
-        

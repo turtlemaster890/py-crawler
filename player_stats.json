@@ -1,0 +1,38 @@
+{
+    "warrior": {
+        "base_stats": {
+            "health": 100,
+            "speed": 100,
+            "stamina": 100
+        },
+        "starting_items": {
+            "weapon": "longsword",
+            "armor": "breastplate",
+            "items": []
+        }
+    },
+    "mage": {
+        "base_stats": {
+            "health": 70,
+            "speed": 120,
+            "stamina":100
+        },
+        "starting_items": {
+            "weapon": "staff",
+            "armor": "robes",
+            "items": []
+        }
+    },
+    "rogue": {
+        "base_stats": {
+            "health": 80,
+            "speed": 150,
+            "stamina": 90
+        },
+        "starting_items": {
+            "weapon": "dagger",
+            "armor": "leather_armor",
+            "items": []
+        }
+    }
+}
