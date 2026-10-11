@@ -1,7 +1,6 @@
 from typing import TypedDict, Literal, Any, TYPE_CHECKING, Callable
 import json
 import random
-from xml.sax import handler
 from turnEntry import TurnEntry
 if TYPE_CHECKING:
     from combatHandler import CombatHandler
@@ -54,7 +53,8 @@ class enemy:
     def takeDamage(self, damage: int):
         self.health -= damage
         if self.health <= 0:
-            self.die(handler)
+            if self.combat:
+                self.die(self.combat)
 
     def heal(self, amount: int):
         self.health = min(self.max_health, self.health + amount)

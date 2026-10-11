@@ -1,15 +1,29 @@
 import json
 from maze import Pos
 from inventory import PlayerInventory
-from item import Item
+from item import Item, Weapon, Armor
 import terminalDisplay
 import inputController
 from pynput.keyboard import Key
 from utils import key_to_delta
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, TypedDict
 if TYPE_CHECKING:   
     from party import Party
     from combatHandler import CombatHandler
+
+class BaseStats(TypedDict):
+    health: int
+    speed: int
+    stamina: int
+
+class StartingItems(TypedDict):
+    weapon: str
+    armor: str
+    items: list[str]
+
+class PlayerStats(TypedDict):
+    base_stats: BaseStats
+    starting_items: StartingItems
 
 class Player:
     def __init__(self, pos: Pos, name: str = "Player", class_type: str = "warrior"):
@@ -19,7 +33,7 @@ class Player:
         self.inventory = PlayerInventory()
 
         with open("player_stats.json", "r") as f:
-            all_stats: dict[str, dict[str, int]] = json.load(f)
+            all_stats: dict[str, PlayerStats] = json.load(f)
             self.stats = all_stats[self.class_type]
 
         self.speed = self.stats["base_stats"]["speed"]
@@ -27,8 +41,8 @@ class Player:
         self.health = self.max_health
         self.max_stamina = self.stats["base_stats"]["stamina"]
         self.stamina = self.max_stamina
-        self.inventory.equip(self.stats["starting_items"]["weapon"])
-        self.inventory.equip(self.stats["starting_items"]["armor"])
+        self.inventory.equip(Weapon(self.stats["starting_items"]["weapon"]))
+        self.inventory.equip(Armor(self.stats["starting_items"]["armor"]))
         for item in self.stats["starting_items"]["items"]:
             self.inventory.add(Item(item))
     
