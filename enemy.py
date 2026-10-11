@@ -1,6 +1,7 @@
 from typing import TypedDict, Literal, Any, TYPE_CHECKING, Callable
 import json
 import random
+from xml.sax import handler
 from turnEntry import TurnEntry
 if TYPE_CHECKING:
     from combatHandler import CombatHandler
@@ -15,9 +16,10 @@ class EnemyStats(TypedDict):
     actions: dict[str, ActionInfo]
 
 class enemy:
-    def __init__(self, name: str = "Enemy", enemy_type: str = "goblin"):
+    def __init__(self, name: str = "Enemy", enemy_type: str = "goblin", handler: CombatHandler | None = None):
         self.enemy_type = enemy_type or "goblin"
         self.name = name or "Enemy"
+        self.combat = handler
         with open("enemy_stats.json", "r") as f:
             all_stats: dict[str, EnemyStats] = json.load(f)
             self.stats = all_stats[self.enemy_type]
@@ -48,6 +50,19 @@ class enemy:
 
     def attack(self, handler: CombatHandler):
         random.choice(handler.players).health -= self.stats["actions"]["attack"]["damage"]
+
+    def takeDamage(self, damage: int):
+        self.health -= damage
+        if self.health <= 0:
+            self.die(handler)
+
+    def heal(self, amount: int):
+        self.health = min(self.max_health, self.health + amount)
+
+    def die(self, handler: CombatHandler):
+        handler.removeEnemy(self)
+        print(f"{self.name} has been defeated!")
+        input()
 
 class Goblin(enemy):
     def __init__(self, name: str = "Goblin"):

@@ -5,3 +5,15 @@ class Item:
 class Weapon(Item):
     def __init__(self, name: str, ):
         super().__init__(name)
+
+class Armor(Item):
+    def __init__(self, name: str, ):
+        super().__init__(name)
+
+class Relic(Item):
+    def __init__(self, name: str, ):
+        super().__init__(name)
+
+class Consumable(Item):
+    def __init__(self, name: str, ):
+        super().__init__(name)
