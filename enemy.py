@@ -1,6 +1,7 @@
 from typing import TypedDict, Literal, Any, TYPE_CHECKING, Callable
 import json
 import random
+from utils import getRelativePath
 from turnEntry import TurnEntry
 if TYPE_CHECKING:
     from combatHandler import CombatHandler
@@ -19,7 +20,7 @@ class enemy:
         self.enemy_type = enemy_type or "goblin"
         self.name = name or "Enemy"
         self.combat = handler
-        with open("enemy_stats.json", "r") as f:
+        with open(getRelativePath("enemy_stats.json"), "r") as f:
             all_stats: dict[str, EnemyStats] = json.load(f)
             self.stats = all_stats[self.enemy_type]
             

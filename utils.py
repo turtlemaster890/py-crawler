@@ -24,3 +24,6 @@ key_to_delta = {
     Key.up: -1,
     Key.down: 1
 }
+
+def getRelativePath(filename: str):
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), filename))

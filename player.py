@@ -5,7 +5,7 @@ from item import Item, Weapon, Armor
 import terminalDisplay
 import inputController
 from pynput.keyboard import Key
-from utils import key_to_delta
+from utils import key_to_delta, getRelativePath
 from typing import TYPE_CHECKING, Callable, TypedDict
 if TYPE_CHECKING:   
     from party import Party
@@ -32,7 +32,7 @@ class Player:
         self.class_type = class_type
         self.inventory = PlayerInventory()
 
-        with open("player_stats.json", "r") as f:
+        with open(getRelativePath("player_stats.json"), "r") as f:
             all_stats: dict[str, PlayerStats] = json.load(f)
             self.stats = all_stats[self.class_type]
 
