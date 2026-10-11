@@ -72,6 +72,7 @@ class LargeSlime(enemy):
         if self.health <= self.max_health / 2:
             self.takeAction("split", handler)
         else:
+            self.decideAction()
             self.takeAction(self.action, handler)
     def split(self, handler: CombatHandler):
         handler.addEnemy(SmallSlime())
