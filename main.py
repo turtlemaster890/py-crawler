@@ -22,7 +22,7 @@ combat_handler: CombatHandler | None = None
 
 def main():
     colorama.init(autoreset=True)
-    # utils.clear()
+    utils.clear()
     # d1 = terminalDisplay.DisplayArea(0, 0, 10, 10)
     # d2 = terminalDisplay.DisplayArea(12, 0, 15, 15)
     # d1.print(["Hi!","This is in display 1.","That msg","was cutoff"])

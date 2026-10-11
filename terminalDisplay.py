@@ -1,6 +1,9 @@
 from typing import Callable
 import utils
 
+def moveCursor(x: int, y: int):
+    print(f"\033[{y + 1};{x + 1}H", end="", flush=True)
+
 class DisplayArea:
     def __init__(self, x: int, y: int, width: int, height: int, messageProvider: Callable[[int, int], list[str]] | None = None, wrap: bool = False):
         self.x = x
@@ -11,10 +14,13 @@ class DisplayArea:
         self.wrap = wrap
 
     def print(self, text: list[str] = []):
+        for i in range(self.height):
+            moveCursor(self.x, self.y + i)
+            print(" " * self.width)
         if self.messageProvider:
             text = self.messageProvider(self.width, self.height)
         for i in range(self.height):
-            print(f"\033[{self.y + i + 1};{self.x + 1}H", end="", flush=True)
+            moveCursor(self.x, self.y + i)
             if i < len(text):
                 print(text[i], end="", flush=True)
 
@@ -26,6 +32,6 @@ contextDisplay = DisplayArea(0, 15, 30, 10)
 
 displays = [mazeDisplay, combatDisplay, contextDisplay]
 def updateDisplays():
-    utils.clear()
+    # utils.clear()
     for d in displays:
         d.print()

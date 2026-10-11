@@ -1,5 +1,6 @@
 import os
 from typing import Callable
+from pynput.keyboard import Key
 
 def clear():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -18,3 +19,8 @@ def printSequences():
     order.sort(key=lambda x: x[1]) #.sort(key = lambda x: x[1])
     for func in order:
         func[0]()
+
+key_to_delta = {
+    Key.up: -1,
+    Key.down: 1
+}

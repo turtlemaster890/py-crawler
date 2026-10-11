@@ -1,24 +1,60 @@
-import pynput
+from pynput.keyboard import Key, KeyCode
+import threading
+import msvcrt
+import time
 
-lastKey = None
-held_keys = set()
+lastKey: Key | KeyCode | None = None
+# held_keys: set[Key] = set()
+
+# input_keys = {}
+
 def getKey():
     global lastKey
     k = lastKey
     lastKey = None
     return k
-def pressKey(key):
-    global lastKey
-    if key not in held_keys:
-        held_keys.add(key)
-        lastKey = key
 
-def releaseKey(key):
-    global lastKey
-    held_keys.discard(key)
-    if lastKey == key:
-        lastKey = None
+arrow_map = {
+    b'H': Key.up,
+    b'P': Key.down,
+    b'K': Key.left,
+    b'M': Key.right
+}
+
+def update():
+    while True:
+        global lastKey
+        while msvcrt.kbhit():
+            ch = msvcrt.getch()
+
+            key = None
+
+            if ch in (b'\x00', b'\xe0'):
+                ch2 = msvcrt.getch()
+                key = arrow_map.get(ch2)
+            elif ch == b'\r':
+                key = Key.enter
+            elif ch == b'\x1b':
+                key = Key.esc
+            elif ch == b' ':
+                key = Key.space
+            elif ch == b'\x03':
+                raise KeyboardInterrupt
+            else:
+                try:
+                    char_str = ch.decode('utf-8').lower()
+                    key = KeyCode.from_char(char_str)
+                except UnicodeDecodeError:
+                    continue
+
+            if key:
+                lastKey = key
+        time.sleep(0.01)
+
+            
+
+# listener = keyboard.Listener(on_press=pressKey, on_release=releaseKey)
 
 def start():
-    listener = pynput.keyboard.Listener(on_press=pressKey, on_release=releaseKey)
-    listener.start()
+    t = threading.Thread(target=update, daemon=True)
+    t.start()
