@@ -4,13 +4,9 @@ if TYPE_CHECKING:
     from party import Party
 import inputController
 import terminalDisplay
+from utils import key_to_delta
 from pynput.keyboard import Key
 from colorama import Fore, Style
-
-key_to_delta = {
-    Key.up: -1,
-    Key.down: 1
-}
 
 class Shop:
     def __init__(self, items: list[tuple[Item, int]]):
@@ -60,7 +56,7 @@ class Shop:
             while True:
                 key = inputController.getKey()
                 if key and key in key_to_delta.keys():
-                    selectedItem += key_to_delta[key]
+                    selectedItem += key_to_delta[key] # type: ignore
                     break
                 if key == Key.enter:
                     if selectedItem >= len(self.items):

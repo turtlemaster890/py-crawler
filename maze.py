@@ -74,7 +74,7 @@ class Pos:
         self.x = x
         self.y = y
 
-    def __add__(self, other) -> Pos:
+    def __add__(self, other) -> "Pos":
         if isinstance(other, Pos):
             return Pos(self.x + other.x, self.y + other.y)
         if isinstance(other, direction):
