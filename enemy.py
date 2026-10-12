@@ -51,11 +51,11 @@ class enemy:
     def attack(self, handler: CombatHandler):
         random.choice(handler.players).health -= self.stats["actions"]["attack"]["damage"]
 
-    def takeDamage(self, damage: int):
+    def takeDamage(self, handler: CombatHandler, damage: int):
         self.health -= damage
         if self.health <= 0:
             if self.combat:
-                self.die(self.combat)
+                self.die(handler)
 
     def heal(self, amount: int):
         self.health = min(self.max_health, self.health + amount)

@@ -1,6 +1,10 @@
+from pynput.keyboard import Key
+
 import terminalDisplay
-from typing import TYPE_CHECKING
+import inputController
+from typing import TYPE_CHECKING, Callable
 from turnEntry import TurnEntry
+import utils
 if TYPE_CHECKING:
     from player import Player
     from enemy import enemy
@@ -29,6 +33,12 @@ class CombatHandler:
     def removeEnemy(self, enemy: enemy):
         for i, entry in enumerate(self.turn_order):
             if entry.character is enemy:
+                del self.turn_order[i]
+                return
+
+    def removePlayer(self, player: Player):
+        for i, entry in enumerate(self.turn_order):
+            if entry.character is player:
                 del self.turn_order[i]
                 return
 
@@ -80,3 +90,41 @@ class CombatHandler:
             out.append(f"│ {name} │ {av_str} AV │")
         out.append("└" + "─" * (w - 2) + "┘")
         return out
+
+    def select_character(self, f: Callable[[Player | enemy], bool]) -> Player | enemy:
+        options = [e for e in self.turn_order if f(e.character)]
+        selected = 0
+        terminalDisplay.combatDisplay.messageProvider = lambda w, h: self.print_turn_order_list_select(w, h, selected, options)
+        while True:
+            selected %= len(options)
+            terminalDisplay.updateDisplays()
+            while True:
+                key = inputController.getKey()
+                if key in utils.key_to_delta:
+                    selected += utils.key_to_delta[key]
+                    break 
+                if key == Key.enter:
+                    terminalDisplay.combatDisplay.messageProvider = self.print_turn_order_list
+                    return options[selected].character
+
+
+    def print_turn_order_list_select(self, w: int, h: int, selected: int, options: list[TurnEntry]) -> list[str]:
+            
+            out = []
+            # "│ " (2) + " │ " (3) + " ### AV │" (8) = 13 characters
+            nameSpace = w - 14
+    
+    
+            out.append("┌" + "─" * (w - 2) + "┐")
+            out.append("│" + "TURN ORDER".center(w - 2) + "│")
+            out.append("├" + "─" * (w - 2) + "┤")
+            realOptions = -1
+            for i, entry in enumerate(self.turn_order):
+                if entry in options:
+                    realOptions += 1
+                sel_str = "> " if (realOptions == selected and entry in options) else "  "
+                name = entry.character.name[:nameSpace].ljust(nameSpace)
+                av_str = f"{entry.av:<3.0f}"
+                out.append(f"│{sel_str}{name} │ {av_str} AV │")
+            out.append("└" + "─" * (w - 2) + "┘")
+            return out

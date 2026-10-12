@@ -36,6 +36,7 @@ class Player:
             all_stats: dict[str, PlayerStats] = json.load(f)
             self.stats = all_stats[self.class_type]
 
+        self.combat: CombatHandler | None = None
         self.speed = self.stats["base_stats"]["speed"]
         self.max_health = self.stats["base_stats"]["health"]
         self.health = self.max_health
@@ -46,8 +47,22 @@ class Player:
         for item in self.stats["starting_items"]["items"]:
             self.inventory.add(Item(item))
     
-    def getTurnOptions(self) -> list[tuple[str, Callable]]:
-        return [("attack", lambda: None)]
+    def getTurnOptions(self, handler: CombatHandler) -> list[tuple[str, Callable]]:
+        return [
+            ("pass", lambda: None), 
+            ("die", lambda: self.takeDamage(handler, 100)), 
+            ("attack", lambda: None),
+            ("kill other player", lambda: handler.select_character(lambda c: isinstance(c, Player) and not c is self).takeDamage(handler, 1000))
+            ]
+
+    def takeDamage(self, handler: CombatHandler, damage: int):
+        self.health -= damage
+        if self.health <= 0:
+            self.die(handler)
+
+    def die(self, handler: CombatHandler):
+        print(f"Player {self.name} dies!")
+        handler.removePlayer(self)
 
     def pretty_print_turn_options(self, options: list[tuple[str, Callable]], selected: int, w: int, h: int) -> list[str]:
         content_width = w - 2
@@ -61,7 +76,7 @@ class Player:
         return out
 
     def turnStart(self, handler: CombatHandler):
-        op = self.getTurnOptions()
+        op = self.getTurnOptions(handler)
         selectedOption = 0
         terminalDisplay.contextDisplay.messageProvider = lambda w, h: self.pretty_print_turn_options(op, selectedOption, w, h)
         while True:
