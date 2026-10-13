@@ -54,8 +54,7 @@ class enemy:
     def takeDamage(self, handler: CombatHandler, damage: int):
         self.health -= damage
         if self.health <= 0:
-            if self.combat:
-                self.die(handler)
+            self.die(handler)
 
     def heal(self, amount: int):
         self.health = min(self.max_health, self.health + amount)

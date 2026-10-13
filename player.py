@@ -47,13 +47,19 @@ class Player:
         for item in self.stats["starting_items"]["items"]:
             self.inventory.add(Item(item))
     
-    def getTurnOptions(self, handler: CombatHandler) -> list[tuple[str, Callable]]:
+    def getTurnOptions(self, handler: CombatHandler) -> list[tuple[str, Callable[[CombatHandler], None]]]:
         return [
-            ("pass", lambda: None), 
-            ("die", lambda: self.takeDamage(handler, 100)), 
-            ("attack", lambda: None),
-            ("kill other player", lambda: handler.select_character(lambda c: isinstance(c, Player) and not c is self).takeDamage(handler, 1000))
+            ("pass", lambda h: None), 
+            ("die", lambda h: self.takeDamage(h, 100)), 
+            ("attack", self.attack),
+            ("kill other player", lambda h: h.select_character(lambda c: isinstance(c, Player) and not c is self).takeDamage(h, 1000))
             ]
+
+    def attack(self, handler: CombatHandler):
+        if not self.inventory.weapon:
+            return
+        to_attack = handler.select_character(lambda c: not isinstance(c, Player))
+        to_attack.takeDamage(handler, self.inventory.weapon.damage)
 
     def takeDamage(self, handler: CombatHandler, damage: int):
         self.health -= damage
@@ -89,7 +95,7 @@ class Player:
                     break
                 if key == Key.enter:
                     terminalDisplay.contextDisplay.messageProvider = None
-                    op[selectedOption][1]()
+                    op[selectedOption][1](handler)
                     return
         
 

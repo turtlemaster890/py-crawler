@@ -5,6 +5,7 @@ class Item:
 class Weapon(Item):
     def __init__(self, name: str, ):
         super().__init__(name)
+        self.damage = 5
 
 class Armor(Item):
     def __init__(self, name: str, ):

@@ -1,4 +1,5 @@
 from direction import direction
+from encounters import encounterFactory
 import random
 import enemy
 from item import Item
@@ -161,7 +162,7 @@ def gen_main_path(startPos: Pos, maxSteps: int, x: int, y: int):
             currentRoom = maze[currentPos.y][currentPos.x]
             if maze[newPos.y][newPos.x] is None:
                 # make connections between rooms
-                maze[newPos.y][newPos.x] = Room(connections={moveDirection.opposite()})
+                maze[newPos.y][newPos.x] = Room(connections={moveDirection.opposite()}, enemies=encounterFactory())
                 assert isinstance(currentRoom, Room)
                 currentRoom.make_connection(moveDirection)
                 currentPos = newPos
@@ -207,7 +208,7 @@ def gen_branch(maze: maze, pos: Pos, width: int, height: int, maxBranchLength: i
                         options.remove(moveDirection)
                         continue
                 if maze[newPos.y][newPos.x] is None:
-                    maze[newPos.y][newPos.x] = Room(connections={moveDirection.opposite()})
+                    maze[newPos.y][newPos.x] = Room(connections={moveDirection.opposite()}, enemies=encounterFactory())
                     currentRoom = maze[currentPos.y][currentPos.x]
                     assert isinstance(currentRoom, Room)
                     currentRoom.make_connection(moveDirection)

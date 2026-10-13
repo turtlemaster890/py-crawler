@@ -2,6 +2,7 @@ import os
 from typing import Callable
 from pynput.keyboard import Key
 
+
 def clear():
     os.system('cls' if os.name == 'nt' else 'clear')
 
