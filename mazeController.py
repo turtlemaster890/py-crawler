@@ -1,9 +1,11 @@
 from direction import direction
-from maze import maze, pretty_print, pretty_print_list, Room, Pos
+from maze import maze, pretty_print, pretty_print_list
+from Pos import Pos
 from party import Party
 from combatHandler import CombatHandler
 import inputController
 from pynput.keyboard import Key
+from room import Room
 # from utils import clear
 import terminalDisplay
 
@@ -20,17 +22,17 @@ class mazeController:
         self.width = width
         self.height = height
         self.party = party
-        self.discovered_rooms = {party.pos}
+        # self.discovered_rooms = {party.pos}
 
         startPos = startPos or party.pos
 
         startRoom = maze[startPos.y][startPos.x]
         assert isinstance(startRoom, Room)
         for connection in startRoom.connections:
-            self.discovered_rooms.add(startPos + connection)
+            self.party.discovered_positions.add(startPos + connection)
         inputController.start()
         # utils.addPrintFunction("maze", lambda: pretty_print(self.maze, self.discovered_rooms, self.party.pos), 0)
-        terminalDisplay.mazeDisplay.messageProvider = lambda x, y: pretty_print_list(x, y, self.maze, self.discovered_rooms, self.party.pos)
+        terminalDisplay.mazeDisplay.messageProvider = lambda x, y: pretty_print_list(x, y, self.maze, self.party.discovered_positions, self.party.pos)
 
     def move(self, moveDirection: direction) -> tuple[CombatHandler | None, bool]:
         newPos = self.party.pos + moveDirection
@@ -40,9 +42,9 @@ class mazeController:
         assert isinstance(currentRoom, Room)
         newRoom = self.maze[newPos.y][newPos.x]
         if isinstance(newRoom, Room) and currentRoom.has_connection(moveDirection):
-            self.discovered_rooms.add(newPos)
+            self.party.discovered_positions.add(newPos)
             for connection in newRoom.connections:
-                self.discovered_rooms.add(newPos + connection)
+                self.party.discovered_positions.add(newPos + connection)
             self.party.pos = newPos
             newRoom.enter_room(self.party)
             if newRoom.enemies:

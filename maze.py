@@ -2,8 +2,10 @@ from direction import direction
 from encounters import encounterFactory
 import random
 import enemy
+from Pos import Pos
 from item import Item
 from shop import Shop
+from room import Room, StartRoom, EndRoom, ShopRoom
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -69,32 +71,6 @@ def connections_to_char(connections: set[direction]):
     return c
 
 type maze = list[list[Room | None]]
-
-class Pos:
-    def __init__(self, x: int = 0, y: int = 0):
-        self.x = x
-        self.y = y
-
-    def __add__(self, other) -> "Pos":
-        if isinstance(other, Pos):
-            return Pos(self.x + other.x, self.y + other.y)
-        if isinstance(other, direction):
-            return Pos(self.x + other.value[0], self.y + other.value[1])
-        return NotImplemented
-
-    def __str__(self):
-        return f"P({self.x}, {self.y})"
-
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, Pos):
-            return self.x == other.x and self.y == other.y
-        return False
-
-    def __key(self):
-        return (self.x, self.y)
-
-    def __hash__(self):
-        return hash(self.__key())
 
 
 def pretty_print(maze: maze, discovered_positions: set[Pos], current_position: Pos):
@@ -231,62 +207,3 @@ def generate_maze(width: int, height: int):
 
 
 
-
-class Room:
-    def __init__(self, connections: set[direction] | None = None, enemies: list[enemy.enemy] | None = None):
-        if connections is None:
-            connections = set()
-        if enemies is None:
-            enemies = []
-        self.connections = connections
-        self.enemies = enemies
-        self.colour = Fore.LIGHTBLACK_EX
-        self.selectedColour = Fore.WHITE
-
-    def enter_room(self, party: Party):
-        pass
-
-    def has_connection(self, direction: direction):
-        return direction in self.connections
-
-    def make_connection(self, direction: direction):
-        self.connections.add(direction)
-
-    def __repr__(self):
-        return f"R({[d.name for d in self.connections]})"
-
-class StartRoom(Room):
-    def __init__(self, connections: set[direction] | None = None):
-        super().__init__(connections)
-        self.enemies = []
-        self.colour = Fore.GREEN
-        self.selectedColour = Fore.LIGHTGREEN_EX
-
-class EndRoom(Room):
-    def __init__(self, connections: set[direction] | None = None):
-        super().__init__(connections, enemies=[enemy.Goblin(name="Super Scary Bob AAA")])
-        self.colour = Fore.RED
-        self.selectedColour = Fore.LIGHTRED_EX
-
-class ShopRoom(Room):
-    def __init__(self, connections: set[direction] | None = None):
-        super().__init__(connections)
-        self.enemies = []
-        self.shop = Shop([(Item("Joe's Toe"), 50), (Item("Bob's Job"), 100), (Item("Floop's Goop"), 500)])
-        self.colour = Fore.YELLOW
-        self.selectedColour = Fore.LIGHTYELLOW_EX
-
-    def enter_room(self, party: Party):
-        super().enter_room(party)
-        self.shop.displayShop(party)
-
-
-
-
-class Maze:
-    def __init__(self, width: int, height: int):
-        self.width = width
-        self.height = height
-        self.maze = []
-        for _ in range(height):
-            self.maze.append([0] * width)

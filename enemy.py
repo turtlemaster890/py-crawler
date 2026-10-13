@@ -39,6 +39,24 @@ class enemy:
             actList = ["pass"]
         self.action = random.choice(actList)
 
+    def to_json(self):
+        return {
+            'enemy_type': self.enemy_type,
+            'name': self.name,
+            'max_health': self.max_health,
+            'speed': self.speed,
+            'health': self.health
+        }
+
+    @classmethod
+    def from_json(cls, j):
+        new_enemy = cls(j['name'])
+        new_enemy.max_health = j['max_health']
+        new_enemy.speed = j['speed']
+        new_enemy.health = j['health']
+        return new_enemy
+
+
 
     def turnStart(self, handler: CombatHandler):
         self.decideAction()
@@ -100,3 +118,14 @@ class LargeSlime(enemy):
         terminalDisplay.updateDisplays()
         terminalDisplay.contextDisplay.print_boxify(f"{self.name} splits into two!")
         utils.wait_for_enter()
+
+enemy_type_to_class = {
+    'goblin': Goblin,
+    'skeleton': Skeleton,
+    'small_slime': SmallSlime,
+    'large_slime': LargeSlime
+}
+
+def from_json(j: dict[str, object]):
+    _class = enemy_type_to_class.get(j['enemy_type'], enemy) #type: ignore
+    return _class.from_json(j)

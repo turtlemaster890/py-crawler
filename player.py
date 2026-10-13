@@ -1,6 +1,6 @@
 import json
-from maze import Pos
-from inventory import PlayerInventory
+from Pos import Pos
+import inventory
 from item import Item, Weapon, Armor
 import terminalDisplay
 import inputController
@@ -26,11 +26,10 @@ class PlayerStats(TypedDict):
     starting_items: StartingItems
 
 class Player:
-    def __init__(self, pos: Pos, name: str = "Player", class_type: str = "warrior"):
-        self.pos = pos
+    def __init__(self, name: str = "Player", class_type: str = "warrior"):
         self.name = name
         self.class_type = class_type
-        self.inventory = PlayerInventory()
+        self.inventory = inventory.PlayerInventory()
 
         with open(getRelativePath("player_stats.json"), "r") as f:
             all_stats: dict[str, PlayerStats] = json.load(f)
@@ -46,6 +45,29 @@ class Player:
         self.inventory.equip(Armor(self.stats["starting_items"]["armor"]))
         for item in self.stats["starting_items"]["items"]:
             self.inventory.add(Item(item))
+
+    def to_json(self):
+        return {
+            'name': self.name,
+            'class_type': self.class_type,
+            'inventory': self.inventory.to_json(),
+            'speed': self.speed,
+            'max_health': self.max_health,
+            'health': self.health,
+            'max_stamina':self.max_stamina,
+            'stamina': self.stamina,
+        }
+
+    @classmethod
+    def from_json(cls, j):
+        new_player = cls(name=j['name'], class_type=j['class_type'])
+        new_player.inventory = inventory.from_json(j['inventory'])
+        new_player.speed = j['speed']
+        new_player.max_health = j['max_health']
+        new_player.health = j['health']
+        new_player.max_stamina = j['max_stamina']
+        new_player.stamina = j['stamina']
+        return new_player
     
     def getTurnOptions(self, handler: CombatHandler) -> list[tuple[str, Callable[[CombatHandler], None]]]:
         return [

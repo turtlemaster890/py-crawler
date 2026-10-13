@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import textwrap
 import inputController
 from typing import Callable
@@ -51,5 +52,5 @@ key_to_delta = {
     Key.down: 1
 }
 
-def getRelativePath(filename: str):
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), filename))
+def getRelativePath(filename: str | Path) -> Path:
+    return Path(os.path.join(os.path.dirname(__file__), filename))

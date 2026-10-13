@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
+from item import Item
 if TYPE_CHECKING:
-    from item import Item
     from party import Party
 import inputController
 import terminalDisplay
@@ -12,6 +12,13 @@ class Shop:
     def __init__(self, items: list[tuple[Item, int]]):
         self.items: list[tuple[Item, int]] = items
 
+    def to_json(self):
+        return [(i.to_json(), c) for i, c in self.items]
+
+    @classmethod
+    def from_json(cls, j: list[tuple[dict, int]]):
+        return cls([(Item.from_json(i), c) for i, c in j])
+        
     def pretty_print(self, funds: int = 0, selectedItem: int = -1):
         longestName = max([len(item[0].name) for item in self.items])
         additionalChars = max(0, longestName - 8)
