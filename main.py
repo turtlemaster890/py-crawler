@@ -59,7 +59,8 @@ def main():
     while True:
         combat_handler = mController.tick()
         while combat_handler:
-            combat_handler.combat()
+            if not combat_handler.combat():
+                combat_handler = None
     
 
 if __name__ == "__main__":

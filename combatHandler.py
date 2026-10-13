@@ -1,3 +1,5 @@
+import sys
+
 from pynput.keyboard import Key
 
 import terminalDisplay
@@ -29,20 +31,29 @@ class CombatHandler:
 
     def addEnemy(self, enemy: enemy):
         self.turn_order.append(TurnEntry(10000 / enemy.speed, enemy))
+        self.enemies.append(enemy)
 
     def removeEnemy(self, enemy: enemy):
         for i, entry in enumerate(self.turn_order):
             if entry.character is enemy:
                 del self.turn_order[i]
+                self.enemies.remove(enemy)
                 return
 
     def removePlayer(self, player: Player):
         for i, entry in enumerate(self.turn_order):
             if entry.character is player:
                 del self.turn_order[i]
+                self.players.remove(player)
                 return
 
-    def combat(self):
+    def combat(self) -> bool:
+        if len(self.players) == 0:
+            print("YOU LOSE!!!")
+            sys.exit()
+        if len(self.enemies) == 0:
+            terminalDisplay.combatDisplay.messageProvider = None
+            return False
         # clear()
         # self.print_turn_order()
         # utils.printSequences()
@@ -50,6 +61,7 @@ class CombatHandler:
         print(self.turn_order[0].character.name, "is taking their turn.")
         self.turn_order[0].character.turnStart(self)
         self.tick_initiative()
+        return True
 
     def tick_initiative(self):
         current_av, current_character = self.turn_order[0].av, self.turn_order[0].character
