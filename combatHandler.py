@@ -28,16 +28,16 @@ class CombatHandler:
         for character in self.players + self.enemies:
             av: float = 10000 / character.speed
             self.turn_order.append(TurnEntry(av, character))
-            character.combat = self
         self.turn_order.sort(key=lambda x: x.av)
         for i in range(1, len(self.turn_order)):
             self.turn_order[i].av -= self.turn_order[0].av
         self.turn_order[0].av = 0
         terminalDisplay.combatDisplay.messageProvider = self.print_turn_order_list
         for enemy in self.enemies:
-            enemy.combatStart()
+            enemy.combatStart(self)
 
     def addEnemy(self, enemy: enemy):
+        enemy.combatStart(self)
         self.turn_order.append(TurnEntry(10000 / enemy.speed, enemy))
         self.enemies.append(enemy)
 

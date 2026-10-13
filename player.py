@@ -1,6 +1,6 @@
 import json
 import inventory
-from item import Item, Weapon, Armor, Relic, Consumable
+from item import Item, Weapon, Armor, Relic
 import terminalDisplay
 import inputController
 from pynput.keyboard import Key
@@ -93,12 +93,13 @@ class Player:
         if not self.inventory.weapon:
             return
         to_attack = handler.select_character(lambda c: not isinstance(c, Player))
-        for relic in self.inventory.items:
-            if isinstance(relic, Relic):
-                relic.dealDamage()
-        to_attack.takeDamage(handler, self.inventory.weapon.damage, self)
+        damage = self.inventory.weapon.damage
+        for item in self.inventory.items:
+            if isinstance(item, Relic):
+                damage = item.dealDamage(damage, self, to_attack) or damage
+        to_attack.takeDamage(handler, damage, self)
 
-    def takeDamage(self, handler: CombatHandler, damage: int, attacker = None):
+    def takeDamage(self, handler: CombatHandler, damage: int, attacker=None):
         for relic in self.inventory.items:
             if isinstance(relic, Relic):
                 relic.healthChange(-damage, attacker, self)
@@ -113,7 +114,6 @@ class Player:
                 relic.die()
         if self.health <= 0:
             handler.removePlayer(self)
-        
 
     def pretty_print_turn_options(
         self, options: list[tuple[str, Callable]], selected: int, w: int, h: int

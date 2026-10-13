@@ -30,7 +30,7 @@ class enemy:
     ):
         self.enemy_type = enemy_type or "goblin"
         self.name = name or "Enemy"
-        self.combat = handler
+        self.combatHandler = handler
         with open(getRelativePath("enemy_stats.json"), "r") as f:
             all_stats: dict[str, EnemyStats] = json.load(f)
             self.stats = all_stats[self.enemy_type]
@@ -41,8 +41,9 @@ class enemy:
         self.action = ""
         self.aggro = []
 
-    def combatStart(self):
-        self.aggro = [[0, player] for player in self.combat.players]
+    def combatStart(self, handler: CombatHandler):
+        self.combatHandler = handler
+        self.aggro = [[0, player] for player in self.combatHandler.players]
         self.decideAction()
 
     def decideAction(self):
@@ -86,6 +87,9 @@ class enemy:
     def attack(self, handler: CombatHandler):
         target = min(self.aggro, key=lambda x: x[0])[1]
         target.takeDamage(handler, self.stats["actions"]["attack"]["damage"], self)
+        terminalDisplay.contextDisplay.print_boxify(
+            f"{self.name} attacks {target.name} for {self.stats["actions"]["attack"]["damage"]} damage."
+        )
 
     def takeDamage(self, handler: CombatHandler, damage: int, attacker=None):
         for player in self.aggro:
