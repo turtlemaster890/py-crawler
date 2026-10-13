@@ -21,47 +21,51 @@ input_to_direction = {
 combat_handler: CombatHandler | None = None
 
 def main():
-    colorama.init(autoreset=True)
-    utils.clear()
-    # d1 = terminalDisplay.DisplayArea(0, 0, 10, 10)
-    # d2 = terminalDisplay.DisplayArea(12, 0, 15, 15)
-    # d1.print(["Hi!","This is in display 1.","That msg","was cutoff"])
-    # # d2.print(["Whoa beside!","This is cool"])
-    # input()
+    try:
+        colorama.init(autoreset=True)
+        utils.clear()
+        print('\033[?25l', end="")
+        # d1 = terminalDisplay.DisplayArea(0, 0, 10, 10)
+        # d2 = terminalDisplay.DisplayArea(12, 0, 15, 15)
+        # d1.print(["Hi!","This is in display 1.","That msg","was cutoff"])
+        # # d2.print(["Whoa beside!","This is cool"])
+        # utils.wait_for_enter()
 
-    # return
+        # return
 
-    global combat_handler
+        global combat_handler
 
-    player1 = Player(Pos(5, 5), name="Player1", class_type="warrior")
-    player2 = Player(Pos(5, 5), name="Player2", class_type="mage")
-    player3 = Player(Pos(5, 5), name="Player3", class_type="rogue")
-    player4 = Player(Pos(5, 5), name="Player4", class_type="warrior")
-    # enemy1 = enemy(name="Enemy1", enemy_type="goblin")
-    # enemy2 = enemy(name="Enemy2", enemy_type="goblin")
-    # combat_handler = CombatHandler([player1, player2, player3, player4], [enemy1, enemy2])
+        player1 = Player(Pos(5, 5), name="Player1", class_type="warrior")
+        player2 = Player(Pos(5, 5), name="Player2", class_type="mage")
+        player3 = Player(Pos(5, 5), name="Player3", class_type="rogue")
+        player4 = Player(Pos(5, 5), name="Player4", class_type="warrior")
+        # enemy1 = enemy(name="Enemy1", enemy_type="goblin")
+        # enemy2 = enemy(name="Enemy2", enemy_type="goblin")
+        # combat_handler = CombatHandler([player1, player2, player3, player4], [enemy1, enemy2])
 
-    party = Party(Pos(14, 6), [player1, player2, player3, player4])
-    party.funds = 900
+        party = Party(Pos(14, 6), [player1, player2, player3, player4])
+        party.funds = 900
 
-    # party.inventory.add(Weapon("Eye of vishnu"))
-    # print(party.inventory.items)
-    # print(party.members[0].inventory.items)
-    # print(party.moveItemToMember(party.members[0], party.inventory[0]))
-    # print(party.inventory.items)
-    # print(party.members[0].inventory.items)
-    mz = gen_main_path(party.pos, 50, 28, 13)
-    mController = mazeController(mz, 28, 13, party)
+        # party.inventory.add(Weapon("Eye of vishnu"))
+        # print(party.inventory.items)
+        # print(party.members[0].inventory.items)
+        # print(party.moveItemToMember(party.members[0], party.inventory[0]))
+        # print(party.inventory.items)
+        # print(party.members[0].inventory.items)
+        mz = gen_main_path(party.pos, 50, 28, 13)
+        mController = mazeController(mz, 28, 13, party)
 
-    # s = Shop([(Item("Joe's Toe"), 5), (Item("Bob's Job"), 60), (Item("Cool"), 720)])
-    # s.displayShop(party)
-    
-    while True:
-        combat_handler = mController.tick()
-        while combat_handler:
-            if not combat_handler.combat():
-                combat_handler = None
-    
+        # s = Shop([(Item("Joe's Toe"), 5), (Item("Bob's Job"), 60), (Item("Cool"), 720)])
+        # s.displayShop(party)
+        
+        while True:
+            combat_handler = mController.tick()
+            while combat_handler:
+                if not combat_handler.combat():
+                    combat_handler = None
+    finally:
+        print('\033[?25h', end="")
+        
 
 if __name__ == "__main__":
     main()

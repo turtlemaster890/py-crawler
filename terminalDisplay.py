@@ -13,11 +13,14 @@ class DisplayArea:
         self.messageProvider = messageProvider
         self.wrap = wrap
 
+    def print_boxify(self, message: str):
+        self.print(utils.boxify(self.width, self.height, message))
+
     def print(self, text: list[str] = []):
         for i in range(self.height):
             moveCursor(self.x, self.y + i)
             print(" " * self.width)
-        if self.messageProvider:
+        if self.messageProvider and len(text) == 0:
             text = self.messageProvider(self.width, self.height)
         for i in range(self.height):
             moveCursor(self.x, self.y + i)
@@ -26,7 +29,7 @@ class DisplayArea:
 
 mazeDisplay = DisplayArea(0, 0, 30, 15)
 
-combatDisplay = DisplayArea(31, 0, 25, 15)
+combatDisplay = DisplayArea(31, 0, 35, 15)
 
 contextDisplay = DisplayArea(0, 15, 30, 10)
 

@@ -58,7 +58,8 @@ class CombatHandler:
         # self.print_turn_order()
         # utils.printSequences()
         terminalDisplay.updateDisplays()
-        print(self.turn_order[0].character.name, "is taking their turn.")
+        # terminalDisplay.contextDisplay.print_boxify(f"{self.turn_order[0].character.name} is taking their turn.")
+        # print(self.turn_order[0].character.name, "is taking their turn.")
         self.turn_order[0].character.turnStart(self)
         self.tick_initiative()
         return True
@@ -97,7 +98,7 @@ class CombatHandler:
         out.append("│" + "TURN ORDER".center(w - 2) + "│")
         out.append("├" + "─" * (w - 2) + "┤")
         for entry in self.turn_order:
-            name = entry.character.name[:nameSpace].ljust(nameSpace)
+            name = (entry.character.name + f" ({entry.character.health}♥)")[:nameSpace].ljust(nameSpace)
             av_str = f"{entry.av:<3.0f}"
             out.append(f"│ {name} │ {av_str} AV │")
         out.append("└" + "─" * (w - 2) + "┘")
@@ -134,9 +135,10 @@ class CombatHandler:
             for i, entry in enumerate(self.turn_order):
                 if entry in options:
                     realOptions += 1
-                sel_str = "> " if (realOptions == selected and entry in options) else "  "
-                name = entry.character.name[:nameSpace].ljust(nameSpace)
+                sel_str = "> " if (realOptions == selected and entry in options) else ("  " if entry in options else " ")
+                sel_extra = " " if not entry in options else ""
+                name = (entry.character.name + f" ({entry.character.health}♥)")[:nameSpace].ljust(nameSpace)
                 av_str = f"{entry.av:<3.0f}"
-                out.append(f"│{sel_str}{name} │ {av_str} AV │")
+                out.append(f"│{sel_str}{name}{sel_extra} │ {av_str} AV │")
             out.append("└" + "─" * (w - 2) + "┘")
             return out

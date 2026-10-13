@@ -1,8 +1,10 @@
 from typing import TypedDict, Literal, Any, TYPE_CHECKING, Callable
 import json
 import random
+import terminalDisplay
 from utils import getRelativePath
 from turnEntry import TurnEntry
+import utils
 if TYPE_CHECKING:
     from combatHandler import CombatHandler
 
@@ -41,7 +43,7 @@ class enemy:
     def turnStart(self, handler: CombatHandler):
         self.decideAction()
         self.takeAction(self.action, handler)
-        input()
+        utils.wait_for_enter()
 
     def takeAction(self, action: str, handler: CombatHandler):
         action_method = getattr(self, action, None)
@@ -61,15 +63,17 @@ class enemy:
 
     def die(self, handler: CombatHandler):
         handler.removeEnemy(self)
-        print(f"{self.name} has been defeated!")
-        input()
+        terminalDisplay.updateDisplays()
+        terminalDisplay.contextDisplay.print_boxify(f"{self.name} has been defeated!")
+        utils.wait_for_enter()
 
 class Goblin(enemy):
     def __init__(self, name: str = "Goblin"):
         super().__init__(name, "goblin")
     def rob(self, handler: CombatHandler):
         stolen = random.randint(3, 7)
-        print(f"{self.name} steals {stolen} from you!")
+        terminalDisplay.updateDisplays()
+        terminalDisplay.contextDisplay.print_boxify(f"{self.name} steals {stolen} from you!")
         handler.party.funds -= min(stolen, handler.party.funds)
 
 class Skeleton(enemy):
@@ -93,3 +97,6 @@ class LargeSlime(enemy):
         handler.addEnemy(SmallSlime())
         handler.addEnemy(SmallSlime())
         handler.removeEnemy(self)
+        terminalDisplay.updateDisplays()
+        terminalDisplay.contextDisplay.print_boxify(f"{self.name} splits into two!")
+        utils.wait_for_enter()
