@@ -3,6 +3,7 @@ from maze import maze
 from party import Party
 import json
 
+
 def save_maze(maze: maze):
     maze_rep: list[list[dict | None]] = []
     for row in maze:
@@ -15,6 +16,7 @@ def save_maze(maze: maze):
                 row_rep.append(None)
         maze_rep.append(row_rep)
     return maze_rep
+
 
 def load_maze(maze_rep: list[list[dict | None]]) -> maze:
     mz = []
@@ -29,11 +31,10 @@ def load_maze(maze_rep: list[list[dict | None]]) -> maze:
         mz.append(row)
     return mz
 
+
 def save(mz: maze, party: Party):
-    return {
-        'maze': save_maze(mz),
-        'party': party.to_json()
-    }
+    return {"maze": save_maze(mz), "party": party.to_json()}
+
 
 def load(j) -> tuple[maze, Party]:
-    return (load_maze(j['maze']), Party.from_json(j['party']))
+    return (load_maze(j["maze"]), Party.from_json(j["party"]))

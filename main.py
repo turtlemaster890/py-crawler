@@ -18,10 +18,10 @@ input_to_direction = {
     "u": direction.UP,
     "d": direction.DOWN,
     "l": direction.LEFT,
-    "r": direction.RIGHT
+    "r": direction.RIGHT,
 }
 
-SAVE_LOCATION = Path('saves/')
+SAVE_LOCATION = Path("saves/")
 save_index = 0
 save_file = utils.getRelativePath(SAVE_LOCATION.joinpath(f"save_{save_index}.json"))
 
@@ -31,15 +31,16 @@ mz: maze
 
 party: Party
 
+
 def main():
     global party, mz, combat_handler
     try:
         colorama.init(autoreset=True)
         utils.clear()
-        print('\033[?25l', end="")
+        print("\033[?25l", end="")
 
         try:
-            with open(save_file, 'r') as f:
+            with open(save_file, "r") as f:
                 save = json.load(f)
                 mz, party = saves.load(save)
         except FileNotFoundError, json.JSONDecodeError, KeyError:
@@ -52,15 +53,16 @@ def main():
             party = Party(Pos(14, 6), [player1, player2, player3, player4])
             party.funds = 900
             mz = gen_main_path(party.pos, 50, 28, 13)
-        
+
         mController = mazeController(mz, 28, 13, party)
         current_room = mz[party.pos.y][party.pos.x]
         if current_room:
             current_room.enter_room(party)
             if current_room.enemies:
-                combat_handler = CombatHandler(party, party.members, current_room.enemies)
+                combat_handler = CombatHandler(
+                    party, party.members, current_room.enemies
+                )
 
-        
         while True:
             while combat_handler:
                 if not combat_handler.combat():
@@ -68,10 +70,10 @@ def main():
             combat_handler = mController.tick()
     finally:
         SAVE_LOCATION.mkdir(parents=True, exist_ok=True)
-        with open(save_file, 'w') as f:
+        with open(save_file, "w") as f:
             json.dump(saves.save(mz, party), f, indent=4)
-        print('\033[?25h', end="")
-        
+        print("\033[?25h", end="")
+
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class direction(Enum):
     UP = (0, -1)
     DOWN = (0, 1)
@@ -11,5 +12,5 @@ class direction(Enum):
             direction.UP: direction.DOWN,
             direction.DOWN: direction.UP,
             direction.LEFT: direction.RIGHT,
-            direction.RIGHT: direction.LEFT
+            direction.RIGHT: direction.LEFT,
         }[self]

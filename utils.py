@@ -7,7 +7,8 @@ from pynput.keyboard import Key
 
 
 def clear():
-    os.system('cls' if os.name == 'nt' else 'clear')
+    os.system("cls" if os.name == "nt" else "clear")
+
 
 def boxify(w: int, h: int, message: str, squish: bool = True) -> list[str]:
     boxWidth = w - 2
@@ -26,31 +27,35 @@ def boxify(w: int, h: int, message: str, squish: bool = True) -> list[str]:
     out.append("└" + "─" * boxWidth + "┘")
     return out
 
+
 def wait_for_enter():
     while True:
         key = inputController.getKey()
         if key == Key.enter:
             return
 
+
 printSqs: dict[str, tuple[Callable, int]] = {}
+
 
 def addPrintFunction(name: str, func: Callable, priority: int):
     printSqs[name] = (func, priority)
 
+
 def removePrintFunction(name: str):
     del printSqs[name]
+
 
 def printSequences():
     clear()
     order = list(printSqs.values())
-    order.sort(key=lambda x: x[1]) #.sort(key = lambda x: x[1])
+    order.sort(key=lambda x: x[1])  # .sort(key = lambda x: x[1])
     for func in order:
         func[0]()
 
-key_to_delta = {
-    Key.up: -1,
-    Key.down: 1
-}
+
+key_to_delta = {Key.up: -1, Key.down: 1}
+
 
 def getRelativePath(filename: str | Path) -> Path:
     return Path(os.path.join(os.path.dirname(__file__), filename))

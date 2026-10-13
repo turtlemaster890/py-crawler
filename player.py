@@ -7,23 +7,28 @@ import inputController
 from pynput.keyboard import Key
 from utils import key_to_delta, getRelativePath
 from typing import TYPE_CHECKING, Callable, TypedDict
-if TYPE_CHECKING:   
+
+if TYPE_CHECKING:
     from party import Party
     from combatHandler import CombatHandler
+
 
 class BaseStats(TypedDict):
     health: int
     speed: int
     stamina: int
 
+
 class StartingItems(TypedDict):
     weapon: str
     armor: str
     items: list[str]
 
+
 class PlayerStats(TypedDict):
     base_stats: BaseStats
     starting_items: StartingItems
+
 
 class Player:
     def __init__(self, name: str = "Player", class_type: str = "warrior"):
@@ -48,34 +53,41 @@ class Player:
 
     def to_json(self):
         return {
-            'name': self.name,
-            'class_type': self.class_type,
-            'inventory': self.inventory.to_json(),
-            'speed': self.speed,
-            'max_health': self.max_health,
-            'health': self.health,
-            'max_stamina':self.max_stamina,
-            'stamina': self.stamina,
+            "name": self.name,
+            "class_type": self.class_type,
+            "inventory": self.inventory.to_json(),
+            "speed": self.speed,
+            "max_health": self.max_health,
+            "health": self.health,
+            "max_stamina": self.max_stamina,
+            "stamina": self.stamina,
         }
 
     @classmethod
     def from_json(cls, j):
-        new_player = cls(name=j['name'], class_type=j['class_type'])
-        new_player.inventory = inventory.from_json(j['inventory'])
-        new_player.speed = j['speed']
-        new_player.max_health = j['max_health']
-        new_player.health = j['health']
-        new_player.max_stamina = j['max_stamina']
-        new_player.stamina = j['stamina']
+        new_player = cls(name=j["name"], class_type=j["class_type"])
+        new_player.inventory = inventory.from_json(j["inventory"])
+        new_player.speed = j["speed"]
+        new_player.max_health = j["max_health"]
+        new_player.health = j["health"]
+        new_player.max_stamina = j["max_stamina"]
+        new_player.stamina = j["stamina"]
         return new_player
-    
-    def getTurnOptions(self, handler: CombatHandler) -> list[tuple[str, Callable[[CombatHandler], None]]]:
+
+    def getTurnOptions(
+        self, handler: CombatHandler
+    ) -> list[tuple[str, Callable[[CombatHandler], None]]]:
         return [
-            ("pass", lambda h: None), 
-            ("die", lambda h: self.takeDamage(h, 100)), 
+            ("pass", lambda h: None),
+            ("die", lambda h: self.takeDamage(h, 100)),
             ("attack", self.attack),
-            ("kill other player", lambda h: h.select_character(lambda c: isinstance(c, Player) and not c is self).takeDamage(h, 1000))
-            ]
+            (
+                "kill other player",
+                lambda h: h.select_character(
+                    lambda c: isinstance(c, Player) and not c is self
+                ).takeDamage(h, 1000),
+            ),
+        ]
 
     def attack(self, handler: CombatHandler):
         if not self.inventory.weapon:
@@ -92,21 +104,29 @@ class Player:
         print(f"Player {self.name} dies!")
         handler.removePlayer(self)
 
-    def pretty_print_turn_options(self, options: list[tuple[str, Callable]], selected: int, w: int, h: int) -> list[str]:
+    def pretty_print_turn_options(
+        self, options: list[tuple[str, Callable]], selected: int, w: int, h: int
+    ) -> list[str]:
         content_width = w - 2
         content_height = h - 2
         out: list[str] = []
         out.append("┌" + "─" * content_width + "┐")
         for i in range(min(content_height, len(options))):
             optName, optFunc = options[i]
-            out.append("│" + (("> " if i == selected else "  ") + optName).ljust(content_width) + "│")
+            out.append(
+                "│"
+                + (("> " if i == selected else "  ") + optName).ljust(content_width)
+                + "│"
+            )
         out.append("└" + "─" * content_width + "┘")
         return out
 
     def turnStart(self, handler: CombatHandler):
         op = self.getTurnOptions(handler)
         selectedOption = 0
-        terminalDisplay.contextDisplay.messageProvider = lambda w, h: self.pretty_print_turn_options(op, selectedOption, w, h)
+        terminalDisplay.contextDisplay.messageProvider = (
+            lambda w, h: self.pretty_print_turn_options(op, selectedOption, w, h)
+        )
         while True:
             selectedOption %= len(op)
             terminalDisplay.updateDisplays()
@@ -119,11 +139,12 @@ class Player:
                     terminalDisplay.contextDisplay.messageProvider = None
                     op[selectedOption][1](handler)
                     return
-        
 
     def moveItemToParty(self, party: Party, item: Item) -> bool:
-        if item not in self.inventory: return False
-        if not self.inventory.remove(item): return False
+        if item not in self.inventory:
+            return False
+        if not self.inventory.remove(item):
+            return False
         if not party.inventory.add(item):
             self.inventory.add(item)
             return False

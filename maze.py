@@ -25,7 +25,7 @@ add_up = {
     "─": "┴",
     "┐": "┤",
     "┌": "├",
-    "┬": "┼"
+    "┬": "┼",
 }
 
 add_down = {
@@ -36,7 +36,7 @@ add_down = {
     "─": "┬",
     "┘": "┤",
     "└": "├",
-    "┴": "┼"
+    "┴": "┼",
 }
 
 add_left = {
@@ -47,7 +47,7 @@ add_left = {
     "│": "┤",
     "└": "┴",
     "┌": "┬",
-    "├": "┼"
+    "├": "┼",
 }
 
 add_right = {
@@ -58,17 +58,23 @@ add_right = {
     "│": "├",
     "┘": "┴",
     "┐": "┬",
-    "┤": "┼"
+    "┤": "┼",
 }
+
 
 def connections_to_char(connections: set[direction]):
     c = "·"
     for d in list(connections):
-        if d == direction.UP: c = add_up[c]
-        if d == direction.DOWN: c = add_down[c]
-        if d == direction.LEFT: c = add_left[c]
-        if d == direction.RIGHT: c = add_right[c]
+        if d == direction.UP:
+            c = add_up[c]
+        if d == direction.DOWN:
+            c = add_down[c]
+        if d == direction.LEFT:
+            c = add_left[c]
+        if d == direction.RIGHT:
+            c = add_right[c]
     return c
+
 
 type maze = list[list[Room | None]]
 
@@ -79,10 +85,21 @@ def pretty_print(maze: maze, discovered_positions: set[Pos], current_position: P
             if not isinstance(r, Room) or Pos(x, y) not in discovered_positions:
                 print(" ", end=Style.RESET_ALL)
             else:
-                print((r.selectedColour if current_position == Pos(x, y) else (Style.DIM + r.colour)) + connections_to_char(r.connections), end = Style.RESET_ALL)
+                print(
+                    (
+                        r.selectedColour
+                        if current_position == Pos(x, y)
+                        else (Style.DIM + r.colour)
+                    )
+                    + connections_to_char(r.connections),
+                    end=Style.RESET_ALL,
+                )
         print()
 
-def pretty_print_list(w: int, h: int, maze: maze, discovered_positions: set[Pos], current_position: Pos) -> list[str]:
+
+def pretty_print_list(
+    w: int, h: int, maze: maze, discovered_positions: set[Pos], current_position: Pos
+) -> list[str]:
     content_width = w - 2
     content_height = h - 2
 
@@ -97,7 +114,11 @@ def pretty_print_list(w: int, h: int, maze: maze, discovered_positions: set[Pos]
                     if not isinstance(r, Room) or Pos(x, y) not in discovered_positions:
                         line_chars.append(" ")
                     else:
-                        colour = r.selectedColour if current_position == Pos(x, y) else (Style.DIM + r.colour)
+                        colour = (
+                            r.selectedColour
+                            if current_position == Pos(x, y)
+                            else (Style.DIM + r.colour)
+                        )
                         char = connections_to_char(r.connections)
                         line_chars.append(f"{colour}{char}{Style.RESET_ALL}")
                 else:
@@ -110,6 +131,7 @@ def pretty_print_list(w: int, h: int, maze: maze, discovered_positions: set[Pos]
 
     out.append("└" + "─" * content_width + "┘")
     return out
+
 
 # step 1: generate path to boss room
 def gen_main_path(startPos: Pos, maxSteps: int, x: int, y: int):
@@ -138,7 +160,9 @@ def gen_main_path(startPos: Pos, maxSteps: int, x: int, y: int):
             currentRoom = maze[currentPos.y][currentPos.x]
             if maze[newPos.y][newPos.x] is None:
                 # make connections between rooms
-                maze[newPos.y][newPos.x] = Room(connections={moveDirection.opposite()}, enemies=encounterFactory())
+                maze[newPos.y][newPos.x] = Room(
+                    connections={moveDirection.opposite()}, enemies=encounterFactory()
+                )
                 assert isinstance(currentRoom, Room)
                 currentRoom.make_connection(moveDirection)
                 currentPos = newPos
@@ -153,7 +177,12 @@ def gen_main_path(startPos: Pos, maxSteps: int, x: int, y: int):
     if currentPos in branch_positions:
         branch_positions.remove(currentPos)
     to_return = gen_branches(maze, branch_positions, x, y, 12)
-    open_room_spots = [(x, y) for y in range(len(maze)) for x in range(len(maze[y])) if type(maze[y][x]) == Room]
+    open_room_spots = [
+        (x, y)
+        for y in range(len(maze))
+        for x in range(len(maze[y]))
+        if type(maze[y][x]) == Room
+    ]
     shopRoomSpot = random.choice(open_room_spots)
     shopRoomSpotRoom = maze[shopRoomSpot[1]][shopRoomSpot[0]]
     assert isinstance(shopRoomSpotRoom, Room)
@@ -161,15 +190,18 @@ def gen_main_path(startPos: Pos, maxSteps: int, x: int, y: int):
     return maze
 
 
-def gen_branches(maze: maze, positions: list[Pos], width: int, height: int, maxBranches: int, d = 1) -> maze:
-    options = random.choices(positions, k = maxBranches)
+def gen_branches(
+    maze: maze, positions: list[Pos], width: int, height: int, maxBranches: int, d=1
+) -> maze:
+    options = random.choices(positions, k=maxBranches)
     for pos in options:
         maze = gen_branch(maze, pos, width, height, 9, d)
     return maze
-        
 
 
-def gen_branch(maze: maze, pos: Pos, width: int, height: int, maxBranchLength: int, d: int = 3):
+def gen_branch(
+    maze: maze, pos: Pos, width: int, height: int, maxBranchLength: int, d: int = 3
+):
     # if d > 3:
     #     return maze
     currentPos = pos
@@ -180,11 +212,19 @@ def gen_branch(maze: maze, pos: Pos, width: int, height: int, maxBranchLength: i
             if len(options) > 0:
                 moveDirection = random.choice(options)
                 newPos = currentPos + moveDirection
-                if newPos.x < 0 or newPos.x >= width or newPos.y < 0 or newPos.y >= height:
-                        options.remove(moveDirection)
-                        continue
+                if (
+                    newPos.x < 0
+                    or newPos.x >= width
+                    or newPos.y < 0
+                    or newPos.y >= height
+                ):
+                    options.remove(moveDirection)
+                    continue
                 if maze[newPos.y][newPos.x] is None:
-                    maze[newPos.y][newPos.x] = Room(connections={moveDirection.opposite()}, enemies=encounterFactory())
+                    maze[newPos.y][newPos.x] = Room(
+                        connections={moveDirection.opposite()},
+                        enemies=encounterFactory(),
+                    )
                     currentRoom = maze[currentPos.y][currentPos.x]
                     assert isinstance(currentRoom, Room)
                     currentRoom.make_connection(moveDirection)
@@ -202,8 +242,5 @@ def gen_branch(maze: maze, pos: Pos, width: int, height: int, maxBranchLength: i
         return gen_branches(maze, branchOptions, width, height, 2, d + 1)
     return maze
 
-def generate_maze(width: int, height: int):
-    ...
 
-
-
+def generate_maze(width: int, height: int): ...

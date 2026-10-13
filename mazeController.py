@@ -6,6 +6,7 @@ from combatHandler import CombatHandler
 import inputController
 from pynput.keyboard import Key
 from room import Room
+
 # from utils import clear
 import terminalDisplay
 
@@ -13,11 +14,19 @@ key_to_direction = {
     Key.left: direction.LEFT,
     Key.right: direction.RIGHT,
     Key.up: direction.UP,
-    Key.down: direction.DOWN
+    Key.down: direction.DOWN,
 }
 
+
 class mazeController:
-    def __init__(self, maze: maze, width: int, height: int, party: Party, startPos: Pos | None = None):
+    def __init__(
+        self,
+        maze: maze,
+        width: int,
+        height: int,
+        party: Party,
+        startPos: Pos | None = None,
+    ):
         self.maze = maze
         self.width = width
         self.height = height
@@ -32,11 +41,18 @@ class mazeController:
             self.party.discovered_positions.add(startPos + connection)
         inputController.start()
         # utils.addPrintFunction("maze", lambda: pretty_print(self.maze, self.discovered_rooms, self.party.pos), 0)
-        terminalDisplay.mazeDisplay.messageProvider = lambda x, y: pretty_print_list(x, y, self.maze, self.party.discovered_positions, self.party.pos)
+        terminalDisplay.mazeDisplay.messageProvider = lambda x, y: pretty_print_list(
+            x, y, self.maze, self.party.discovered_positions, self.party.pos
+        )
 
     def move(self, moveDirection: direction) -> tuple[CombatHandler | None, bool]:
         newPos = self.party.pos + moveDirection
-        if newPos.x < 0 or newPos.x >= self.width or newPos.y < 0 or newPos.y >= self.height:
+        if (
+            newPos.x < 0
+            or newPos.x >= self.width
+            or newPos.y < 0
+            or newPos.y >= self.height
+        ):
             return None, False
         currentRoom = self.maze[self.party.pos.y][self.party.pos.x]
         assert isinstance(currentRoom, Room)
@@ -48,7 +64,10 @@ class mazeController:
             self.party.pos = newPos
             newRoom.enter_room(self.party)
             if newRoom.enemies:
-                return CombatHandler(self.party, self.party.members, newRoom.enemies), True
+                return (
+                    CombatHandler(self.party, self.party.members, newRoom.enemies),
+                    True,
+                )
             return None, True
         return None, False
 
@@ -68,4 +87,3 @@ class mazeController:
                     return combat_handler
                 break
         return
-        

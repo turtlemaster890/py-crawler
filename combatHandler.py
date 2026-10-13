@@ -7,13 +7,20 @@ import inputController
 from typing import TYPE_CHECKING, Callable
 from turnEntry import TurnEntry
 import utils
+
 if TYPE_CHECKING:
     from player import Player
     from enemy import enemy
     from party import Party
 
+
 class CombatHandler:
-    def __init__(self, party: Party, players: list[Player] | None = None, enemies: list[enemy] | None = None):
+    def __init__(
+        self,
+        party: Party,
+        players: list[Player] | None = None,
+        enemies: list[enemy] | None = None,
+    ):
         self.party = party
         self.players = players or []
         self.enemies = enemies or []
@@ -26,7 +33,6 @@ class CombatHandler:
         for i in range(1, len(self.turn_order)):
             self.turn_order[i].av -= self.turn_order[0].av
         self.turn_order[0].av = 0
-        # utils.addPrintFunction("combat", self.print_turn_order, 10)
         terminalDisplay.combatDisplay.messageProvider = self.print_turn_order_list
 
     def addEnemy(self, enemy: enemy):
@@ -54,18 +60,16 @@ class CombatHandler:
         if len(self.enemies) == 0:
             terminalDisplay.combatDisplay.messageProvider = None
             return False
-        # clear()
-        # self.print_turn_order()
-        # utils.printSequences()
         terminalDisplay.updateDisplays()
-        # terminalDisplay.contextDisplay.print_boxify(f"{self.turn_order[0].character.name} is taking their turn.")
-        # print(self.turn_order[0].character.name, "is taking their turn.")
         self.turn_order[0].character.turnStart(self)
         self.tick_initiative()
         return True
 
     def tick_initiative(self):
-        current_av, current_character = self.turn_order[0].av, self.turn_order[0].character
+        current_av, current_character = (
+            self.turn_order[0].av,
+            self.turn_order[0].character,
+        )
 
         next_av = 10000 / current_character.speed
         self.turn_order[0].av = next_av
@@ -82,23 +86,23 @@ class CombatHandler:
         print("│" + "TURN ORDER".center(26 + additionalChars) + "│")
         print("├──────────────────────────" + "─" * additionalChars + "┤")
         for entry in self.turn_order:
-            print(f"│ {entry.character.name.ljust(15 + additionalChars)} │ {entry.av:<3.0f} AV │")
+            print(
+                f"│ {entry.character.name.ljust(15 + additionalChars)} │ {entry.av:<3.0f} AV │"
+            )
         print("└──────────────────────────" + "─" * additionalChars + "┘")
 
     def print_turn_order_list(self, w: int, h: int) -> list[str]:
         out = []
         # "│ " (2) + " │ " (3) + " ### AV │" (8) = 13 characters
         nameSpace = w - 13
-        
-        # longestName = max(len(entry.character.name) for entry in self.turn_order)
-        # additionalChars = max(0, longestName - 15)
-
 
         out.append("┌" + "─" * (w - 2) + "┐")
         out.append("│" + "TURN ORDER".center(w - 2) + "│")
         out.append("├" + "─" * (w - 2) + "┤")
         for entry in self.turn_order:
-            name = (entry.character.name + f" ({entry.character.health}♥)")[:nameSpace].ljust(nameSpace)
+            name = (entry.character.name + f" ({entry.character.health}♥)")[
+                :nameSpace
+            ].ljust(nameSpace)
             av_str = f"{entry.av:<3.0f}"
             out.append(f"│ {name} │ {av_str} AV │")
         out.append("└" + "─" * (w - 2) + "┘")
@@ -107,7 +111,9 @@ class CombatHandler:
     def select_character(self, f: Callable[[Player | enemy], bool]) -> Player | enemy:
         options = [e for e in self.turn_order if f(e.character)]
         selected = 0
-        terminalDisplay.combatDisplay.messageProvider = lambda w, h: self.print_turn_order_list_select(w, h, selected, options)
+        terminalDisplay.combatDisplay.messageProvider = (
+            lambda w, h: self.print_turn_order_list_select(w, h, selected, options)
+        )
         while True:
             selected %= len(options)
             terminalDisplay.updateDisplays()
@@ -115,30 +121,38 @@ class CombatHandler:
                 key = inputController.getKey()
                 if key in utils.key_to_delta:
                     selected += utils.key_to_delta[key]
-                    break 
+                    break
                 if key == Key.enter:
-                    terminalDisplay.combatDisplay.messageProvider = self.print_turn_order_list
+                    terminalDisplay.combatDisplay.messageProvider = (
+                        self.print_turn_order_list
+                    )
                     return options[selected].character
 
+    def print_turn_order_list_select(
+        self, w: int, h: int, selected: int, options: list[TurnEntry]
+    ) -> list[str]:
 
-    def print_turn_order_list_select(self, w: int, h: int, selected: int, options: list[TurnEntry]) -> list[str]:
-            
-            out = []
-            # "│ " (2) + " │ " (3) + " ### AV │" (8) = 13 characters
-            nameSpace = w - 14
-    
-    
-            out.append("┌" + "─" * (w - 2) + "┐")
-            out.append("│" + "TURN ORDER".center(w - 2) + "│")
-            out.append("├" + "─" * (w - 2) + "┤")
-            realOptions = -1
-            for i, entry in enumerate(self.turn_order):
-                if entry in options:
-                    realOptions += 1
-                sel_str = "> " if (realOptions == selected and entry in options) else ("  " if entry in options else " ")
-                sel_extra = " " if not entry in options else ""
-                name = (entry.character.name + f" ({entry.character.health}♥)")[:nameSpace].ljust(nameSpace)
-                av_str = f"{entry.av:<3.0f}"
-                out.append(f"│{sel_str}{name}{sel_extra} │ {av_str} AV │")
-            out.append("└" + "─" * (w - 2) + "┘")
-            return out
+        out = []
+        # "│ " (2) + " │ " (3) + " ### AV │" (8) = 13 characters
+        nameSpace = w - 14
+
+        out.append("┌" + "─" * (w - 2) + "┐")
+        out.append("│" + "TURN ORDER".center(w - 2) + "│")
+        out.append("├" + "─" * (w - 2) + "┤")
+        realOptions = -1
+        for i, entry in enumerate(self.turn_order):
+            if entry in options:
+                realOptions += 1
+            sel_str = (
+                "> "
+                if (realOptions == selected and entry in options)
+                else ("  " if entry in options else " ")
+            )
+            sel_extra = " " if not entry in options else ""
+            name = (entry.character.name + f" ({entry.character.health}♥)")[
+                :nameSpace
+            ].ljust(nameSpace)
+            av_str = f"{entry.av:<3.0f}"
+            out.append(f"│{sel_str}{name}{sel_extra} │ {av_str} AV │")
+        out.append("└" + "─" * (w - 2) + "┘")
+        return out
