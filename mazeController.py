@@ -1,5 +1,5 @@
 from direction import direction
-from maze import maze, pretty_print, pretty_print_list
+from maze import maze, pretty_print_list
 from Pos import Pos
 from party import Party
 from combatHandler import CombatHandler

@@ -1,5 +1,5 @@
 from direction import direction
-from colorama import Fore, Style
+from colorama import Fore
 from party import Party
 import enemy
 from shop import Shop

@@ -1,7 +1,6 @@
 import room
 from maze import maze
 from party import Party
-import json
 
 
 def save_maze(maze: maze):

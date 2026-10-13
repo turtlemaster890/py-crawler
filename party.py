@@ -2,7 +2,7 @@ from Pos import Pos
 from player import Player
 from inventory import Inventory
 from item import Item
-from inventory import Inventory, PlayerInventory
+from inventory import Inventory
 
 
 class Party:
