@@ -1,4 +1,4 @@
-from item import Armor, Item, Weapon, Consumable, Relic
+from item import Armor, Item, Weapon
 import item
 
 

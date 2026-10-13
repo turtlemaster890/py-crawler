@@ -1,16 +1,12 @@
-from maze import Pos, gen_main_path, pretty_print, maze
+from maze import Pos, gen_main_path, maze
 from direction import direction
 from player import Player
 from party import Party
 from pathlib import Path
-import enemy
 import json
 from combatHandler import CombatHandler
 from mazeController import mazeController
-from item import Item, Weapon
-from shop import Shop
 import saves
-import terminalDisplay
 import utils
 import colorama
 

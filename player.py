@@ -1,5 +1,4 @@
 import json
-from Pos import Pos
 import inventory
 from item import Item, Weapon, Armor
 import terminalDisplay
