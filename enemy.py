@@ -1,6 +1,7 @@
 from typing import TypedDict, TYPE_CHECKING
 import json
 import random
+from combatHandler import CombatHandler
 import terminalDisplay
 from utils import getRelativePath
 import utils
@@ -80,12 +81,13 @@ class enemy:
         action_method = getattr(self, action, None)
         if action_method:
             action_method(handler)
+        utils.wait_for_enter()
 
     def attack(self, handler: CombatHandler):
         target = min(self.aggro, key=lambda x: x[0])[1]
         target.takeDamage(handler, self.stats["actions"]["attack"]["damage"], self)
 
-    def takeDamage(self, handler: CombatHandler, damage: int, attacker = None):
+    def takeDamage(self, handler: CombatHandler, damage: int, attacker=None):
         for player in self.aggro:
             if player[1] is attacker:
                 player[0] += damage
@@ -143,7 +145,47 @@ class LargeSlime(enemy):
         handler.removeEnemy(self)
         terminalDisplay.updateDisplays()
         terminalDisplay.contextDisplay.print_boxify(f"{self.name} splits into two!")
+
+
+class Necromancer(enemy):
+    def __init__(self, name: str = "Necromancer"):
+        super().__init__(name, "necromancer")
+
+    def raise_undead(self, handler: CombatHandler):
+        handler.addEnemy(Skeleton())
+        handler.addEnemy(Skeleton())
+
+
+class NormalGuy(enemy):
+    def __init__(self, name: str = "Normal Guy"):
+        super().__init__(name, "normal_guy")
+
+    def die(self, handler: CombatHandler):
+        handler.removeEnemy(self)
+        terminalDisplay.updateDisplays()
+        terminalDisplay.contextDisplay.print_boxify(f"{self.name} has been defeated!")
         utils.wait_for_enter()
+        terminalDisplay.contextDisplay.print_boxify(
+            f"Wait... {self.name} gets back up!"
+        )
+        utils.wait_for_enter()
+        handler.addEnemy(Werewolf(f"Werewolf ({self.name})"))
+
+    def greet(self, handler: CombatHandler):
+        terminalDisplay.contextDisplay.print_boxify(f"{self.name} says hello.")
+        utils.wait_for_enter()
+
+    def handshake(self, handler: CombatHandler):
+        terminalDisplay.contextDisplay.print_boxify(f"{self.name} shakes your hand.")
+        utils.wait_for_enter()
+
+
+class Werewolf(enemy):
+    def __init__(self, name: str = "Werewolf"):
+        super().__init__(name, "werewolf")
+
+    def howl(self, handler: CombatHandler):
+        handler.addEnemy(Werewolf())
 
 
 enemy_type_to_class = {
@@ -151,6 +193,9 @@ enemy_type_to_class = {
     "skeleton": Skeleton,
     "small_slime": SmallSlime,
     "large_slime": LargeSlime,
+    "necromancer": Necromancer,
+    "normal_guy": NormalGuy,
+    "werewolf": Werewolf,
 }
 
 
