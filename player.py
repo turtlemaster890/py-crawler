@@ -1,5 +1,6 @@
 import json
 from Pos import Pos
+from enemy import enemy
 import inventory
 from item import Item, Weapon, Armor
 import terminalDisplay
@@ -93,9 +94,9 @@ class Player:
         if not self.inventory.weapon:
             return
         to_attack = handler.select_character(lambda c: not isinstance(c, Player))
-        to_attack.takeDamage(handler, self.inventory.weapon.damage)
+        to_attack.takeDamage(handler, self.inventory.weapon.damage, self)
 
-    def takeDamage(self, handler: CombatHandler, damage: int):
+    def takeDamage(self, handler: CombatHandler, damage: int, attacker: enemy | Player = None):
         self.health -= damage
         if self.health <= 0:
             self.die(handler)

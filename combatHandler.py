@@ -34,6 +34,8 @@ class CombatHandler:
             self.turn_order[i].av -= self.turn_order[0].av
         self.turn_order[0].av = 0
         terminalDisplay.combatDisplay.messageProvider = self.print_turn_order_list
+        for enemy in self.enemies:
+            enemy.combatStart()
 
     def addEnemy(self, enemy: enemy):
         self.turn_order.append(TurnEntry(10000 / enemy.speed, enemy))

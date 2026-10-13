@@ -39,6 +39,11 @@ class enemy:
         self.speed: int = self.stats["speed"]
         self.health = self.max_health
         self.action = ""
+        self.aggro = []
+
+    def combatStart(self):
+        self.aggro = [[0, player] for player in self.combat.players]
+        self.decideAction()
 
     def decideAction(self):
         actList = []
@@ -66,9 +71,11 @@ class enemy:
         return new_enemy
 
     def turnStart(self, handler: CombatHandler):
-        self.decideAction()
+        for player in self.aggro:
+            player[0] /= 2
         self.takeAction(self.action, handler)
         utils.wait_for_enter()
+        self.decideAction()
 
     def takeAction(self, action: str, handler: CombatHandler):
         action_method = getattr(self, action, None)
@@ -76,11 +83,13 @@ class enemy:
             action_method(handler)
 
     def attack(self, handler: CombatHandler):
-        random.choice(handler.players).health -= self.stats["actions"]["attack"][
-            "damage"
-        ]
+        target = min(self.aggro, key=lambda x: x[0])[1]
+        target.takeDamage(handler, self.stats["actions"]["attack"]["damage"], self)
 
-    def takeDamage(self, handler: CombatHandler, damage: int):
+    def takeDamage(self, handler: CombatHandler, damage: int, attacker = None):
+        for player in self.aggro:
+            if player[1] is attacker:
+                player[0] += damage
         self.health -= damage
         if self.health <= 0:
             self.die(handler)
