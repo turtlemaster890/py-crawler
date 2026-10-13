@@ -60,6 +60,8 @@ class CombatHandler:
             print("YOU LOSE!!!")
             sys.exit()
         if len(self.enemies) == 0:
+            for player in self.players:
+                player.leaveCombat()
             terminalDisplay.combatDisplay.messageProvider = None
             return False
         terminalDisplay.updateDisplays()

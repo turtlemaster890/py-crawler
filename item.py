@@ -52,12 +52,48 @@ class Relic(Item):
         self,
         name: str,
     ):
+        self.combat = None
+        self.player = None
         super().__init__(name)
 
     def to_json(self) -> dict[str, object]:
         j = super().to_json()
         j["item_type"] = "relic"
         return j
+
+    def combatStart(self, handler = None):
+        self.combat = handler
+
+    def turnStart(self):
+        pass
+
+    def turnEnd(self):
+        pass
+
+    def healthChange(self, amount, attacker = None, defender = None, damage_type = None):
+        pass
+
+    def die(self):
+        pass
+
+    def dealDamage(self, amount, attacker = None, defender = None, damage_type = None):
+        pass
+
+    def enemyDeath(self, enemy):
+        pass
+
+    def inflictCondition(self, condition, target):
+        pass
+
+    def equip(self, player):
+        self.player = player
+        pass
+
+    def unequip(self, player):
+        self.player = None
+        pass
+
+
 
 
 class Consumable(Item):

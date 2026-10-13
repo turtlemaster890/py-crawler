@@ -1,6 +1,6 @@
 import json
 import inventory
-from item import Item, Weapon, Armor
+from item import Item, Weapon, Armor, Relic, Consumable
 import terminalDisplay
 import inputController
 from pynput.keyboard import Key
@@ -45,6 +45,7 @@ class Player:
         self.health = self.max_health
         self.max_stamina = self.stats["base_stats"]["stamina"]
         self.stamina = self.max_stamina
+        self.conditions = []
         self.inventory.equip(Weapon(self.stats["starting_items"]["weapon"]))
         self.inventory.equip(Armor(self.stats["starting_items"]["armor"]))
         for item in self.stats["starting_items"]["items"]:
@@ -92,16 +93,27 @@ class Player:
         if not self.inventory.weapon:
             return
         to_attack = handler.select_character(lambda c: not isinstance(c, Player))
+        for relic in self.inventory.items:
+            if isinstance(relic, Relic):
+                relic.dealDamage()
         to_attack.takeDamage(handler, self.inventory.weapon.damage, self)
 
     def takeDamage(self, handler: CombatHandler, damage: int, attacker = None):
-        self.health -= damage
+        for relic in self.inventory.items:
+            if isinstance(relic, Relic):
+                relic.healthChange(-damage, attacker, self)
+        self.health += damage
         if self.health <= 0:
             self.die(handler)
 
     def die(self, handler: CombatHandler):
         print(f"Player {self.name} dies!")
-        handler.removePlayer(self)
+        for relic in self.inventory.items:
+            if isinstance(relic, Relic):
+                relic.die()
+        if self.health <= 0:
+            handler.removePlayer(self)
+        
 
     def pretty_print_turn_options(
         self, options: list[tuple[str, Callable]], selected: int, w: int, h: int
@@ -121,6 +133,9 @@ class Player:
         return out
 
     def turnStart(self, handler: CombatHandler):
+        for relic in self.inventory.items:
+            if isinstance(relic, Relic):
+                relic.turnStart()
         op = self.getTurnOptions(handler)
         selectedOption = 0
         terminalDisplay.contextDisplay.messageProvider = (
@@ -148,3 +163,11 @@ class Player:
             self.inventory.add(item)
             return False
         return True
+
+    def startCombat(self):
+        for relic in self.inventory.items:
+            if isinstance(relic, Relic):
+                relic.combatStart()
+
+    def leaveCombat(self):
+        self.conditions = []
