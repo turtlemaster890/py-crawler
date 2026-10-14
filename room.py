@@ -67,9 +67,7 @@ class StartRoom(Room):
 
 class EndRoom(Room):
     def __init__(self, connections: set[direction] | None = None):
-        super().__init__(
-            connections, enemies=[enemy.Goblin(name="Super Scary Bob AAA")]
-        )
+        super().__init__(connections, enemies=[enemy.Werewolf(name="Joe")])
         self.colour = Fore.RED
         self.selectedColour = Fore.LIGHTRED_EX
 

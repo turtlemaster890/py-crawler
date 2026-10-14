@@ -20,29 +20,41 @@ def select_save_file():
     options = [f"Save {p.name.split('_')[1].removesuffix(".json")}" for p in save_files]
 
     selected = 0
+    hselected = 0
+    lastProvider = terminalDisplay.contextDisplay.messageProvider
     terminalDisplay.contextDisplay.messageProvider = lambda w, h: show_saves(
-        w, h, options, selected
+        w, h, options, selected, hselected
     )
 
     while True:
         selected %= len(options) + 1
+        hselected %= 2
         terminalDisplay.updateDisplays()
         while True:
             key = inputController.getKey()
             if key and key in utils.key_to_delta:
                 selected += utils.key_to_delta[key]
                 break
+            if key in [Key.left, Key.right]:
+                hselected += (key == Key.right) - (key == Key.left)
+                break
             if key == Key.enter:
                 if selected >= len(options):
                     save_file = SAVE_LOCATION.joinpath(f"save_{len(options)}.json")
                 else:
-                    save_file = save_files[selected]
-                terminalDisplay.contextDisplay.messageProvider = None
+                    if hselected == 0:
+                        save_file = save_files[selected]
+                    else:
+                        save_files[selected].unlink()
+                        break
+                terminalDisplay.contextDisplay.messageProvider = lastProvider
                 return
 
 
-def show_saves(w: int, h: int, save_files: list[str], selected: int = -1) -> list[str]:
-    nameSpace = w - 5
+def show_saves(
+    w: int, h: int, save_files: list[str], selected: int = -1, hselected: int = -1
+) -> list[str]:
+    nameSpace = w - 7
     # longestName = max([len(item[0].name) for item in self.items])
     # additionalChars = max(0, longestName - 8)
     out = []
@@ -51,7 +63,7 @@ def show_saves(w: int, h: int, save_files: list[str], selected: int = -1) -> lis
     out.append("├" + "─" * (w - 2) + "┤")
     for i, save_file in enumerate(save_files):
         out.append(
-            f"│{("> " if i == selected else "  ")}{save_file[:nameSpace].ljust(nameSpace)} │"
+            f"│{(">[" if i == selected and hselected == 0 else ("> " if i == selected else "  "))}{save_file[:nameSpace].ljust(nameSpace)}{"[×]" if selected == i and hselected == 1 else ("]× " if selected == i else " × ")}│"
         )
     out.append(
         f"│{("> " if selected == len(save_files) else "  ")}{"New Save".ljust(w - 5)} │"

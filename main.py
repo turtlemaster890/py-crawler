@@ -62,6 +62,7 @@ def main():
             while combat_handler:
                 if not combat_handler.combat():
                     combat_handler = None
+                    saves.save(mz, party)
             combat_handler = mController.tick()
     finally:
         print("\033[?25h", end="")

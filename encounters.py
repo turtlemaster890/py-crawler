@@ -19,7 +19,7 @@ def encounterFactory() -> list[enemy.enemy]:
             # ],
             [enemy.LargeSlime()],
             [enemy.Skeleton(), enemy.Skeleton()],
-            [enemy.NormalGuy()],
+            # [enemy.NormalGuy()],
             [enemy.Necromancer()],
             [enemy.Jelly() for _ in range(8)],
         ]
