@@ -43,7 +43,12 @@ class Shop:
         # longestName = max([len(item[0].name) for item in self.items])
         # additionalChars = max(0, longestName - 8)
         out = []
-        out.append("┌" + "─" * (w - 2) + "┐")
+        out.append(
+            "┌"
+            + "─" * (w - 6)
+            + f"{Fore.LIGHTYELLOW_EX}¢{funds:<3}{Style.RESET_ALL}"
+            + "┐"
+        )
         out.append("│" + "Shop".center(w - 2) + "│")
         out.append("├" + "─" * (w - 2) + "┤")
         for i, (item, price) in enumerate(self.items):
@@ -57,18 +62,18 @@ class Shop:
         return out
 
     def displayShop(self, party: Party):
-        if len(self.items) == 0:
-            return
+        # if len(self.items) == 0:
+        #     return
         # utils.addPrintFunction("shop", lambda: self.pretty_print(party.funds, selectedItem), 2)
         terminalDisplay.contextDisplay.messageProvider = (
             lambda w, h: self.pretty_print_list(w, h, party.funds, selectedItem)
         )
         selectedItem = 0
         while True:
-            if len(self.items) == 0:
-                # utils.removePrintFunction("shop")
-                terminalDisplay.contextDisplay.messageProvider = None
-                return
+            # if len(self.items) == 0:
+            #     # utils.removePrintFunction("shop")
+            #     terminalDisplay.contextDisplay.messageProvider = None
+            #     return
             selectedItem %= len(self.items) + 1
             # clear()
             # self.pretty_print(party.funds, selectedItem)

@@ -56,6 +56,8 @@ class CombatHandler:
                 return
 
     def combat(self) -> bool:
+        if utils.DEBUG:
+            self.enemies = []
         if len(self.players) == 0:
             print("YOU LOSE!!!")
             sys.exit()

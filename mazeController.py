@@ -97,6 +97,7 @@ class mazeController:
     def room_options(self):
         options = [("View Inventory", self.party.inventory_menu)]
         selected = 0
+        lastProvider = terminalDisplay.contextDisplay.messageProvider
         terminalDisplay.contextDisplay.messageProvider = lambda w, h: show_room_options(
             w, h, [option[0] for option in options], selected
         )
@@ -112,7 +113,8 @@ class mazeController:
                 if key == Key.enter:
                     if selected < len(options):
                         options[selected][1]()
-                    terminalDisplay.contextDisplay.messageProvider = None
+                        break
+                    terminalDisplay.contextDisplay.messageProvider = lastProvider
                     return
 
 

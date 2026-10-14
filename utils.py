@@ -5,6 +5,8 @@ import inputController
 from typing import Callable
 from pynput.keyboard import Key
 
+DEBUG = True
+
 
 def clear():
     os.system("cls" if os.name == "nt" else "clear")
