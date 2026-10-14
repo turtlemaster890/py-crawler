@@ -88,6 +88,10 @@ class Player:
                     lambda c: isinstance(c, Player) and not c is self
                 ).takeDamage(h, 1000),
             ),
+            (
+                "debug.win",
+                lambda h: [[c.takeDamage(h, 1000) for c in h.enemies.copy()], None][1],
+            ),
         ]
 
     def attack(self, handler: CombatHandler):
@@ -95,20 +99,17 @@ class Player:
             return
         to_attack = handler.select_character(lambda c: not isinstance(c, Player))
         damage = self.inventory.weapon.damage
-        for relic in self.inventory.items:
-            if isinstance(relic, Relic):
-                relic.dealDamage(damage)
-        for condition in self.conditions:
-            condition.dealDamage(damage)
+        for item in self.inventory.items:
+            if isinstance(item, Relic):
+                damage = item.dealDamage(damage, self, to_attack) or damage
         to_attack.takeDamage(handler, damage, self)
 
-    def takeDamage(self, handler: CombatHandler, damage: int, attacker = None):
+    def takeDamage(self, handler: CombatHandler, damage: int, attacker=None):
+        damage = -damage
         for relic in self.inventory.items:
             if isinstance(relic, Relic):
-                relic.takeDamage(damage, attacker)
-        for condition in self.conditions:
-            condition.takeDamage(damage, attacker)
-        self.health -= damage
+                damage = relic.healthChange(damage, attacker, self) or damage
+        self.health += damage
         if self.health <= 0:
             self.die(handler)
 
@@ -121,7 +122,6 @@ class Player:
             condition.die()
         if self.health <= 0:
             handler.removePlayer(self)
-        
 
     def pretty_print_turn_options(
         self, options: list[tuple[str, Callable]], selected: int, w: int, h: int

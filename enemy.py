@@ -1,6 +1,7 @@
 from typing import TypedDict, TYPE_CHECKING
 import json
 import random
+from combatHandler import CombatHandler
 import terminalDisplay
 from utils import getRelativePath
 import utils
@@ -29,7 +30,7 @@ class enemy:
     ):
         self.enemy_type = enemy_type or "goblin"
         self.name = name or "Enemy"
-        self.combat = handler
+        self.combatHandler = handler
         with open(getRelativePath("enemy_stats.json"), "r") as f:
             all_stats: dict[str, EnemyStats] = json.load(f)
             self.stats = all_stats[self.enemy_type]
@@ -40,8 +41,9 @@ class enemy:
         self.action = ""
         self.aggro = []
 
-    def combatStart(self):
-        self.aggro = [[0, player] for player in self.combat.players]
+    def combatStart(self, handler: CombatHandler):
+        self.combatHandler = handler
+        self.aggro = [[0, player] for player in self.combatHandler.players]
         self.decideAction()
 
     def decideAction(self):
@@ -70,22 +72,32 @@ class enemy:
         return new_enemy
 
     def turnStart(self, handler: CombatHandler):
+        self.aggro = [entry for entry in self.aggro if entry[1] in handler.players]
         for player in self.aggro:
             player[0] /= 2
         self.takeAction(self.action, handler)
-        utils.wait_for_enter()
         self.decideAction()
 
     def takeAction(self, action: str, handler: CombatHandler):
         action_method = getattr(self, action, None)
         if action_method:
             action_method(handler)
+        utils.wait_for_enter()
 
     def attack(self, handler: CombatHandler):
-        target = min(self.aggro, key=lambda x: x[0])[1]
+        target = random.choice(
+            [
+                entry[1]
+                for entry in self.aggro
+                if entry == min(self.aggro, key=lambda x: x[0])
+            ]
+        )
         target.takeDamage(handler, self.stats["actions"]["attack"]["damage"], self)
+        terminalDisplay.contextDisplay.print_boxify(
+            f"{self.name} attacks {target.name} for {self.stats["actions"]["attack"]["damage"]} damage."
+        )
 
-    def takeDamage(self, handler: CombatHandler, damage: int, attacker = None):
+    def takeDamage(self, handler: CombatHandler, damage: int, attacker=None):
         for player in self.aggro:
             if player[1] is attacker:
                 player[0] += damage
@@ -143,7 +155,76 @@ class LargeSlime(enemy):
         handler.removeEnemy(self)
         terminalDisplay.updateDisplays()
         terminalDisplay.contextDisplay.print_boxify(f"{self.name} splits into two!")
+
+
+class Necromancer(enemy):
+    def __init__(self, name: str = "Necromancer"):
+        super().__init__(name, "necromancer")
+
+    def raise_undead(self, handler: CombatHandler):
+        terminalDisplay.contextDisplay.type_print(
+            f"{self.name} brings their hand up. Skeletons emerge from the ground."
+        )
+        handler.addEnemy(Skeleton())
+        handler.addEnemy(Skeleton())
+
+
+class NormalGuy(enemy):
+    def __init__(self, name: str = "Normal Guy"):
+        super().__init__(name, "normal_guy")
+
+    def die(self, handler: CombatHandler):
+        handler.removeEnemy(self)
+        terminalDisplay.updateDisplays()
+        terminalDisplay.contextDisplay.print_boxify(f"{self.name} has been defeated!")
         utils.wait_for_enter()
+        terminalDisplay.contextDisplay.type_print(f"Wait... {self.name} gets back up!")
+        utils.wait_for_enter()
+        handler.addEnemy(Werewolf(f"{self.name} (Wolf)"))
+
+    def greet(self, handler: CombatHandler):
+        terminalDisplay.contextDisplay.print_boxify(f"{self.name} says hello.")
+
+    def handshake(self, handler: CombatHandler):
+        terminalDisplay.contextDisplay.print_boxify(f"{self.name} shakes your hand.")
+
+
+class Werewolf(enemy):
+    def __init__(self, name: str = "Werewolf"):
+        super().__init__(name, "werewolf")
+
+    def howl(self, handler: CombatHandler):
+        terminalDisplay.contextDisplay.type_print(f"{self.name} howls at the moon...")
+        handler.addEnemy(Werewolf())
+
+
+class Jelly(enemy):
+    def __init__(self, name: str = "Jelly"):
+        super().__init__(name, "jelly")
+
+    def split(self, handler: CombatHandler):
+        terminalDisplay.contextDisplay.print_boxify(f"{self.name} splits.")
+        handler.removeEnemy(self)
+        handler.addEnemy(BabyJelly())
+        handler.addEnemy(BabyJelly())
+        handler.addEnemy(BabyJelly())
+
+
+class BabyJelly(enemy):
+    def __init__(self, name: str = "Baby Jelly"):
+        super().__init__(name, "baby_jelly")
+        self.growth = 0
+
+    def grow(self, handler: CombatHandler):
+        self.growth += 1
+        if self.growth >= 3:
+            terminalDisplay.contextDisplay.print_boxify(
+                f"{self.name} suddenly grows larger."
+            )
+            handler.removeEnemy(self)
+            handler.addEnemy(Jelly())
+        else:
+            terminalDisplay.contextDisplay.print_boxify(f"{self.name} sits there.")
 
 
 enemy_type_to_class = {
@@ -151,6 +232,11 @@ enemy_type_to_class = {
     "skeleton": Skeleton,
     "small_slime": SmallSlime,
     "large_slime": LargeSlime,
+    "necromancer": Necromancer,
+    "normal_guy": NormalGuy,
+    "werewolf": Werewolf,
+    "jelly": Jelly,
+    "baby_jelly": BabyJelly,
 }
 
 

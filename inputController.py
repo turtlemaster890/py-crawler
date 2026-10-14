@@ -22,6 +22,7 @@ arrow_map = {b"H": Key.up, b"P": Key.down, b"K": Key.left, b"M": Key.right}
 def update():
     while True:
         global lastKey
+        lastKey = None
         while msvcrt.kbhit():
             ch = msvcrt.getch()
 

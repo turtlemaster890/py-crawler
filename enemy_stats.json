@@ -46,5 +46,71 @@
                 "damage": 0
             }
         }
+    },
+    "necromancer": {
+        "speed": 50,
+        "health": 50,
+        "actions": {
+            "attack": {
+                "weight": 3,
+                "damage": 6
+            },
+            "raise_undead": {
+                "weight": 2,
+                "damage": 0
+            }
+        }
+    },
+    "normal_guy":{
+        "speed": 30,
+        "health": 40,
+        "actions": {
+            "greet": {
+                "weight": 2,
+                "damage": 0
+            },
+            "handshake": {
+                "weight": 1,
+                "damage": 0
+            }
+        }
+    },
+    "werewolf": {
+        "speed": 120,
+        "health": 60,
+        "actions": {
+            "attack": {
+                "weight": 5,
+                "damage": 7
+            },
+            "howl": {
+                "weight": 1,
+                "damage": 0
+            }
+        }
+    },
+    "jelly": {
+        "speed": 90,
+        "health": 5,
+        "actions": {
+            "attack": {
+                "weight": 1,
+                "damage": 2
+            },
+            "split": {
+                "weight": 1,
+                "damage": 0
+            }
+        }
+    },
+    "baby_jelly": {
+        "speed": 250,
+        "health": 5,
+        "actions": {
+            "grow": {
+                "weight": 1,
+                "damage": 0
+            }
+        }
     }
 }

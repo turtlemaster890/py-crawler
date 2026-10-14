@@ -1,4 +1,5 @@
 from typing import Callable
+import time
 import utils
 
 
@@ -26,6 +27,13 @@ class DisplayArea:
     def print_boxify(self, message: str):
         self.print(utils.boxify(self.width, self.height, message))
 
+    def type_print(self, message: str):
+        total = ""
+        for char in message:
+            total += char
+            self.print_boxify(total)
+            time.sleep(0.05)
+
     def print(self, text: list[str] = []):
         for i in range(self.height):
             moveCursor(self.x, self.y + i)
@@ -48,6 +56,5 @@ displays = [mazeDisplay, combatDisplay, contextDisplay]
 
 
 def updateDisplays():
-    # utils.clear()
     for d in displays:
         d.print()

@@ -20,8 +20,9 @@ class Room:
         self.enemies = enemies
         self.colour = Fore.LIGHTBLACK_EX
         self.selectedColour = Fore.WHITE
+        self.has_action = False
 
-    def enter_room(self, party: Party):
+    def room_action(self, party: Party):
         pass
 
     def to_json(self):
@@ -66,9 +67,7 @@ class StartRoom(Room):
 
 class EndRoom(Room):
     def __init__(self, connections: set[direction] | None = None):
-        super().__init__(
-            connections, enemies=[enemy.Goblin(name="Super Scary Bob AAA")]
-        )
+        super().__init__(connections, enemies=[enemy.Werewolf(name="Joe")])
         self.colour = Fore.RED
         self.selectedColour = Fore.LIGHTRED_EX
 
@@ -81,6 +80,7 @@ class EndRoom(Room):
 class ShopRoom(Room):
     def __init__(self, connections: set[direction] | None = None):
         super().__init__(connections)
+        self.has_action = True
         self.enemies = []
         self.shop = Shop(
             [
@@ -92,8 +92,8 @@ class ShopRoom(Room):
         self.colour = Fore.YELLOW
         self.selectedColour = Fore.LIGHTYELLOW_EX
 
-    def enter_room(self, party: Party):
-        super().enter_room(party)
+    def room_action(self, party: Party):
+        super().room_action(party)
         self.shop.displayShop(party)
 
     def to_json(self):

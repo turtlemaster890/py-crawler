@@ -1,10 +1,8 @@
 from direction import direction
 from encounters import encounterFactory
 import random
-import enemy
+import utils
 from Pos import Pos
-from item import Item
-from shop import Shop
 from room import Room, StartRoom, EndRoom, ShopRoom
 from typing import TYPE_CHECKING
 
@@ -12,7 +10,6 @@ if TYPE_CHECKING:
     from party import Party
 
 # from colorama import init as colorama_init
-from colorama import Fore
 from colorama import Style
 
 # colorama_init()
@@ -82,7 +79,9 @@ type maze = list[list[Room | None]]
 def pretty_print(maze: maze, discovered_positions: set[Pos], current_position: Pos):
     for y, row in enumerate(maze):
         for x, r in enumerate(row):
-            if not isinstance(r, Room) or Pos(x, y) not in discovered_positions:
+            if not isinstance(r, Room) or (
+                not Pos(x, y) in discovered_positions and not utils.DEBUG
+            ):
                 print(" ", end=Style.RESET_ALL)
             else:
                 print(
@@ -111,7 +110,9 @@ def pretty_print_list(
             for x in range(content_width):
                 if x < len(row):
                     r = row[x]
-                    if not isinstance(r, Room) or Pos(x, y) not in discovered_positions:
+                    if not isinstance(r, Room) or (
+                        not Pos(x, y) in discovered_positions and not utils.DEBUG
+                    ):
                         line_chars.append(" ")
                     else:
                         colour = (
