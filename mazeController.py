@@ -3,6 +3,7 @@ from maze import maze, pretty_print_list
 from Pos import Pos
 from party import Party
 from combatHandler import CombatHandler
+import utils
 import inputController
 import saves
 from pynput.keyboard import Key
@@ -88,4 +89,49 @@ class mazeController:
                 if combat_handler is not None:
                     return combat_handler
                 break
+            if key == Key.enter:
+                self.room_options()
+                return
         return
+
+    def room_options(self):
+        options = [("View Inventory", self.party.inventory_menu)]
+        selected = 0
+        terminalDisplay.contextDisplay.messageProvider = lambda w, h: show_room_options(
+            w, h, [option[0] for option in options], selected
+        )
+
+        while True:
+            selected %= len(options) + 1
+            terminalDisplay.updateDisplays()
+            while True:
+                key = inputController.getKey()
+                if key and key in utils.key_to_delta:
+                    selected += utils.key_to_delta[key]
+                    break
+                if key == Key.enter:
+                    if selected < len(options):
+                        options[selected][1]()
+                    terminalDisplay.contextDisplay.messageProvider = None
+                    return
+
+
+def show_room_options(
+    w: int, h: int, options: list[str], selected: int = -1
+) -> list[str]:
+    nameSpace = w - 5
+    # longestName = max([len(item[0].name) for item in self.items])
+    # additionalChars = max(0, longestName - 8)
+    out = []
+    out.append("┌" + "─" * (w - 2) + "┐")
+    out.append("│" + "Actions".center(w - 2) + "│")
+    out.append("├" + "─" * (w - 2) + "┤")
+    for i, option in enumerate(options):
+        out.append(
+            f"│{("> " if i == selected else "  ")}{option[:nameSpace].ljust(nameSpace)} │"
+        )
+    out.append(
+        f"│{("> " if selected == len(options) else "  ")}{"Cancel".ljust(w - 5)} │"
+    )
+    out.append("└" + "─" * (w - 2) + "┘")
+    return out

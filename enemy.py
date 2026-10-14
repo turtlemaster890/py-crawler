@@ -208,8 +208,6 @@ class Jelly(enemy):
         handler.addEnemy(BabyJelly())
         handler.addEnemy(BabyJelly())
         handler.addEnemy(BabyJelly())
-        handler.addEnemy(BabyJelly())
-        handler.addEnemy(BabyJelly())
 
 
 class BabyJelly(enemy):

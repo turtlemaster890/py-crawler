@@ -3,6 +3,10 @@ from player import Player
 from inventory import Inventory
 from item import Item
 from inventory import Inventory
+import terminalDisplay
+import inputController
+import utils
+from pynput.keyboard import Key
 
 
 class Party:
@@ -22,6 +26,44 @@ class Party:
             self.inventory.add(item)
             return False
         return True
+
+    def inventory_menu(self):
+        selected = 0
+        terminalDisplay.contextDisplay.messageProvider = (
+            lambda w, h: self.show_inventory(w, h, selected)
+        )
+
+        while True:
+            selected %= len(self.inventory.items) + 1
+            terminalDisplay.updateDisplays()
+            while True:
+                key = inputController.getKey()
+                if key and key in utils.key_to_delta:
+                    selected += utils.key_to_delta[key]
+                    break
+                if key == Key.enter:
+                    if selected < len(self.inventory.items):
+                        pass
+                    terminalDisplay.contextDisplay.messageProvider = None
+                    return
+
+    def show_inventory(self, w: int, h: int, selected: int = -1) -> list[str]:
+        nameSpace = w - 5
+        # longestName = max([len(item[0].name) for item in self.items])
+        # additionalChars = max(0, longestName - 8)
+        out = []
+        out.append("┌" + "─" * (w - 2) + "┐")
+        out.append("│" + "Actions".center(w - 2) + "│")
+        out.append("├" + "─" * (w - 2) + "┤")
+        for i, option in enumerate(self.inventory.items):
+            out.append(
+                f"│{("> " if i == selected else "  ")}{option.name[:nameSpace].ljust(nameSpace)} │"
+            )
+        out.append(
+            f"│{("> " if selected == len(self.inventory.items) else "  ")}{"Cancel".ljust(w - 5)} │"
+        )
+        out.append("└" + "─" * (w - 2) + "┘")
+        return out
 
     def to_json(self):
         return {

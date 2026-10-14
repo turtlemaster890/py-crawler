@@ -47,7 +47,7 @@ def show_saves(w: int, h: int, save_files: list[str], selected: int = -1) -> lis
     # additionalChars = max(0, longestName - 8)
     out = []
     out.append("┌" + "─" * (w - 2) + "┐")
-    out.append("│" + "Shop".center(w - 2) + "│")
+    out.append("│" + "Saves".center(w - 2) + "│")
     out.append("├" + "─" * (w - 2) + "┤")
     for i, save_file in enumerate(save_files):
         out.append(
