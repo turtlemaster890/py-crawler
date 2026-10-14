@@ -63,7 +63,7 @@ class mazeController:
             for connection in newRoom.connections:
                 self.party.discovered_positions.add(newPos + connection)
             self.party.pos = newPos
-            newRoom.enter_room(self.party)
+            # newRoom.enter_room(self.party)
             terminalDisplay.contextDisplay.print_boxify("Autosaving...")
             saves.save(self.maze, self.party)
             if newRoom.enemies:
@@ -96,6 +96,10 @@ class mazeController:
 
     def room_options(self):
         options = [("View Inventory", self.party.inventory_menu)]
+        current_room = self.maze[self.party.pos.y][self.party.pos.x]
+        assert isinstance(current_room, Room)
+        if current_room.has_action:
+            options.append(("Use Room", lambda: current_room.room_action(self.party)))
         selected = 0
         lastProvider = terminalDisplay.contextDisplay.messageProvider
         terminalDisplay.contextDisplay.messageProvider = lambda w, h: show_room_options(

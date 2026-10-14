@@ -52,7 +52,7 @@ def main():
         mController = mazeController(mz, 28, 13, party)
         current_room = mz[party.pos.y][party.pos.x]
         if current_room:
-            current_room.enter_room(party)
+            # current_room.enter_room(party)
             if current_room.enemies:
                 combat_handler = CombatHandler(
                     party, party.members, current_room.enemies

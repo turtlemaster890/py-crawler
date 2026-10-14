@@ -65,6 +65,7 @@ class Shop:
         # if len(self.items) == 0:
         #     return
         # utils.addPrintFunction("shop", lambda: self.pretty_print(party.funds, selectedItem), 2)
+        lastProvider = terminalDisplay.contextDisplay.messageProvider
         terminalDisplay.contextDisplay.messageProvider = (
             lambda w, h: self.pretty_print_list(w, h, party.funds, selectedItem)
         )
@@ -87,7 +88,7 @@ class Shop:
                 if key == Key.enter:
                     if selectedItem >= len(self.items):
                         # utils.removePrintFunction("shop")
-                        terminalDisplay.contextDisplay.messageProvider = None
+                        terminalDisplay.contextDisplay.messageProvider = lastProvider
                         return
                     price = self.items[selectedItem][1]
                     if party.funds >= price:
