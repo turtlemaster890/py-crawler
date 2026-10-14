@@ -1,16 +1,14 @@
 class condition:
-    def __init__(self, name: str, duration: int, affected = None):
+    def __init__(self, name: str, duration: int, affected = None, handler = None):
         self.name = name
         self.duration = duration
         self.affected = affected
+        self.combat = handler
 
     def changeDuration(self, amount: int):
         self.duration += amount
         if self.duration <= 0:
             self.affected.conditions.remove(self)
-
-    def combatStart(self, handler = None):
-            self.combat = handler
     
     def turnStart(self):
         pass
@@ -18,7 +16,7 @@ class condition:
     def turnEnd(self):
         pass
 
-    def healthChange(self, amount, attacker = None, defender = None, damage_type = None):
+    def takeDamage(self, amount, attacker = None, defender = None, damage_type = None):
         pass
 
     def die(self):

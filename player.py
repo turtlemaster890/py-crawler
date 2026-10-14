@@ -1,6 +1,7 @@
 import json
 import inventory
 from item import Item, Weapon, Armor, Relic, Consumable
+import conditions
 import terminalDisplay
 import inputController
 from pynput.keyboard import Key
@@ -93,16 +94,21 @@ class Player:
         if not self.inventory.weapon:
             return
         to_attack = handler.select_character(lambda c: not isinstance(c, Player))
+        damage = self.inventory.weapon.damage
         for relic in self.inventory.items:
             if isinstance(relic, Relic):
-                relic.dealDamage()
-        to_attack.takeDamage(handler, self.inventory.weapon.damage, self)
+                relic.dealDamage(damage)
+        for condition in self.conditions:
+            condition.dealDamage(damage)
+        to_attack.takeDamage(handler, damage, self)
 
     def takeDamage(self, handler: CombatHandler, damage: int, attacker = None):
         for relic in self.inventory.items:
             if isinstance(relic, Relic):
-                relic.healthChange(-damage, attacker, self)
-        self.health += damage
+                relic.takeDamage(damage, attacker)
+        for condition in self.conditions:
+            condition.takeDamage(damage, attacker)
+        self.health -= damage
         if self.health <= 0:
             self.die(handler)
 
@@ -111,6 +117,8 @@ class Player:
         for relic in self.inventory.items:
             if isinstance(relic, Relic):
                 relic.die()
+        for condition in self.conditions:
+            condition.die()
         if self.health <= 0:
             handler.removePlayer(self)
         
@@ -136,6 +144,8 @@ class Player:
         for relic in self.inventory.items:
             if isinstance(relic, Relic):
                 relic.turnStart()
+        for condition in self.conditions:
+            condition.turnStart()
         op = self.getTurnOptions(handler)
         selectedOption = 0
         terminalDisplay.contextDisplay.messageProvider = (

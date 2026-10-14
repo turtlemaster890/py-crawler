@@ -70,7 +70,7 @@ class Relic(Item):
     def turnEnd(self):
         pass
 
-    def healthChange(self, amount, attacker = None, defender = None, damage_type = None):
+    def takeDamage(self, amount, attacker = None, defender = None, damage_type = None):
         pass
 
     def die(self):
