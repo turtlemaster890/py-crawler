@@ -4,6 +4,7 @@ from Pos import Pos
 from party import Party
 from combatHandler import CombatHandler
 import inputController
+import saves
 from pynput.keyboard import Key
 from room import Room
 
@@ -39,7 +40,6 @@ class mazeController:
         assert isinstance(startRoom, Room)
         for connection in startRoom.connections:
             self.party.discovered_positions.add(startPos + connection)
-        inputController.start()
         # utils.addPrintFunction("maze", lambda: pretty_print(self.maze, self.discovered_rooms, self.party.pos), 0)
         terminalDisplay.mazeDisplay.messageProvider = lambda x, y: pretty_print_list(
             x, y, self.maze, self.party.discovered_positions, self.party.pos
@@ -63,6 +63,8 @@ class mazeController:
                 self.party.discovered_positions.add(newPos + connection)
             self.party.pos = newPos
             newRoom.enter_room(self.party)
+            terminalDisplay.contextDisplay.print_boxify("Autosaving...")
+            saves.save(self.maze, self.party)
             if newRoom.enemies:
                 return (
                     CombatHandler(self.party, self.party.members, newRoom.enemies),

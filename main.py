@@ -2,8 +2,8 @@ from maze import Pos, gen_main_path, maze
 from direction import direction
 from player import Player
 from party import Party
-from pathlib import Path
 import json
+import inputController
 from combatHandler import CombatHandler
 from mazeController import mazeController
 import saves
@@ -17,9 +17,6 @@ input_to_direction = {
     "r": direction.RIGHT,
 }
 
-SAVE_LOCATION = Path("saves/")
-save_index = 0
-save_file = utils.getRelativePath(SAVE_LOCATION.joinpath(f"save_{save_index}.json"))
 
 combat_handler: CombatHandler | None = None
 
@@ -35,8 +32,10 @@ def main():
         utils.clear()
         print("\033[?25l", end="")
 
+        saves.select_save_file()
+
         try:
-            with open(save_file, "r") as f:
+            with open(saves.save_file, "r") as f:
                 save = json.load(f)
                 mz, party = saves.load(save)
         except FileNotFoundError, json.JSONDecodeError, KeyError:
@@ -65,11 +64,9 @@ def main():
                     combat_handler = None
             combat_handler = mController.tick()
     finally:
-        SAVE_LOCATION.mkdir(parents=True, exist_ok=True)
-        with open(save_file, "w") as f:
-            json.dump(saves.save(mz, party), f, indent=4)
         print("\033[?25h", end="")
 
 
 if __name__ == "__main__":
+    inputController.start()
     main()

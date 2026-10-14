@@ -100,9 +100,10 @@ class Player:
         to_attack.takeDamage(handler, damage, self)
 
     def takeDamage(self, handler: CombatHandler, damage: int, attacker=None):
+        damage = -damage
         for relic in self.inventory.items:
             if isinstance(relic, Relic):
-                relic.healthChange(-damage, attacker, self)
+                damage = relic.healthChange(damage, attacker, self) or damage
         self.health += damage
         if self.health <= 0:
             self.die(handler)

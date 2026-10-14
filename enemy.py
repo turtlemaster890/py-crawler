@@ -72,10 +72,10 @@ class enemy:
         return new_enemy
 
     def turnStart(self, handler: CombatHandler):
+        self.aggro = [entry for entry in self.aggro if entry[1] in handler.players]
         for player in self.aggro:
             player[0] /= 2
         self.takeAction(self.action, handler)
-        utils.wait_for_enter()
         self.decideAction()
 
     def takeAction(self, action: str, handler: CombatHandler):
@@ -85,7 +85,13 @@ class enemy:
         utils.wait_for_enter()
 
     def attack(self, handler: CombatHandler):
-        target = min(self.aggro, key=lambda x: x[0])[1]
+        target = random.choice(
+            [
+                entry[1]
+                for entry in self.aggro
+                if entry == min(self.aggro, key=lambda x: x[0])
+            ]
+        )
         target.takeDamage(handler, self.stats["actions"]["attack"]["damage"], self)
         terminalDisplay.contextDisplay.print_boxify(
             f"{self.name} attacks {target.name} for {self.stats["actions"]["attack"]["damage"]} damage."

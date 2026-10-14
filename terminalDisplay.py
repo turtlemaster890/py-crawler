@@ -48,6 +48,5 @@ displays = [mazeDisplay, combatDisplay, contextDisplay]
 
 
 def updateDisplays():
-    # utils.clear()
     for d in displays:
         d.print()
