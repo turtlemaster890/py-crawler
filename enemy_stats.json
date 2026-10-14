@@ -88,5 +88,29 @@
                 "damage": 0
             }
         }
+    },
+    "jelly": {
+        "speed": 90,
+        "health": 5,
+        "actions": {
+            "attack": {
+                "weight": 1,
+                "damage": 2
+            },
+            "split": {
+                "weight": 1,
+                "damage": 0
+            }
+        }
+    },
+    "baby_jelly": {
+        "speed": 250,
+        "health": 5,
+        "actions": {
+            "grow": {
+                "weight": 1,
+                "damage": 0
+            }
+        }
     }
 }

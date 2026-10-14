@@ -162,6 +162,9 @@ class Necromancer(enemy):
         super().__init__(name, "necromancer")
 
     def raise_undead(self, handler: CombatHandler):
+        terminalDisplay.contextDisplay.type_print(
+            f"{self.name} brings their hand up. Skeletons emerge from the ground."
+        )
         handler.addEnemy(Skeleton())
         handler.addEnemy(Skeleton())
 
@@ -175,19 +178,15 @@ class NormalGuy(enemy):
         terminalDisplay.updateDisplays()
         terminalDisplay.contextDisplay.print_boxify(f"{self.name} has been defeated!")
         utils.wait_for_enter()
-        terminalDisplay.contextDisplay.print_boxify(
-            f"Wait... {self.name} gets back up!"
-        )
+        terminalDisplay.contextDisplay.type_print(f"Wait... {self.name} gets back up!")
         utils.wait_for_enter()
-        handler.addEnemy(Werewolf(f"Werewolf ({self.name})"))
+        handler.addEnemy(Werewolf(f"{self.name} (Wolf)"))
 
     def greet(self, handler: CombatHandler):
         terminalDisplay.contextDisplay.print_boxify(f"{self.name} says hello.")
-        utils.wait_for_enter()
 
     def handshake(self, handler: CombatHandler):
         terminalDisplay.contextDisplay.print_boxify(f"{self.name} shakes your hand.")
-        utils.wait_for_enter()
 
 
 class Werewolf(enemy):
@@ -195,7 +194,39 @@ class Werewolf(enemy):
         super().__init__(name, "werewolf")
 
     def howl(self, handler: CombatHandler):
+        terminalDisplay.contextDisplay.type_print(f"{self.name} howls at the moon...")
         handler.addEnemy(Werewolf())
+
+
+class Jelly(enemy):
+    def __init__(self, name: str = "Jelly"):
+        super().__init__(name, "jelly")
+
+    def split(self, handler: CombatHandler):
+        terminalDisplay.contextDisplay.print_boxify(f"{self.name} splits.")
+        handler.removeEnemy(self)
+        handler.addEnemy(BabyJelly())
+        handler.addEnemy(BabyJelly())
+        handler.addEnemy(BabyJelly())
+        handler.addEnemy(BabyJelly())
+        handler.addEnemy(BabyJelly())
+
+
+class BabyJelly(enemy):
+    def __init__(self, name: str = "Baby Jelly"):
+        super().__init__(name, "baby_jelly")
+        self.growth = 0
+
+    def grow(self, handler: CombatHandler):
+        self.growth += 1
+        if self.growth >= 3:
+            terminalDisplay.contextDisplay.print_boxify(
+                f"{self.name} suddenly grows larger."
+            )
+            handler.removeEnemy(self)
+            handler.addEnemy(Jelly())
+        else:
+            terminalDisplay.contextDisplay.print_boxify(f"{self.name} sits there.")
 
 
 enemy_type_to_class = {
@@ -206,6 +237,8 @@ enemy_type_to_class = {
     "necromancer": Necromancer,
     "normal_guy": NormalGuy,
     "werewolf": Werewolf,
+    "jelly": Jelly,
+    "baby_jelly": BabyJelly,
 }
 
 

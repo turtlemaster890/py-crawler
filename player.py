@@ -87,6 +87,10 @@ class Player:
                     lambda c: isinstance(c, Player) and not c is self
                 ).takeDamage(h, 1000),
             ),
+            (
+                "debug.win",
+                lambda h: [[c.takeDamage(h, 1000) for c in h.enemies.copy()], None][1],
+            ),
         ]
 
     def attack(self, handler: CombatHandler):
