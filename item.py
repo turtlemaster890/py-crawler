@@ -121,3 +121,15 @@ item_type_to_class = {
 def from_json(j: dict[str, object]):
     _class = item_type_to_class.get(j["item_type"], Item)  # type: ignore
     return _class.from_json(j)
+
+
+class manaBooster(Relic):
+    def __init__(
+        self,
+        name: str = "Mana Booster"
+    ):
+        super().__init__(name)
+
+    def dealDamage(self, amount, attacker=None, defender=None, damage_type=None):
+        if damage_type == "magic":
+            return amount+2

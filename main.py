@@ -58,6 +58,7 @@ def main():
                     party, party.members, current_room.enemies
                 )
 
+
         while True:
             while combat_handler:
                 if not combat_handler.combat():

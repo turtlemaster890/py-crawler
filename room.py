@@ -4,7 +4,7 @@ from direction import direction
 from colorama import Fore
 import enemy
 from shop import Shop
-from item import Item
+from item import *
 
 
 class Room:
@@ -82,7 +82,7 @@ class ShopRoom(Room):
         self.enemies = []
         self.shop = Shop(
             [
-                (Item("Joe's Toe"), 50),
+                (manaBooster(), 50),
                 (Item("Bob's Job"), 100),
                 (Item("Floop's Goop"), 500),
             ]

@@ -151,6 +151,9 @@ class Player:
         terminalDisplay.contextDisplay.messageProvider = (
             lambda w, h: self.pretty_print_turn_options(op, selectedOption, w, h)
         )
+        # terminalDisplay.combatDisplay.messageProvider = (
+        #     lambda w, h: 
+        # )
         while True:
             selectedOption %= len(op)
             terminalDisplay.updateDisplays()
@@ -181,3 +184,13 @@ class Player:
 
     def leaveCombat(self):
         self.conditions = []
+
+    def fireball(self, handler: CombatHandler):
+        if not self.inventory.weapon:
+            return
+        to_attack = handler.select_character(lambda c: not isinstance(c, Player))
+        damage = self.inventory.weapon.damage*2
+        for item in self.inventory.items:
+            if isinstance(item, Relic):
+                damage = item.dealDamage(damage, self, to_attack, "magic") or damage
+        to_attack.takeDamage(handler, damage, self)
