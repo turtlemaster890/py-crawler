@@ -1,3 +1,5 @@
+from typing import Callable, Self
+
 from direction import direction
 from colorama import Fore
 from party import Party
@@ -11,19 +13,16 @@ class Room:
         self,
         connections: set[direction] | None = None,
         enemies: list[enemy.enemy] | None = None,
-    ):
+    ) -> None:
         if connections is None:
             connections = set()
         if enemies is None:
             enemies = []
-        self.connections = connections
-        self.enemies = enemies
-        self.colour = Fore.LIGHTBLACK_EX
-        self.selectedColour = Fore.WHITE
-        self.has_action = False
-
-    def room_action(self, party: Party):
-        pass
+        self.connections: set[direction] = connections
+        self.enemies: list[enemy.enemy] = enemies
+        self.colour: str = Fore.LIGHTBLACK_EX
+        self.selectedColour: str = Fore.WHITE
+        self.room_actions = []
 
     def to_json(self):
         return {
@@ -35,29 +34,29 @@ class Room:
         }
 
     @classmethod
-    def from_json(cls, j):
-        new_room = cls({direction[d] for d in j["connections"]})
+    def from_json(cls, j) -> Self:
+        new_room: Self = cls({direction[d] for d in j["connections"]})
         new_room.enemies = [enemy.from_json(e) for e in j["enemies"]]
         new_room.colour = j["colour"]
         new_room.selectedColour = j["selected_colour"]
         return new_room
 
-    def has_connection(self, direction: direction):
+    def has_connection(self, direction: direction) -> bool:
         return direction in self.connections
 
-    def make_connection(self, direction: direction):
+    def make_connection(self, direction: direction) -> None:
         self.connections.add(direction)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"R({[d.name for d in self.connections]})"
 
 
 class StartRoom(Room):
-    def __init__(self, connections: set[direction] | None = None):
+    def __init__(self, connections: set[direction] | None = None) -> None:
         super().__init__(connections)
         self.enemies = []
-        self.colour = Fore.GREEN
-        self.selectedColour = Fore.LIGHTGREEN_EX
+        self.colour: str = Fore.GREEN
+        self.selectedColour: str = Fore.LIGHTGREEN_EX
 
     def to_json(self):
         j = super().to_json()
@@ -66,10 +65,10 @@ class StartRoom(Room):
 
 
 class EndRoom(Room):
-    def __init__(self, connections: set[direction] | None = None):
-        super().__init__(connections, enemies=[enemy.Werewolf(name="Joe")])
-        self.colour = Fore.RED
-        self.selectedColour = Fore.LIGHTRED_EX
+    def __init__(self, connections: set[direction] | None = None) -> None:
+        super().__init__(connections, enemies=[enemy.StoneTitan()])
+        self.colour: str = Fore.RED
+        self.selectedColour: str = Fore.LIGHTRED_EX
 
     def to_json(self):
         j = super().to_json()
@@ -78,7 +77,7 @@ class EndRoom(Room):
 
 
 class ShopRoom(Room):
-    def __init__(self, connections: set[direction] | None = None):
+    def __init__(self, connections: set[direction] | None = None) -> None:
         super().__init__(connections)
         self.has_action = True
         self.enemies = []
@@ -89,12 +88,11 @@ class ShopRoom(Room):
                 (Item("Floop's Goop"), 500),
             ]
         )
-        self.colour = Fore.YELLOW
-        self.selectedColour = Fore.LIGHTYELLOW_EX
-
-    def room_action(self, party: Party):
-        super().room_action(party)
-        self.shop.displayShop(party)
+        self.colour: str = Fore.YELLOW
+        self.selectedColour: str = Fore.LIGHTYELLOW_EX
+        self.room_actions: list[tuple[str, Callable[..., None]]] = [
+            ("Open Shop", self.shop.displayShop)
+        ]
 
     def to_json(self):
         j = super().to_json()
@@ -103,8 +101,8 @@ class ShopRoom(Room):
         return j
 
     @classmethod
-    def from_json(cls, j):
-        new_room = super(ShopRoom, cls).from_json(j)
+    def from_json(cls, j) -> Self:
+        new_room: Self = super(ShopRoom, cls).from_json(j)
         new_room.shop = Shop.from_json(j["shop"])
         return new_room
 
