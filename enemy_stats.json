@@ -2,13 +2,13 @@
     "goblin": {
         "speed": 80,
         "health": 30,
-        "actions":{
+        "actions": {
             "attack": {
-                "weight":1,
+                "weight": 1,
                 "damage": 5
             },
             "rob": {
-                "weight":1,
+                "weight": 1,
                 "damage": 0
             }
         }
@@ -61,7 +61,7 @@
             }
         }
     },
-    "normal_guy":{
+    "normal_guy": {
         "speed": 30,
         "health": 40,
         "actions": {
@@ -110,6 +110,25 @@
             "grow": {
                 "weight": 1,
                 "damage": 0
+            }
+        }
+    },
+    "stone_titan": {
+        "speed": 50,
+        "health": 250,
+        "actions": {
+            "attack": {
+                "weight": 3,
+                "damage": 15
+            },
+            "slam": {
+                "weight": 2
+            },
+            "charge": {
+                "weight": 1
+            },
+            "core_burst": {
+                "weight": 0
             }
         }
     }

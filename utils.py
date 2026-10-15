@@ -5,7 +5,7 @@ import inputController
 from typing import Any, Callable
 from pynput.keyboard import Key
 
-DEBUG = True
+DEBUG = False
 
 
 def clear() -> None:

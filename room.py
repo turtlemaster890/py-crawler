@@ -66,7 +66,7 @@ class StartRoom(Room):
 
 class EndRoom(Room):
     def __init__(self, connections: set[direction] | None = None) -> None:
-        super().__init__(connections, enemies=[enemy.Werewolf(name="Joe")])
+        super().__init__(connections, enemies=[enemy.StoneTitan()])
         self.colour: str = Fore.RED
         self.selectedColour: str = Fore.LIGHTRED_EX
 
@@ -90,9 +90,9 @@ class ShopRoom(Room):
         )
         self.colour: str = Fore.YELLOW
         self.selectedColour: str = Fore.LIGHTYELLOW_EX
-        self.room_actions: list[tuple[str, Callable[..., None]]] = [(
-            "Open Shop", self.shop.displayShop
-        )]
+        self.room_actions: list[tuple[str, Callable[..., None]]] = [
+            ("Open Shop", self.shop.displayShop)
+        ]
 
     def to_json(self):
         j = super().to_json()
