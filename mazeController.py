@@ -1,11 +1,9 @@
-from typing import Callable
-
+import menuHelper
 from direction import direction
 from maze import maze, pretty_print_list
 from Pos import Pos
 from party import Party
 from combatHandler import CombatHandler
-import utils
 import inputController
 import saves
 from pynput.keyboard import Key
@@ -95,31 +93,48 @@ class mazeController:
                 return
         return
 
-    def room_options(self) -> None:
-        options: list[tuple[str, Callable[[], None]]] = [("View Inventory", self.party.inventory_menu)]
+    def room_options(self):
+        options = [("View Inventory", self.party.inventory_menu)]
         current_room: Room | None = self.maze[self.party.pos.y][self.party.pos.x]
         assert isinstance(current_room, Room)
-        options.extend([(action[0], lambda: action[1](self.party)) for action in current_room.room_actions])
-        selected = 0
-        lastProvider: Callable[[int, int], list[str]] | None = terminalDisplay.contextDisplay.messageProvider
-        terminalDisplay.contextDisplay.messageProvider = lambda w, h: show_room_options(
-            w, h, [option[0] for option in options], selected
+        options.extend(
+            [
+                (action[0], lambda: action[1](self.party))
+                for action in current_room.room_actions
+            ]
         )
-
         while True:
-            selected %= len(options) + 1
-            terminalDisplay.updateDisplays()
-            while True:
-                key: Key | inputController.KeyCode | None = inputController.getKey()
-                if key and key in utils.key_to_delta:
-                    selected += utils.key_to_delta[key]
-                    break
-                if key == Key.enter:
-                    if selected < len(options):
-                        options[selected][1]()
-                        break
-                    terminalDisplay.contextDisplay.messageProvider = lastProvider
-                    return
+            option = menuHelper.menu("Actions", [option[0] for option in options])
+            if option is not None:
+                options[option][1]()
+            else:
+                return
+
+    # def room_options(self) -> None:
+    #     options: list[tuple[str, Callable[[], None]]] = [("View Inventory", self.party.inventory_menu)]
+    #     current_room: Room | None = self.maze[self.party.pos.y][self.party.pos.x]
+    #     assert isinstance(current_room, Room)
+    #     options.extend([(action[0], lambda: action[1](self.party)) for action in current_room.room_actions])
+    #     selected = 0
+    #     lastProvider: Callable[[int, int], list[str]] | None = terminalDisplay.contextDisplay.messageProvider
+    #     terminalDisplay.contextDisplay.messageProvider = lambda w, h: show_room_options(
+    #         w, h, [option[0] for option in options], selected
+    #     )
+
+    #     while True:
+    #         selected %= len(options) + 1
+    #         terminalDisplay.updateDisplays()
+    #         while True:
+    #             key: Key | inputController.KeyCode | None = inputController.getKey()
+    #             if key and key in utils.key_to_delta:
+    #                 selected += utils.key_to_delta[key]
+    #                 break
+    #             if key == Key.enter:
+    #                 if selected < len(options):
+    #                     options[selected][1]()
+    #                     break
+    #                 terminalDisplay.contextDisplay.messageProvider = lastProvider
+    #                 return
 
 
 def show_room_options(

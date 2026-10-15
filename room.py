@@ -2,7 +2,6 @@ from typing import Callable, Self
 
 from direction import direction
 from colorama import Fore
-from party import Party
 import enemy
 from shop import Shop
 from item import Item
@@ -104,6 +103,7 @@ class ShopRoom(Room):
     def from_json(cls, j) -> Self:
         new_room: Self = super(ShopRoom, cls).from_json(j)
         new_room.shop = Shop.from_json(j["shop"])
+        new_room.room_actions = [("Open Shop", new_room.shop.displayShop)]
         return new_room
 
 
