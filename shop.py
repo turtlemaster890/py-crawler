@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 from item import Item
+import item
 
 if TYPE_CHECKING:
     from party import Party
@@ -19,7 +20,7 @@ class Shop:
 
     @classmethod
     def from_json(cls, j: list[tuple[dict, int]]):
-        return cls([(Item.from_json(i), c) for i, c in j])
+        return cls([(item.from_json(i), c) for i, c in j])
 
     def pretty_print(self, funds: int = 0, selectedItem: int = -1):
         longestName = max([len(item[0].name) for item in self.items])

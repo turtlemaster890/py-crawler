@@ -1,7 +1,6 @@
 import json
 import inventory
-from item import Item, Weapon, Armor, Relic, Consumable
-import conditions
+from item import Item, Weapon, Armor, Relic
 import terminalDisplay
 import inputController
 from pynput.keyboard import Key
@@ -86,12 +85,14 @@ class Player:
                 "kill other player",
                 lambda h: h.select_character(
                     lambda c: isinstance(c, Player) and not c is self
-                ).takeDamage(h, 1000),
+                )[0].takeDamage(h, 1000),
             ),
             (
                 "debug.win",
                 lambda h: [[c.takeDamage(h, 1000) for c in h.enemies.copy()], None][1],
             ),
+            ("Fireball", self.fireball),
+            ("Scorching Ray", self.scorching_ray),
         ]
 
     def attack(self, handler: CombatHandler):
@@ -102,14 +103,13 @@ class Player:
         for item in self.inventory.items:
             if isinstance(item, Relic):
                 damage = item.dealDamage(damage, self, to_attack) or damage
-        to_attack.takeDamage(handler, damage, self)
+        to_attack[0].takeDamage(handler, damage, self)
 
     def takeDamage(self, handler: CombatHandler, damage: int, attacker=None):
-        damage = -damage
         for relic in self.inventory.items:
             if isinstance(relic, Relic):
-                damage = relic.healthChange(damage, attacker, self) or damage
-        self.health += damage
+                damage = relic.takeDamage(damage, attacker, self) or damage
+        self.health -= damage
         if self.health <= 0:
             self.die(handler)
 
@@ -152,7 +152,7 @@ class Player:
             lambda w, h: self.pretty_print_turn_options(op, selectedOption, w, h)
         )
         # terminalDisplay.combatDisplay.messageProvider = (
-        #     lambda w, h: 
+        #     lambda w, h:
         # )
         while True:
             selectedOption %= len(op)
@@ -189,8 +189,17 @@ class Player:
         if not self.inventory.weapon:
             return
         to_attack = handler.select_character(lambda c: not isinstance(c, Player))
-        damage = self.inventory.weapon.damage*2
+        damage = self.inventory.weapon.damage * 2
         for item in self.inventory.items:
             if isinstance(item, Relic):
                 damage = item.dealDamage(damage, self, to_attack, "magic") or damage
-        to_attack.takeDamage(handler, damage, self)
+        to_attack[0].takeDamage(handler, damage, self)
+
+    def scorching_ray(self, handler: CombatHandler):
+        to_attack = handler.select_character(lambda c: not isinstance(c, Player), 3, 1)
+        damage = 5
+        for item in self.inventory.items:
+            if isinstance(item, Relic):
+                damage = item.dealDamage(damage, self, to_attack, "magic") or damage
+        for c in to_attack:
+            c.takeDamage(handler, damage, self)

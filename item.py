@@ -1,4 +1,6 @@
 class Item:
+    item_type = "item"
+
     def __init__(
         self,
         name: str,
@@ -6,7 +8,7 @@ class Item:
         self.name = name
 
     def to_json(self) -> dict[str, object]:
-        return {"item_type": "item", "name": self.name}
+        return {"item_type": self.item_type, "name": self.name}
 
     @classmethod
     def from_json(cls, j):
@@ -14,6 +16,8 @@ class Item:
 
 
 class Weapon(Item):
+    item_type = "weapon"
+
     def __init__(
         self,
         name: str,
@@ -23,7 +27,6 @@ class Weapon(Item):
 
     def to_json(self):
         j = super().to_json()
-        j["item_type"] = "weapon"
         j["damage"] = self.damage
         return j
 
@@ -35,19 +38,18 @@ class Weapon(Item):
 
 
 class Armor(Item):
+    item_type = "armor"
+
     def __init__(
         self,
         name: str,
     ):
         super().__init__(name)
 
-    def to_json(self) -> dict[str, object]:
-        j = super().to_json()
-        j["item_type"] = "armor"
-        return j
-
 
 class Relic(Item):
+    item_type = "relic"
+
     def __init__(
         self,
         name: str,
@@ -56,12 +58,7 @@ class Relic(Item):
         self.player = None
         super().__init__(name)
 
-    def to_json(self) -> dict[str, object]:
-        j = super().to_json()
-        j["item_type"] = "relic"
-        return j
-
-    def combatStart(self, handler = None):
+    def combatStart(self, handler=None):
         self.combat = handler
 
     def turnStart(self):
@@ -70,13 +67,13 @@ class Relic(Item):
     def turnEnd(self):
         pass
 
-    def takeDamage(self, amount, attacker = None, defender = None, damage_type = None):
+    def takeDamage(self, amount, attacker=None, defender=None, damage_type=None):
         pass
 
     def die(self):
         pass
 
-    def dealDamage(self, amount, attacker = None, defender = None, damage_type = None):
+    def dealDamage(self, amount, attacker=None, defender=None, damage_type=None):
         pass
 
     def enemyDeath(self, enemy):
@@ -94,19 +91,25 @@ class Relic(Item):
         pass
 
 
-
-
 class Consumable(Item):
+    item_type = "consumable"
+
     def __init__(
         self,
         name: str,
     ):
         super().__init__(name)
 
-    def to_json(self) -> dict[str, object]:
-        j = super().to_json()
-        j["item_type"] = "consumable"
-        return j
+
+class manaBooster(Relic):
+    item_type = "manaBooster"
+
+    def __init__(self, name: str = "Mana Booster"):
+        super().__init__(name)
+
+    def dealDamage(self, amount, attacker=None, defender=None, damage_type=None):
+        if damage_type == "magic":
+            return amount + 2
 
 
 item_type_to_class = {
@@ -115,21 +118,10 @@ item_type_to_class = {
     "armor": Armor,
     "relic": Relic,
     "consumable": Consumable,
+    "manaBooster": manaBooster,
 }
 
 
 def from_json(j: dict[str, object]):
     _class = item_type_to_class.get(j["item_type"], Item)  # type: ignore
     return _class.from_json(j)
-
-
-class manaBooster(Relic):
-    def __init__(
-        self,
-        name: str = "Mana Booster"
-    ):
-        super().__init__(name)
-
-    def dealDamage(self, amount, attacker=None, defender=None, damage_type=None):
-        if damage_type == "magic":
-            return amount+2

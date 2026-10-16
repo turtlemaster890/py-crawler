@@ -114,28 +114,54 @@ class CombatHandler:
         out.append("└" + "─" * (w - 2) + "┘")
         return out
 
-    def select_character(self, f: Callable[[Player | enemy], bool]) -> Player | enemy:
+    def select_character(
+        self, f: Callable[[Player | enemy], bool], count: int = 1, minimum: int = -1
+    ) -> list[Player | enemy]:
+        if minimum == -1:
+            minimum = count
         options = [e for e in self.turn_order if f(e.character)]
-        selected = 0
+        hovered = 0
+        selected: list[TurnEntry] = []
         terminalDisplay.combatDisplay.messageProvider = (
-            lambda w, h: self.print_turn_order_list_select(w, h, selected, options)
+            lambda w, h: self.print_turn_order_list_select(
+                w, h, selected, hovered, options, count, minimum
+            )
         )
         while True:
-            selected %= len(options)
+            hovered %= len(options) + 1
             terminalDisplay.updateDisplays()
             while True:
                 key = inputController.getKey()
                 if key in utils.key_to_delta:
-                    selected += utils.key_to_delta[key]
+                    hovered += utils.key_to_delta[key]
                     break
                 if key == Key.enter:
-                    terminalDisplay.combatDisplay.messageProvider = (
-                        self.print_turn_order_list
-                    )
-                    return options[selected].character
+                    if hovered < len(options):
+                        if options[hovered] in selected:
+                            selected.remove(options[hovered])
+                        elif len(selected) < count:
+                            selected.append(options[hovered])
+                        break
+                    else:
+                        if len(selected) >= minimum:
+                            terminalDisplay.combatDisplay.messageProvider = (
+                                self.print_turn_order_list
+                            )
+                            return [option.character for option in selected]
+                    # terminalDisplay.combatDisplay.messageProvider = (
+                    #     self.print_turn_order_list
+                    # )
+                    # return [option.character for option in selected]
 
     def print_turn_order_list_select(
-        self, w: int, h: int, selected: int, options: list[TurnEntry]
+        self,
+        w: int,
+        h: int,
+        selected: list[TurnEntry],
+        hovered: int,
+        options: list[TurnEntry],
+        count: int,
+        minimum: int,
     ) -> list[str]:
 
         out = []
@@ -143,22 +169,42 @@ class CombatHandler:
         nameSpace = w - 14
 
         out.append("┌" + "─" * (w - 2) + "┐")
-        out.append("│" + "TURN ORDER".center(w - 2) + "│")
+        out.append(
+            "│"
+            + f"TURN ORDER (Select {f"{minimum}-{count}" if minimum < count else minimum})".center(
+                w - 2
+            )
+            + "│"
+        )
         out.append("├" + "─" * (w - 2) + "┤")
         realOptions = -1
         for i, entry in enumerate(self.turn_order):
             if entry in options:
                 realOptions += 1
             sel_str = (
-                "> "
-                if (realOptions == selected and entry in options)
-                else ("  " if entry in options else " ")
+                ">["
+                if (realOptions == hovered and entry in options and entry in selected)
+                else (
+                    " ["
+                    if (entry in options and entry in selected)
+                    else (
+                        "> "
+                        if realOptions == hovered and entry in options
+                        else ("  " if entry in options else " ")
+                    )
+                )
             )
-            sel_extra = " " if not entry in options else ""
-            name = (entry.character.name + f" ({entry.character.health}♥)")[
-                :nameSpace
-            ].ljust(nameSpace)
+            sel_extra = "]" if entry in options and entry in selected else " "
+            name = (
+                (entry.character.name + f" ({entry.character.health}♥)")[
+                    : nameSpace - len(sel_extra)
+                ]
+                + sel_extra
+            ).ljust(nameSpace - (len(sel_str) - 2))
             av_str = f"{entry.av:<3.0f}"
-            out.append(f"│{sel_str}{name}{sel_extra} │ {av_str} AV │")
+            out.append(f"│{sel_str}{name} │ {av_str} AV │")
+        out.append(
+            f"│{"> " if hovered == len(options) else "  "}{"Confirm".ljust(w - 4)}│"
+        )
         out.append("└" + "─" * (w - 2) + "┘")
         return out

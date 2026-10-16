@@ -19,11 +19,15 @@ save_file: Path = SAVE_LOCATION.joinpath(f"save_{save_index}.json")
 def select_save_file() -> None:
     global save_file
     save_files: list[Path] = [p for p in SAVE_LOCATION.glob("*.json")]
-    options: list[str] = [f"Save {p.name.split('_')[1].removesuffix(".json")}" for p in save_files]
+    options: list[str] = [
+        f"Save {p.name.split('_')[1].removesuffix(".json")}" for p in save_files
+    ]
 
     selected = 0
     hselected = 0
-    lastProvider: Callable[[int, int], list[str]] | None = terminalDisplay.contextDisplay.messageProvider
+    lastProvider: Callable[[int, int], list[str]] | None = (
+        terminalDisplay.contextDisplay.messageProvider
+    )
     terminalDisplay.contextDisplay.messageProvider = lambda w, h: show_saves(
         w, h, options, selected, hselected
     )
@@ -36,6 +40,8 @@ def select_save_file() -> None:
             key: Key | inputController.KeyCode | None = inputController.getKey()
             if key and key in utils.key_to_delta:
                 selected += utils.key_to_delta[key]
+                if selected == len(save_files):
+                    hselected = 0
                 break
             if key in [Key.left, Key.right]:
                 hselected += (key == Key.right) - (key == Key.left)

@@ -14,7 +14,7 @@ class Inventory:
 
     @classmethod
     def from_json(cls, j):
-        return cls([Item.from_json(i) for i in j["items"]])
+        return cls([item.from_json(i) for i in j["items"]])
 
     def __contains__(self, item):
         return item in self.items
@@ -35,7 +35,7 @@ class Inventory:
 
 class PlayerInventory(Inventory):
     def __init__(self, items: list[Item] | None = None):
-        super().__init__()
+        super().__init__(items)
         self.weapon: Weapon | None = None
         self.armor: Armor | None = None
 
