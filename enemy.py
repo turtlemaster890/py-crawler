@@ -273,6 +273,28 @@ class StoneTitan(enemy):
             f"{self.name} bursts into a glowing light. It seems... stronger now?"
         )
 
+class Mimic(enemy):
+    def __init__(self, name: str = "Mimic") -> None:
+        super().__init__(name, "mimic")
+
+    def bite(self, handler: CombatHandler):
+        target = random.choice(
+            [
+                entry[1]
+                for entry in self.aggro
+                if entry == min(self.aggro, key=lambda x: x[0])
+            ]
+        )
+        target.takeDamage(handler, 3, self)
+        terminalDisplay.contextDisplay.print_boxify(
+            f"{self.name} attacks {target.name} for 3 damage."
+        )
+        # if random.randint(0, 2) == 2:
+        #     utils.wait_for_enter()
+        #     spilled_coins = random.randint(30, 65)
+        #     terminalDisplay.contextDisplay.print_boxify(f"¢{spilled_coins} spills from {self.name}'s mouth!")
+            
+        
 
 enemy_type_to_class = {
     "goblin": Goblin,

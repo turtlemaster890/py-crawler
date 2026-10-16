@@ -5,6 +5,11 @@ from colorama import Fore
 import enemy
 from shop import Shop
 from item import *
+import terminalDisplay
+import party
+import random
+import utils
+from combatHandler import CombatHandler
 
 
 class Room:
@@ -51,7 +56,7 @@ class Room:
 
 
 class StartRoom(Room):
-    def __init__(self, connections: set[direction] | None = None) -> None:
+    def __init__(self, connections: set[direction] | None = None, enemies=None) -> None:
         super().__init__(connections)
         self.enemies = []
         self.colour: str = Fore.GREEN
@@ -64,7 +69,7 @@ class StartRoom(Room):
 
 
 class EndRoom(Room):
-    def __init__(self, connections: set[direction] | None = None) -> None:
+    def __init__(self, connections: set[direction] | None = None, enemies=None) -> None:
         super().__init__(connections, enemies=[enemy.StoneTitan()])
         self.colour: str = Fore.RED
         self.selectedColour: str = Fore.LIGHTRED_EX
@@ -76,7 +81,7 @@ class EndRoom(Room):
 
 
 class ShopRoom(Room):
-    def __init__(self, connections: set[direction] | None = None) -> None:
+    def __init__(self, connections: set[direction] | None = None, enemies=None) -> None:
         super().__init__(connections)
         self.has_action = True
         self.enemies = []
@@ -107,7 +112,53 @@ class ShopRoom(Room):
         return new_room
 
 
-str_to_room_type = {"room": Room, "start": StartRoom, "end": EndRoom, "shop": ShopRoom}
+class ChestRoom(Room):
+    def __init__(self, connections: set[direction] | None = None, enemies=None) -> None:
+        super().__init__(connections)
+        self.chest_opened = False
+        self.room_actions = [("Open Chest", self.open_chest)]
+
+    def open_chest(self, party: party.Party):
+        self.chest_opened = True
+        self.room_actions = []
+        triggering_player = random.choice(party.members)
+        terminalDisplay.contextDisplay.print_boxify(
+            f"{triggering_player.name} opens the chest."
+        )
+        utils.wait_for_enter()
+        if random.randint(0, 1):
+            terminalDisplay.contextDisplay.print_boxify("Contained inside is ¢300!")
+            utils.wait_for_enter()
+            party.funds += 300
+        else:
+            terminalDisplay.contextDisplay.print_boxify(
+                f"The chest bites {triggering_player.name}!"
+            )
+            utils.wait_for_enter()
+            return CombatHandler(party, party.members, [enemy.Mimic()])
+
+    def to_json(self):
+        j = super().to_json()
+        j["room_type"] = "chest"
+        j["chest_opened"] = self.chest_opened
+        return j
+
+    @classmethod
+    def from_json(cls, j) -> Self:
+        new_room = super().from_json(j)
+        new_room.chest_opened = j["chest_opened"]
+        if new_room.chest_opened:
+            new_room.room_actions = []
+        return new_room
+
+
+str_to_room_type = {
+    "room": Room,
+    "start": StartRoom,
+    "end": EndRoom,
+    "shop": ShopRoom,
+    "chest": ChestRoom,
+}
 
 
 def from_json(j: dict[str, object]):

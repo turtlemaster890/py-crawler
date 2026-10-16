@@ -3,7 +3,7 @@ from encounters import encounterFactory
 import random
 import utils
 from Pos import Pos
-from room import Room, StartRoom, EndRoom, ShopRoom
+from room import Room, StartRoom, EndRoom, ShopRoom, ChestRoom
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -13,6 +13,8 @@ if TYPE_CHECKING:
 from colorama import Style
 
 # colorama_init()
+
+room_weights: dict[type[Room], int] = {Room: 10, ChestRoom: 1}
 
 add_up = {
     "·": "╵",
@@ -161,9 +163,9 @@ def gen_main_path(startPos: Pos, maxSteps: int, x: int, y: int):
             currentRoom = maze[currentPos.y][currentPos.x]
             if maze[newPos.y][newPos.x] is None:
                 # make connections between rooms
-                maze[newPos.y][newPos.x] = Room(
-                    connections={moveDirection.opposite()}, enemies=encounterFactory()
-                )
+                maze[newPos.y][newPos.x] = random.choices(
+                    list(room_weights.keys()), list(room_weights.values()), k=1
+                )[0](connections={moveDirection.opposite()}, enemies=encounterFactory())
                 assert isinstance(currentRoom, Room)
                 currentRoom.make_connection(moveDirection)
                 currentPos = newPos
@@ -222,7 +224,13 @@ def gen_branch(
                     options.remove(moveDirection)
                     continue
                 if maze[newPos.y][newPos.x] is None:
-                    maze[newPos.y][newPos.x] = Room(
+                    maze[newPos.y][newPos.x] = maze[newPos.y][
+                        newPos.x
+                    ] = random.choices(
+                        list(room_weights.keys()), list(room_weights.values()), k=1
+                    )[
+                        0
+                    ](
                         connections={moveDirection.opposite()},
                         enemies=encounterFactory(),
                     )

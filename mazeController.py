@@ -89,8 +89,7 @@ class mazeController:
                     return combat_handler
                 break
             if key == Key.enter:
-                self.room_options()
-                return
+                return self.room_options()
         return
 
     def room_options(self):
@@ -106,7 +105,7 @@ class mazeController:
         while True:
             option = menuHelper.menu("Actions", [option[0] for option in options])
             if option is not None:
-                options[option][1]()
+                return options[option][1]()
             else:
                 return
 

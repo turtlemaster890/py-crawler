@@ -131,5 +131,14 @@
                 "weight": 0
             }
         }
+    },
+    "mimic": {
+        "speed": 85,
+        "health": 20,
+        "actions": {
+            "bite": {
+                "weight": 1
+            }
+        }
     }
 }
