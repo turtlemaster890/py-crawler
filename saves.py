@@ -10,7 +10,8 @@ from maze import maze
 from party import Party
 from pathlib import Path
 
-SAVE_LOCATION: Path = utils.getRelativePath(Path("saves/"))
+# SAVE_LOCATION: Path = utils.getRelativePath(Path("saves/"))
+SAVE_LOCATION = Path.home() / "py-crawler" / "saves"
 save_index = 0
 
 save_file: Path = SAVE_LOCATION.joinpath(f"save_{save_index}.json")
