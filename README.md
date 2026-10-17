@@ -15,13 +15,8 @@ A speed-derived Initiative System where higher-speed units can perform actions m
 #### Maze generation
 Random walk main path with branches off of the path, and sub-branches
 
-### Coming Soon:
-
 #### Relics
 Relics are items with passive abilities that can be equipped to a character, such as more health or damage.
-
-#### Conditions
-Effects that can be applied to units in combat
 
 #### Enemies
 A large variety of enemies with unique mechanics, such as:
@@ -30,6 +25,11 @@ Strange Man (?) turns into a werewolf
 
 #### Aggro System
 Enemies will target whoever has dealt the most damage to them.
+
+### Coming Soon:
+
+#### Conditions
+Effects that can be applied to units in combat
 
 ## Usage
 Use arrow keys and enter to navigate the maze and menus.
