@@ -89,6 +89,16 @@
             }
         }
     },
+    "wolf": {
+        "speed": 120,
+        "health": 60,
+        "actions": {
+            "attack": {
+                "weight": 1,
+                "damage": 7
+            }
+        }
+    },
     "jelly": {
         "speed": 90,
         "health": 5,

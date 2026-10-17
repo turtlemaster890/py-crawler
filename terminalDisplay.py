@@ -48,11 +48,11 @@ class DisplayArea:
 
 mazeDisplay = DisplayArea(0, 0, 30, 15)
 
-combatDisplay = DisplayArea(31, 0, 35, 15)
+combatDisplay = DisplayArea(31, 10, 30, 25)
 
 contextDisplay = DisplayArea(0, 15, 30, 10)
 
-descriptionDisplay = DisplayArea(31, 15, 35, 10)
+descriptionDisplay = DisplayArea(31, 0, 30, 10)
 
 # combatDisplay = DisplayArea(31, 15, 35, 15)
 

@@ -197,7 +197,12 @@ class Werewolf(enemy):
 
     def howl(self, handler: CombatHandler) -> None:
         terminalDisplay.contextDisplay.type_print(f"{self.name} howls at the moon...")
-        handler.addEnemy(Werewolf())
+        handler.addEnemy(Wolf())
+
+
+class Wolf(enemy):
+    def __init__(self, name: str = "Enemy", enemy_type: str = "Wolf") -> None:
+        super().__init__(name, "wolf")
 
 
 class Jelly(enemy):

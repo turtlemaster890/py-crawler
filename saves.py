@@ -27,9 +27,9 @@ def select_save_file() -> None:
     selected = 0
     hselected = 0
     lastProvider: Callable[[int, int], list[str]] | None = (
-        terminalDisplay.contextDisplay.messageProvider
+        terminalDisplay.mazeDisplay.messageProvider
     )
-    terminalDisplay.contextDisplay.messageProvider = lambda w, h: show_saves(
+    terminalDisplay.mazeDisplay.messageProvider = lambda w, h: show_saves(
         w, h, options, selected, hselected
     )
 
@@ -58,7 +58,7 @@ def select_save_file() -> None:
                         del save_files[selected]
                         del options[selected]
                         break
-                terminalDisplay.contextDisplay.messageProvider = lastProvider
+                terminalDisplay.mazeDisplay.messageProvider = lastProvider
                 return
 
 
