@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 from item import Item
 import item
+import utils
 
 if TYPE_CHECKING:
     from party import Party
@@ -46,7 +47,7 @@ class Shop:
         out = []
         out.append(
             "┌"
-            + "─" * (w - 6)
+            + "─" * (w - 6 - (len(str(funds)) - 3))
             + f"{Fore.LIGHTYELLOW_EX}¢{funds:<3}{Style.RESET_ALL}"
             + "┐"
         )
@@ -69,6 +70,10 @@ class Shop:
         lastProvider = terminalDisplay.contextDisplay.messageProvider
         terminalDisplay.contextDisplay.messageProvider = (
             lambda w, h: self.pretty_print_list(w, h, party.funds, selectedItem)
+        )
+        lastDescProvider = terminalDisplay.descriptionDisplay.messageProvider
+        terminalDisplay.descriptionDisplay.messageProvider = (
+            lambda w, h: self.print_description(w, h, selectedItem)
         )
         selectedItem = 0
         while True:
@@ -97,3 +102,9 @@ class Shop:
                         party.funds -= price
                         del self.items[selectedItem]
                         break
+
+    def print_description(self, w, h, selected: int):
+        if selected < len(self.items) and self.items[selected][0].description != "":
+            return utils.boxify(w, h, self.items[selected][0].description)
+        else:
+            return []

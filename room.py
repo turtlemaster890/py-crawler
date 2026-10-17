@@ -93,9 +93,9 @@ class ShopRoom(Room):
         self.enemies = []
         self.shop = Shop(
             [
-                (ManaBooster(), 50),
-                (Item("Bob's Job"), 100),
-                (Item("Floop's Goop"), 500),
+                (ManaBooster(), 150),
+                (QuickBoots(), 100),
+                (ThornedAmulet(), 400),
             ]
         )
         self.colour: str = Fore.YELLOW

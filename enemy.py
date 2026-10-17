@@ -297,10 +297,13 @@ class Mimic(enemy):
         terminalDisplay.contextDisplay.print_boxify(
             f"{self.name} attacks {target.name} for 3 damage."
         )
-        # if random.randint(0, 2) == 2:
-        #     utils.wait_for_enter()
-        #     spilled_coins = random.randint(30, 65)
-        #     terminalDisplay.contextDisplay.print_boxify(f"¢{spilled_coins} spills from {self.name}'s mouth!")
+        if random.randint(0, 2) == 2:
+            utils.wait_for_enter()
+            spilled_coins = random.randint(30, 65)
+            terminalDisplay.contextDisplay.print_boxify(
+                f"¢{spilled_coins} spills from {self.name}'s mouth!"
+            )
+            handler.party.funds += spilled_coins
 
 
 enemy_type_to_class = {

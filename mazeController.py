@@ -69,9 +69,9 @@ class mazeController:
             or newPos.y >= self.height
         ):
             return None, False
-        currentRoom: Room | None = self.maze[self.party.pos.y][self.party.pos.x]
+        currentRoom = self.maze[self.party.pos.y][self.party.pos.x]
         assert isinstance(currentRoom, Room)
-        newRoom: Room | None = self.maze[newPos.y][newPos.x]
+        newRoom = self.maze[newPos.y][newPos.x]
         if isinstance(newRoom, Room) and currentRoom.has_connection(moveDirection):
             self.party.discovered_positions.add(newPos)
             for connection in newRoom.connections:
@@ -104,7 +104,9 @@ class mazeController:
                     return combat_handler
                 break
             if key == Key.enter:
-                return self.room_options()
+                r = self.room_options()
+                saves.save(self.maze, self.party)
+                return r
         return
 
     def room_options(self):

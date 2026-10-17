@@ -1,5 +1,6 @@
 class Item:
     item_type = "item"
+    description = ""
 
     def __init__(
         self,
@@ -101,6 +102,7 @@ class Consumable(Item):
 
 class ManaBooster(Relic):
     item_type = "manaBooster"
+    description = "Magic damage deals +2"
 
     def __init__(self, name: str = "Mana Booster"):
         super().__init__(name)
@@ -112,6 +114,7 @@ class ManaBooster(Relic):
 
 class ThornedAmulet(Relic):
     item_type = "thornedAmulet"
+    description = "Returns 25% damage to attacker"
 
     def __init__(self, name: str = "Thorned Amulet"):
         super().__init__(name)
@@ -124,6 +127,7 @@ class ThornedAmulet(Relic):
 
 class QuickBoots(Relic):
     item_type = "quickBoots"
+    description = "+10 speed"
 
     def __init__(self, name: str = "Quick Boots"):
         super().__init__(name)
