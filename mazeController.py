@@ -8,6 +8,7 @@ import inputController
 import saves
 from pynput.keyboard import Key
 from room import Room
+import utils
 
 # from utils import clear
 import terminalDisplay
@@ -43,6 +44,20 @@ class mazeController:
             self.party.discovered_positions.add(startPos + connection)
         terminalDisplay.mazeDisplay.messageProvider = lambda x, y: pretty_print_list(
             x, y, self.maze, self.party.discovered_positions, self.party.pos
+        )
+        terminalDisplay.descriptionDisplay.messageProvider = (
+            lambda w, h: self.print_description(w, h)
+        )
+
+    def print_description(self, w, h):
+        current_room = self.maze[self.party.pos.y][self.party.pos.x]
+        assert isinstance(current_room, Room)
+        return utils.boxify(
+            w,
+            h,
+            current_room.description
+            + (" " if current_room.description else "")
+            + "Use [Enter] to open actions.",
         )
 
     def move(self, moveDirection: direction) -> tuple[CombatHandler | None, bool]:

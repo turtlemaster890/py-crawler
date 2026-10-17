@@ -14,7 +14,7 @@ from colorama import Style
 
 # colorama_init()
 
-room_weights: dict[type[Room], int] = {Room: 10, ChestRoom: 1}
+room_weights: dict[type[Room], int] = {Room: 10, ChestRoom: 2, ShopRoom: 1}
 
 add_up = {
     "·": "╵",

@@ -201,7 +201,7 @@ class Werewolf(enemy):
 
 
 class Wolf(enemy):
-    def __init__(self, name: str = "Enemy", enemy_type: str = "Wolf") -> None:
+    def __init__(self, name: str = "Wolf") -> None:
         super().__init__(name, "wolf")
 
 

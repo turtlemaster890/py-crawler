@@ -83,25 +83,30 @@ class Player:
         tuple[str, Callable[[CombatHandler], None]]
         | tuple[str, Callable[[CombatHandler], None], str]
     ]:
-        return [
-            ("pass", lambda h: None),
-            ("die", lambda h: self.takeDamage(h, 100)),
-            ("attack", self.attack),
-            (
-                "kill other player",
-                lambda h: h.select_character(
-                    lambda c: isinstance(c, Player) and not c is self
-                )[0].takeDamage(h, 1000),
-                "Hehe silly",
-            ),
-            (
-                "debug.win",
-                lambda h: [[c.takeDamage(h, 1000) for c in h.enemies.copy()], None][1],
-                "Win.",
-            ),
+        actions = [
+            ("Attack", self.attack),
+            ("Pass", lambda h: None),
+            # (
+            #     "kill other player",
+            #     lambda h: h.select_character(
+            #         lambda c: isinstance(c, Player) and not c is self
+            #     )[0].takeDamage(h, 1000),
+            #     "Hehe silly",
+            # ),
             ("Fireball", self.fireball, "High single-target damage"),
             ("Scorching Ray", self.scorching_ray, "Multi-target magic beam"),
         ]
+        if utils.DEBUG:
+            actions.append(
+                (
+                    "debug.win",
+                    lambda h: [[c.takeDamage(h, 1000) for c in h.enemies.copy()], None][
+                        1
+                    ],
+                    "Win.",
+                )
+            )
+        return actions
 
     def attack(self, handler: CombatHandler):
         if not self.inventory.weapon:
@@ -160,9 +165,11 @@ class Player:
             condition.turnStart()
         op = self.getTurnOptions(handler)
         selectedOption = 0
+        lastProvider = terminalDisplay.contextDisplay.messageProvider
         terminalDisplay.contextDisplay.messageProvider = (
             lambda w, h: self.pretty_print_turn_options(op, selectedOption, w, h)
         )
+        lastDescProvider = terminalDisplay.descriptionDisplay.messageProvider
         terminalDisplay.descriptionDisplay.messageProvider = lambda w, h: (
             utils.boxify(w, h, op[selectedOption][2])
             if len(op[selectedOption]) > 2
@@ -180,8 +187,10 @@ class Player:
                     selectedOption += key_to_delta[key]
                     break
                 if key == Key.enter:
-                    terminalDisplay.contextDisplay.messageProvider = None
-                    terminalDisplay.descriptionDisplay.messageProvider = None
+                    terminalDisplay.contextDisplay.messageProvider = lastProvider
+                    terminalDisplay.descriptionDisplay.messageProvider = (
+                        lastDescProvider
+                    )
                     op[selectedOption][1](handler)
                     return
 

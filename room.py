@@ -13,6 +13,8 @@ from combatHandler import CombatHandler
 
 
 class Room:
+    description = ""
+
     def __init__(
         self,
         connections: set[direction] | None = None,
@@ -56,6 +58,8 @@ class Room:
 
 
 class StartRoom(Room):
+    description = "An empty room."
+
     def __init__(self, connections: set[direction] | None = None, enemies=None) -> None:
         super().__init__(connections)
         self.enemies = []
@@ -81,6 +85,8 @@ class EndRoom(Room):
 
 
 class ShopRoom(Room):
+    description = "A creature has set up a stall in this room."
+
     def __init__(self, connections: set[direction] | None = None, enemies=None) -> None:
         super().__init__(connections)
         self.has_action = True
@@ -113,6 +119,8 @@ class ShopRoom(Room):
 
 
 class ChestRoom(Room):
+    description = "A lone chest stands in the middle of this room."
+
     def __init__(self, connections: set[direction] | None = None, enemies=None) -> None:
         super().__init__(connections)
         self.chest_opened = False
@@ -121,6 +129,7 @@ class ChestRoom(Room):
     def open_chest(self, party: party.Party):
         self.chest_opened = True
         self.room_actions = []
+        self.description = "An opened chest stands in the middle of this room."
         triggering_player = random.choice(party.members)
         terminalDisplay.contextDisplay.print_boxify(
             f"{triggering_player.name} opens the chest."
@@ -149,6 +158,7 @@ class ChestRoom(Room):
         new_room.chest_opened = j["chest_opened"]
         if new_room.chest_opened:
             new_room.room_actions = []
+            new_room.description = "An opened chest stands in the middle of this room."
         return new_room
 
 
