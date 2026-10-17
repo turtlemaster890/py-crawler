@@ -3,6 +3,7 @@ import inventory
 from item import Item, Weapon, Armor, Relic
 import terminalDisplay
 import inputController
+from conditions import Condition
 from pynput.keyboard import Key
 from utils import key_to_delta, getRelativePath
 from typing import TYPE_CHECKING, Callable, TypedDict
@@ -45,7 +46,7 @@ class Player:
         self.health = self.max_health
         self.max_stamina = self.stats["base_stats"]["stamina"]
         self.stamina = self.max_stamina
-        self.conditions = []
+        self.conditions: list[Condition] = []
         self.inventory.equip(Weapon(self.stats["starting_items"]["weapon"]))
         self.inventory.equip(Armor(self.stats["starting_items"]["armor"]))
         for item in self.stats["starting_items"]["items"]:

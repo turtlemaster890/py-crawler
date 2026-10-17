@@ -101,7 +101,7 @@ class Consumable(Item):
         super().__init__(name)
 
 
-class manaBooster(Relic):
+class ManaBooster(Relic):
     item_type = "manaBooster"
 
     def __init__(self, name: str = "Mana Booster"):
@@ -118,7 +118,7 @@ item_type_to_class = {
     "armor": Armor,
     "relic": Relic,
     "consumable": Consumable,
-    "manaBooster": manaBooster,
+    "manaBooster": ManaBooster,
 }
 
 

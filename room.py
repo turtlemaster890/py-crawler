@@ -87,7 +87,7 @@ class ShopRoom(Room):
         self.enemies = []
         self.shop = Shop(
             [
-                (manaBooster(), 50),
+                (ManaBooster(), 50),
                 (Item("Bob's Job"), 100),
                 (Item("Floop's Goop"), 500),
             ]

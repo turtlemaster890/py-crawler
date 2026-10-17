@@ -1,6 +1,7 @@
 from typing import Any, Self, TypedDict, TYPE_CHECKING
 import json
 import random
+from conditions import Condition
 from combatHandler import CombatHandler
 import terminalDisplay
 from utils import getRelativePath
@@ -31,6 +32,7 @@ class enemy:
         self.enemy_type: str = enemy_type or "goblin"
         self.name: str = name or "Enemy"
         self.combatHandler: CombatHandler | None = handler
+        self.conditions: list[Condition] = []
         with open(getRelativePath("enemy_stats.json"), "r") as f:
             all_stats: dict[str, EnemyStats] = json.load(f)
             self.stats: EnemyStats = all_stats[self.enemy_type]
@@ -273,6 +275,7 @@ class StoneTitan(enemy):
             f"{self.name} bursts into a glowing light. It seems... stronger now?"
         )
 
+
 class Mimic(enemy):
     def __init__(self, name: str = "Mimic") -> None:
         super().__init__(name, "mimic")
@@ -293,8 +296,7 @@ class Mimic(enemy):
         #     utils.wait_for_enter()
         #     spilled_coins = random.randint(30, 65)
         #     terminalDisplay.contextDisplay.print_boxify(f"¢{spilled_coins} spills from {self.name}'s mouth!")
-            
-        
+
 
 enemy_type_to_class = {
     "goblin": Goblin,
