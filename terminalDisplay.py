@@ -52,9 +52,11 @@ combatDisplay = DisplayArea(31, 0, 35, 15)
 
 contextDisplay = DisplayArea(0, 15, 30, 10)
 
+descriptionDisplay = DisplayArea(31, 15, 35, 10)
+
 # combatDisplay = DisplayArea(31, 15, 35, 15)
 
-displays = [mazeDisplay, combatDisplay, contextDisplay]
+displays = [mazeDisplay, combatDisplay, contextDisplay, descriptionDisplay]
 
 
 def updateDisplays():

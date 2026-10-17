@@ -84,11 +84,9 @@ class Relic(Item):
 
     def equip(self, player):
         self.player = player
-        pass
 
     def unequip(self, player):
         self.player = None
-        pass
 
 
 class Consumable(Item):
@@ -112,6 +110,33 @@ class ManaBooster(Relic):
             return amount + 2
 
 
+class ThornedAmulet(Relic):
+    item_type = "thornedAmulet"
+
+    def __init__(self, name: str = "Thorned Amulet"):
+        super().__init__(name)
+
+    def takeDamage(self, amount, attacker=None, defender=None, damage_type=None):
+        if attacker:
+            return_damage = max(1, int(amount * 0.25))
+            attacker.takeDamage(self.combat, return_damage, self.player)
+
+
+class QuickBoots(Relic):
+    item_type = "quickBoots"
+
+    def __init__(self, name: str = "Quick Boots"):
+        super().__init__(name)
+
+    def equip(self, player):
+        super().equip(player)
+        player.speed += 10
+
+    def unequip(self, player):
+        super().unequip(player)
+        player.speed -= 10
+
+
 item_type_to_class = {
     "item": Item,
     "weapon": Weapon,
@@ -119,6 +144,8 @@ item_type_to_class = {
     "relic": Relic,
     "consumable": Consumable,
     "manaBooster": ManaBooster,
+    "thornedAmulet": ThornedAmulet,
+    "quickBoots": QuickBoots,
 }
 
 

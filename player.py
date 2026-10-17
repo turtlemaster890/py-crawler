@@ -8,6 +8,8 @@ from pynput.keyboard import Key
 from utils import key_to_delta, getRelativePath
 from typing import TYPE_CHECKING, Callable, TypedDict
 
+import utils
+
 if TYPE_CHECKING:
     from party import Party
     from combatHandler import CombatHandler
@@ -77,7 +79,10 @@ class Player:
 
     def getTurnOptions(
         self, handler: CombatHandler
-    ) -> list[tuple[str, Callable[[CombatHandler], None]]]:
+    ) -> list[
+        tuple[str, Callable[[CombatHandler], None]]
+        | tuple[str, Callable[[CombatHandler], None], str]
+    ]:
         return [
             ("pass", lambda h: None),
             ("die", lambda h: self.takeDamage(h, 100)),
@@ -87,13 +92,15 @@ class Player:
                 lambda h: h.select_character(
                     lambda c: isinstance(c, Player) and not c is self
                 )[0].takeDamage(h, 1000),
+                "Hehe silly",
             ),
             (
                 "debug.win",
                 lambda h: [[c.takeDamage(h, 1000) for c in h.enemies.copy()], None][1],
+                "Win.",
             ),
-            ("Fireball", self.fireball),
-            ("Scorching Ray", self.scorching_ray),
+            ("Fireball", self.fireball, "High single-target damage"),
+            ("Scorching Ray", self.scorching_ray, "Multi-target magic beam"),
         ]
 
     def attack(self, handler: CombatHandler):
@@ -125,14 +132,18 @@ class Player:
             handler.removePlayer(self)
 
     def pretty_print_turn_options(
-        self, options: list[tuple[str, Callable]], selected: int, w: int, h: int
+        self,
+        options: list[tuple[str, Callable] | tuple[str, Callable, str]],
+        selected: int,
+        w: int,
+        h: int,
     ) -> list[str]:
         content_width = w - 2
         content_height = h - 2
         out: list[str] = []
         out.append("┌" + "─" * content_width + "┐")
         for i in range(min(content_height, len(options))):
-            optName, optFunc = options[i]
+            optName, optFunc = options[i][:2]
             out.append(
                 "│"
                 + (("> " if i == selected else "  ") + optName).ljust(content_width)
@@ -152,6 +163,11 @@ class Player:
         terminalDisplay.contextDisplay.messageProvider = (
             lambda w, h: self.pretty_print_turn_options(op, selectedOption, w, h)
         )
+        terminalDisplay.descriptionDisplay.messageProvider = lambda w, h: (
+            utils.boxify(w, h, op[selectedOption][2])
+            if len(op[selectedOption]) > 2
+            else []
+        )
         # terminalDisplay.combatDisplay.messageProvider = (
         #     lambda w, h:
         # )
@@ -165,6 +181,7 @@ class Player:
                     break
                 if key == Key.enter:
                     terminalDisplay.contextDisplay.messageProvider = None
+                    terminalDisplay.descriptionDisplay.messageProvider = None
                     op[selectedOption][1](handler)
                     return
 
