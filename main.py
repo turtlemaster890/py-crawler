@@ -47,15 +47,15 @@ def main():
 
             party = Party(Pos(14, 6), [player1, player2, player3, player4])
             party.funds = 900
-            mz = gen_main_path(party.pos, 50, 28, 13)
+            mz = gen_main_path(party.squads[0].pos, 50, 28, 13)
 
         mController = mazeController(mz, 28, 13, party)
-        current_room = mz[party.pos.y][party.pos.x]
+        current_room = mz[party.squads[0].pos.y][party.squads[0].pos.x]
         if current_room:
             # current_room.enter_room(party)
             if current_room.enemies:
                 combat_handler = CombatHandler(
-                    party, party.members, current_room.enemies
+                    party, list(party.squads[0].characters), current_room.enemies
                 )
 
 

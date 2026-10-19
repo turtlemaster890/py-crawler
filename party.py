@@ -6,16 +6,17 @@ from inventory import Inventory
 import terminalDisplay
 import inputController
 import utils
+from squad import Squad
 from pynput.keyboard import Key
 
 
 class Party:
     def __init__(self, pos: Pos, members: list[Player]):
-        self.pos = pos
         self.discovered_positions: set[Pos] = {pos}
         self.members = members
         self.inventory = Inventory()
         self.funds = 0
+        self.squads = [Squad(pos, list(members))]
 
     def moveItemToMember(self, member: Player, item: Item) -> bool:
         if item not in self.inventory:
@@ -153,9 +154,31 @@ class Party:
         out.append("└" + "─" * (w - 2) + "┘")
         return out
 
+    def create_squad(self, pos, characters):
+        if not characters:
+            raise ValueError("squad character list is empty")
+        if len(characters) != len(set(characters)):
+            raise ValueError("squad has duplicate characters")
+        for character in characters:
+            if character in self.members:
+                continue
+            else:
+                raise ValueError(character.name + " is not in the party")
+        for squad in self.squads:
+            for character in characters:
+                if character not in squad.characters:
+                    continue
+                else:
+                    raise ValueError(character.name + " is in another squad")
+        squad = Squad(pos, list(characters))
+        self.squads.append(squad)
+        return squad
+
+    # TODO: save all squads
+
     def to_json(self):
         return {
-            "pos": self.pos.to_json(),
+            "pos": self.squads[0].pos.to_json(),
             "discovered": [p.to_json() for p in self.discovered_positions],
             "members": [m.to_json() for m in self.members],
             "inventory": self.inventory.to_json(),
@@ -168,7 +191,7 @@ class Party:
             Pos.from_json(j["pos"]), [Player.from_json(p) for p in j["members"]]
         )
         new_party.discovered_positions = set(
-            [Pos.from_json(p) for p in j.get("discovered", {new_party.pos})]
+            [Pos.from_json(p) for p in j.get("discovered", {new_party.squads[0].pos})]
         )
         new_party.inventory = Inventory.from_json(j["inventory"])
         new_party.funds = j["funds"]

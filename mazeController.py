@@ -9,6 +9,7 @@ import saves
 from pynput.keyboard import Key
 from room import Room
 import utils
+from squad import Squad
 
 # from utils import clear
 import terminalDisplay
@@ -34,23 +35,23 @@ class mazeController:
         self.width: int = width
         self.height: int = height
         self.party: Party = party
-        # self.discovered_rooms = {party.pos}
+        self.active_squad = party.squads[0]
 
-        startPos = startPos or party.pos
+        startPos = startPos or self.active_squad.pos
 
         startRoom: Room | None = maze[startPos.y][startPos.x]
         assert isinstance(startRoom, Room)
         for connection in startRoom.connections:
             self.party.discovered_positions.add(startPos + connection)
         terminalDisplay.mazeDisplay.messageProvider = lambda x, y: pretty_print_list(
-            x, y, self.maze, self.party.discovered_positions, self.party.pos
+            x, y, self.maze, self.party.discovered_positions, self.active_squad.pos
         )
         terminalDisplay.descriptionDisplay.messageProvider = (
             lambda w, h: self.print_description(w, h)
         )
 
     def print_description(self, w, h):
-        current_room = self.maze[self.party.pos.y][self.party.pos.x]
+        current_room = self.maze[self.active_squad.pos.y][self.active_squad.pos.x]
         assert isinstance(current_room, Room)
         return utils.boxify(
             w,
@@ -60,8 +61,8 @@ class mazeController:
             + "Use [Enter] to open actions.",
         )
 
-    def move(self, moveDirection: direction) -> tuple[CombatHandler | None, bool]:
-        newPos: Pos = self.party.pos + moveDirection
+    def move(self, moveDirection: direction, squad: Squad) -> tuple[CombatHandler | None, bool,]:
+        newPos: Pos = squad.pos + moveDirection
         if (
             newPos.x < 0
             or newPos.x >= self.width
@@ -69,20 +70,20 @@ class mazeController:
             or newPos.y >= self.height
         ):
             return None, False
-        currentRoom = self.maze[self.party.pos.y][self.party.pos.x]
+        currentRoom = self.maze[squad.pos.y][squad.pos.x]
         assert isinstance(currentRoom, Room)
         newRoom = self.maze[newPos.y][newPos.x]
         if isinstance(newRoom, Room) and currentRoom.has_connection(moveDirection):
             self.party.discovered_positions.add(newPos)
             for connection in newRoom.connections:
                 self.party.discovered_positions.add(newPos + connection)
-            self.party.pos = newPos
+            squad.pos = newPos
             # newRoom.enter_room(self.party)
             terminalDisplay.contextDisplay.print_boxify("Autosaving...")
             saves.save(self.maze, self.party)
             if newRoom.enemies:
                 return (
-                    CombatHandler(self.party, self.party.members, newRoom.enemies),
+                    CombatHandler(self.party, list(squad.characters), newRoom.enemies),
                     True,
                 )
             return None, True
@@ -97,7 +98,7 @@ class mazeController:
             key: Key | inputController.KeyCode | None = inputController.getKey()
             # print(key)
             if key in key_to_direction:
-                combat_handler, success = self.move(key_to_direction[key])
+                combat_handler, success, squad = self.handle_move(key_to_direction[key], self.active_squad)
                 if not success:
                     continue
                 if combat_handler is not None:
@@ -109,9 +110,13 @@ class mazeController:
                 return r
         return
 
+    def handle_move(self, direction, squad):
+        combat_handler, success = self.move(direction, squad)
+        return (combat_handler, success, squad)
+
     def room_options(self):
         options = [("View Inventory", self.party.inventory_menu)]
-        current_room: Room | None = self.maze[self.party.pos.y][self.party.pos.x]
+        current_room: Room | None = self.maze[self.active_squad.pos.y][self.active_squad.pos.x]
         assert isinstance(current_room, Room)
         options.extend(
             [
