@@ -12,7 +12,10 @@ class MessageSocket:
 
     def recv_msg(self):
         while b"\n" not in self.buffer:
-            chunk = self.sock.recv(1024)
+            try:
+                chunk = self.sock.recv(1024)
+            except ConnectionError:
+                return None
             if not chunk:
                 return None
             self.buffer += chunk
