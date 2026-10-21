@@ -5,8 +5,11 @@ from maze import connections_to_char, pretty_print_list
 from Pos import Pos
 from room import Room
 import terminalDisplay
+import inputController
+from pynput.keyboard import Key
+import time
 
-KEYS = {"u": "UP", "d": "DOWN", "l": "LEFT", "r": "RIGHT"}
+KEYS = {Key.up:"UP", Key.down:"DOWN", Key.left:"LEFT", Key.right:"RIGHT", Key.enter:"select"}
 
 def build_view(snap):
     width, height = snap["width"], snap["height"]
@@ -35,8 +38,10 @@ def render(snap):
     terminalDisplay.mazeDisplay.messageProvider = (
         lambda w, h: pretty_print_list(w, h, grid, discovered, my_pos)
     )
+    
     terminalDisplay.updateDisplays()
 
+inputController.start()
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.connect(("localhost", 5000))
@@ -44,17 +49,19 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     snap = ms.recv_msg()
     render(snap)
     while True:
-        letter = input("move (u/d/l/r, q to quit): ")
-        if letter == "q":
+        letter = inputController.getKey()
+        if letter == 'q':
             break
         if letter in KEYS:
+
+
             ms.send_msg({"type": "move", "dir": KEYS[letter]})
             snap = ms.recv_msg()
             if snap is None:
                 print("server disconnected")
                 break
             render(snap)
+        
         else:
-            print("invalid input")
-            continue
+            time.sleep(0.01)
         
