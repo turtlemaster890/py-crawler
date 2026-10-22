@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Any, Callable, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -8,3 +9,11 @@ if TYPE_CHECKING:
 type CombatAction = Callable[[CombatHandler], None]
 type PartyAction = Callable[[Party], CombatHandler | None]
 type PlayerAction = Callable[[Party, Player], Any]
+
+
+@dataclass
+class CombatActionEntry:
+    name: str
+    action: CombatAction
+    description: str = ""
+    stamina_cost: int = 0

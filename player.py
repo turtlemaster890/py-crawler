@@ -5,11 +5,11 @@ from item import Item, Weapon, Armor, Relic
 import menuHelper
 import terminalDisplay
 import inputController
-from actions import CombatAction, PlayerAction
+from actions import CombatActionEntry, PlayerAction
 from conditions import Condition
 from pynput.keyboard import Key
 from utils import key_to_delta, getRelativePath
-from typing import TYPE_CHECKING, Callable, TypedDict
+from typing import TYPE_CHECKING, TypedDict
 
 import utils
 
@@ -80,12 +80,10 @@ class Player:
         new_player.stamina = j["stamina"]
         return new_player
 
-    def getTurnOptions(
-        self, handler: CombatHandler
-    ) -> list[tuple[str, CombatAction] | tuple[str, CombatAction, str]]:
-        actions: list[tuple[str, CombatAction] | tuple[str, CombatAction, str]] = [
-            ("Attack", self.attack),
-            ("Pass", lambda h: None),
+    def getTurnOptions(self, handler: CombatHandler) -> list[CombatActionEntry]:
+        actions: list[CombatActionEntry] = [
+            CombatActionEntry("Attack", self.attack),
+            CombatActionEntry("Pass", lambda h: None),
             # (
             #     "kill other player",
             #     lambda h: h.select_character(
@@ -93,14 +91,16 @@ class Player:
             #     )[0].takeDamage(h, 1000),
             #     "Hehe silly",
             # ),
-            ("Fireball", self.fireball, "High single-target damage"),
-            ("Scorching Ray", self.scorching_ray, "Multi-target magic beam"),
+            CombatActionEntry("Fireball", self.fireball, "High single-target damage"),
+            CombatActionEntry(
+                "Scorching Ray", self.scorching_ray, "Multi-target magic beam"
+            ),
         ]
         for i in self.inventory.items:
             actions.extend(i.combat_actions)
         if utils.DEBUG:
             actions.append(
-                (
+                CombatActionEntry(
                     "debug.win",
                     lambda h: [[c.takeDamage(h, 1000) for c in h.enemies.copy()], None][
                         1
@@ -108,7 +108,7 @@ class Player:
                     "Win.",
                 )
             )
-        return actions
+        return [action for action in actions if action.stamina_cost <= self.stamina]
 
     def action_menu(self, party: Party):
         actions: list[tuple[str, PlayerAction]] = [
@@ -156,7 +156,7 @@ class Player:
 
     def pretty_print_turn_options(
         self,
-        options: list[tuple[str, Callable] | tuple[str, Callable, str]],
+        options: list[CombatActionEntry],
         selected: int,
         w: int,
         h: int,
@@ -166,10 +166,10 @@ class Player:
         out: list[str] = []
         out.append("┌" + "─" * content_width + "┐")
         for i in range(min(content_height, len(options))):
-            optName, optFunc = options[i][:2]
+            opt = options[i]
             out.append(
                 "│"
-                + (("> " if i == selected else "  ") + optName).ljust(content_width)
+                + (("> " if i == selected else "  ") + opt.name).ljust(content_width)
                 + "│"
             )
         out.append("└" + "─" * content_width + "┘")
@@ -191,8 +191,8 @@ class Player:
 
         def get_desc(w: int, h: int) -> list[str]:
             option = op[selectedOption]
-            if len(option) > 2:
-                return utils.boxify(w, h, option[2])
+            if option.description:
+                return utils.boxify(w, h, option.description)
             return []
 
         terminalDisplay.descriptionDisplay.messageProvider = get_desc
@@ -212,7 +212,7 @@ class Player:
                     terminalDisplay.descriptionDisplay.messageProvider = (
                         lastDescProvider
                     )
-                    op[selectedOption][1](handler)
+                    op[selectedOption].action(handler)
                     return
 
     def moveItemToParty(self, party: Party, item: Item) -> bool:

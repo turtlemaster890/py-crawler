@@ -1,7 +1,7 @@
 import random
 from typing import TYPE_CHECKING, Self
 
-from actions import CombatAction, PartyAction, PlayerAction
+from actions import CombatActionEntry, PartyAction, PlayerAction
 from conditions import Condition, Slimed
 import terminalDisplay
 import utils
@@ -19,7 +19,7 @@ class Item:
 
     player_actions: list[tuple[str, PlayerAction]] = []
     party_actions: list[tuple[str, PartyAction]] = []
-    combat_actions: list[tuple[str, CombatAction]] = []
+    combat_actions: list[CombatActionEntry] = []
 
     def __init__(
         self,
@@ -71,7 +71,7 @@ class SlimeBall(Item):
 
     def __init__(self, name: str = "Slimeball") -> None:
         super().__init__(name)
-        self.combat_actions = [(f"Throw {self.name}", self.throw)]
+        self.combat_actions = [CombatActionEntry(f"Throw {self.name}", self.throw)]
 
     def throw(self, combatHandler: CombatHandler) -> None:
         target: Player | Enemy = combatHandler.select_character(
