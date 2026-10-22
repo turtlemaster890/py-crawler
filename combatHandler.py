@@ -12,6 +12,8 @@ if TYPE_CHECKING:
     from player import Player
     from enemy import Enemy
     from party import Party
+    from item import Item
+
 
 
 class CombatHandler:

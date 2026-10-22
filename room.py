@@ -6,6 +6,7 @@ from colorama import Fore
 from item import ManaBooster, QuickBoots, ThornedAmulet
 from shop import Shop
 from enemy import Enemy, Mimic, StoneTitan
+import enemy
 import terminalDisplay
 import party
 import random
@@ -43,7 +44,7 @@ class Room:
     @classmethod
     def from_json(cls, j) -> Self:
         new_room: Self = cls({direction[d] for d in j["connections"]})
-        new_room.enemies = [Enemy.from_json(e) for e in j["enemies"]]
+        new_room.enemies = [enemy.from_json(e) for e in j["enemies"]]
         new_room.colour = j["colour"]
         new_room.selectedColour = j["selected_colour"]
         return new_room

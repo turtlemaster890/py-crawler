@@ -96,6 +96,8 @@ class Player:
             ("Fireball", self.fireball, "High single-target damage"),
             ("Scorching Ray", self.scorching_ray, "Multi-target magic beam"),
         ]
+        for i in self.inventory.items:
+            actions.extend(i.combat_actions)
         if utils.DEBUG:
             actions.append(
                 (

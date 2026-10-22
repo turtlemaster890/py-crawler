@@ -25,8 +25,10 @@ def menu(menu_name: str, options: list[str], back: bool = True) -> int:
             if key == Key.enter:
                 if selected < len(options):
                     terminalDisplay.contextDisplay.messageProvider = lastProvider
+                    terminalDisplay.updateDisplays()
                     return selected
                 terminalDisplay.contextDisplay.messageProvider = lastProvider
+                terminalDisplay.updateDisplays()
                 return -1
 
 

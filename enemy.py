@@ -4,7 +4,7 @@ import json
 import random
 from conditions import Condition
 from combatHandler import CombatHandler
-from item import RustyCoin
+from item import Bone, Item, RustyCoin
 import terminalDisplay
 from utils import getRelativePath
 import utils
@@ -51,6 +51,7 @@ class Enemy:
         self.health: int = self.max_health
         self.action: str = ""
         self.aggro: list[AggroEntry] = []
+        self.loot_table: list[tuple[int, list[Item]]] = [(1, [])]
 
     def combatStart(self, handler: CombatHandler) -> None:
         self.combatHandler = handler
@@ -85,6 +86,8 @@ class Enemy:
         return new_enemy
 
     def turnStart(self, handler: CombatHandler) -> None:
+        for cond in self.conditions:
+            cond.turnStart()
         self.aggro = [entry for entry in self.aggro if entry.player in handler.players]
         for player in self.aggro:
             player.value //= 2
@@ -126,11 +129,25 @@ class Enemy:
         terminalDisplay.updateDisplays()
         terminalDisplay.contextDisplay.print_boxify(f"{self.name} has been defeated!")
         utils.wait_for_enter()
+        drops: list[Item] = random.choices(
+            [l[1] for l in self.loot_table], [l[0] for l in self.loot_table], k=1
+        )[0]
+        if drops:
+            terminalDisplay.contextDisplay.print_boxify(
+                f"{self.name} drops {", ".join([i.name for i in drops])}"
+            )
+            for i in drops:
+                handler.party.inventory.add(i)
+            utils.wait_for_enter()
+
+    def applyCondition(self, condition: Condition, handler: CombatHandler) -> None:
+        self.conditions.append(condition)
 
 
 class Goblin(Enemy):
     def __init__(self, name: str = "Goblin") -> None:
         super().__init__(name, "goblin")
+        self.loot_table = [(1, [RustyCoin()]), (1, [])]
 
     def rob(self, handler: CombatHandler) -> None:
         stolen: int = min(random.randint(3, 7), handler.party.funds)
@@ -144,6 +161,7 @@ class Goblin(Enemy):
 class Skeleton(Enemy):
     def __init__(self, name: str = "Skeleton") -> None:
         super().__init__(name, "skeleton")
+        self.loot_table = [(1, [Bone()])]
 
 
 class SmallSlime(Enemy):
@@ -156,6 +174,8 @@ class LargeSlime(Enemy):
         super().__init__(name, "large_slime")
 
     def turnStart(self, handler: CombatHandler) -> None:
+        for cond in self.conditions:
+            cond.turnStart()
         if self.health <= self.max_health / 2:
             self.takeAction("split", handler)
         else:
@@ -267,6 +287,8 @@ class StoneTitan(Enemy):
 
     def turnStart(self, handler: CombatHandler) -> None:
         if self.coreCharge >= 5:
+            for cond in self.conditions:
+                cond.turnStart()
             self.takeAction("core_burst", handler)
             self.decideAction()
         else:
@@ -336,6 +358,7 @@ enemy_type_to_class = {
     "jelly": Jelly,
     "baby_jelly": BabyJelly,
     "stone_titan": StoneTitan,
+    "mimic": Mimic,
 }
 
 

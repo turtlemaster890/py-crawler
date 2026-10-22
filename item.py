@@ -1,7 +1,8 @@
 import random
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
-from actions import PartyAction, PlayerAction
+from actions import CombatAction, PartyAction, PlayerAction
+from conditions import Condition, Slimed
 import terminalDisplay
 import utils
 
@@ -10,7 +11,6 @@ if TYPE_CHECKING:
     from party import Party
     from enemy import Enemy
     from combatHandler import CombatHandler
-    from conditions import Condition
 
 
 class Item:
@@ -19,6 +19,7 @@ class Item:
 
     player_actions: list[tuple[str, PlayerAction]] = []
     party_actions: list[tuple[str, PartyAction]] = []
+    combat_actions: list[tuple[str, CombatAction]] = []
 
     def __init__(
         self,
@@ -30,7 +31,7 @@ class Item:
         return {"item_type": self.item_type, "name": self.name}
 
     @classmethod
-    def from_json(cls, j):
+    def from_json(cls, j) -> Self:
         return cls(j["name"])
 
 
@@ -42,7 +43,7 @@ class RustyCoin(Item):
         super().__init__(name)
         self.player_actions = [("flip", self.flip)]
 
-    def flip(self, party: Party, player: Player):
+    def flip(self, party: Party, player: Player) -> None:
         heads: bool = random.randint(0, 1) == 1
         terminalDisplay.contextDisplay.print_boxify(
             f"{player.name} flips the {self.name}. It lands on {"heads" if heads else "tails"}."
@@ -65,26 +66,49 @@ class RustyCoin(Item):
         player.inventory.remove(self)
 
 
+class SlimeBall(Item):
+    item_type = "slimeball"
+
+    def __init__(self, name: str = "Slimeball") -> None:
+        super().__init__(name)
+        self.combat_actions = [(f"Throw {self.name}", self.throw)]
+
+    def throw(self, combatHandler: CombatHandler) -> None:
+        target: Player | Enemy = combatHandler.select_character(
+            lambda c: isinstance(c, Enemy)
+        )[0]
+        assert isinstance(target, Enemy)
+        target.applyCondition(Slimed(3, target, combatHandler), combatHandler)
+
+
 class Weapon(Item):
     item_type = "weapon"
 
     def __init__(
         self,
         name: str,
-    ):
+    ) -> None:
         super().__init__(name)
         self.damage = 5
 
-    def to_json(self):
-        j = super().to_json()
+    def to_json(self) -> dict[str, object]:
+        j: dict[str, object] = super().to_json()
         j["damage"] = self.damage
         return j
 
     @classmethod
-    def from_json(cls, j):
-        new_item = super().from_json(j)
+    def from_json(cls, j) -> Self:
+        new_item: Self = super().from_json(j)
         new_item.damage = j["damage"]
         return new_item
+
+
+class Bone(Weapon):
+    item_type: str = "bone"
+
+    def __init__(self, name: str = "Bone") -> None:
+        super().__init__(name)
+        self.damage = 7
 
 
 class Armor(Item):
@@ -93,7 +117,7 @@ class Armor(Item):
     def __init__(
         self,
         name: str,
-    ):
+    ) -> None:
         super().__init__(name)
 
 
@@ -108,7 +132,7 @@ class Relic(Item):
         self.player: Player | None = None
         super().__init__(name)
 
-    def combatStart(self, handler: CombatHandler | None = None):
+    def combatStart(self, handler: CombatHandler | None = None) -> None:
         self.combat = handler
 
     def turnStart(self) -> None:
@@ -157,27 +181,29 @@ class Consumable(Item):
     def __init__(
         self,
         name: str,
-    ):
+    ) -> None:
         super().__init__(name)
 
 
 class ManaBooster(Relic):
-    item_type = "manaBooster"
+    item_type: str = "manaBooster"
     description = "Magic damage deals +2"
 
-    def __init__(self, name: str = "Mana Booster"):
+    def __init__(self, name: str = "Mana Booster") -> None:
         super().__init__(name)
 
-    def dealDamage(self, amount, attacker=None, defender=None, damage_type=None):
+    def dealDamage(
+        self, amount, attacker=None, defender=None, damage_type=None
+    ) -> int | None:
         if damage_type == "magic":
             return amount + 2
 
 
 class ThornedAmulet(Relic):
-    item_type = "thornedAmulet"
+    item_type: str = "thornedAmulet"
     description = "Returns 25% damage to attacker"
 
-    def __init__(self, name: str = "Thorned Amulet"):
+    def __init__(self, name: str = "Thorned Amulet") -> None:
         super().__init__(name)
 
     def takeDamage(
@@ -188,22 +214,22 @@ class ThornedAmulet(Relic):
         damage_type: str = "",
     ) -> int | None:
         if attacker and self.combat:
-            return_damage = max(1, int(amount * 0.25))
+            return_damage: int = max(1, int(amount * 0.25))
             attacker.takeDamage(self.combat, return_damage, self.player)
 
 
 class QuickBoots(Relic):
-    item_type = "quickBoots"
+    item_type: str = "quickBoots"
     description = "+10 speed"
 
-    def __init__(self, name: str = "Quick Boots"):
+    def __init__(self, name: str = "Quick Boots") -> None:
         super().__init__(name)
 
-    def equip(self, player: Player):
+    def equip(self, player: Player) -> None:
         super().equip(player)
         player.speed += 10
 
-    def unequip(self, player):
+    def unequip(self, player) -> None:
         super().unequip(player)
         player.speed -= 10
 
@@ -217,6 +243,8 @@ item_type_to_class = {
     "manaBooster": ManaBooster,
     "thornedAmulet": ThornedAmulet,
     "quickBoots": QuickBoots,
+    "rustyCoin": RustyCoin,
+    "bone": Bone,
 }
 
 

@@ -108,6 +108,11 @@ class mazeController:
                 r = self.room_options()
                 saves.save(self.maze, self.party)
                 return r
+            if key == Key.esc:
+                c = menuHelper.menu("Pause", ["Resume", "Exit"], False)
+                if c == 1:
+                    utils.clear()
+                    raise SystemExit("Game Closed.")
         return
 
     def room_options(self):

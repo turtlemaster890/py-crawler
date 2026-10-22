@@ -13,34 +13,53 @@ class Condition:
         duration: int,
         affected: Player | Enemy,
         handler: CombatHandler,
-    ):
-        self.name = name
-        self.duration = duration
-        self.affected = affected
-        self.combat = handler
+    ) -> None:
+        self.name: str = name
+        self.duration: int = duration
+        self.affected: Player | Enemy = affected
+        self.combat: CombatHandler = handler
 
-    def changeDuration(self, amount: int):
+    def changeDuration(self, amount: int) -> None:
         self.duration += amount
         if self.duration <= 0:
             self.affected.conditions.remove(self)
 
-    def turnStart(self):
+    def turnStart(self) -> None:
+        self.changeDuration(-1)
+
+    def turnEnd(self) -> None:
         pass
 
-    def turnEnd(self):
+    def takeDamage(
+        self, amount, attacker=None, defender=None, damage_type=None
+    ) -> None:
         pass
 
-    def takeDamage(self, amount, attacker=None, defender=None, damage_type=None):
+    def die(self) -> None:
         pass
 
-    def die(self):
+    def dealDamage(
+        self, amount, attacker=None, defender=None, damage_type=None
+    ) -> None:
         pass
 
-    def dealDamage(self, amount, attacker=None, defender=None, damage_type=None):
+    def enemyDeath(self, enemy) -> None:
         pass
 
-    def enemyDeath(self, enemy):
+    def inflictCondition(self, condition, target) -> None:
         pass
 
-    def inflictCondition(self, condition, target):
-        pass
+
+class Slimed(Condition):
+    def __init__(
+        self,
+        duration: int,
+        affected: Player | Enemy,
+        handler: CombatHandler,
+        name: str = "Slimed",
+    ) -> None:
+        super().__init__(name, duration, affected, handler)
+
+    def turnStart(self) -> None:
+        super().turnStart()
+        self.affected.speed -= 5

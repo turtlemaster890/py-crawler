@@ -2,7 +2,7 @@ from Pos import Pos
 import menuHelper
 from player import Player
 from inventory import Inventory
-from item import Item
+from item import Armor, Item, Weapon
 from inventory import Inventory
 import terminalDisplay
 import inputController
@@ -23,9 +23,15 @@ class Party:
             return False
         if not self.inventory.remove(item):
             return False
-        if not member.inventory.add(item):
-            self.inventory.add(item)
-            return False
+        if not isinstance(item, Weapon) and not isinstance(item, Armor):
+            if not member.inventory.add(item):
+                self.inventory.add(item)
+                return False
+        else:
+            returnedItem = member.inventory.equip(item)
+            if returnedItem:
+                self.inventory.add(returnedItem)
+            return True
         return True
 
     def move_to_member_menu(self, item: Item):
@@ -48,8 +54,11 @@ class Party:
                 if key == Key.enter:
                     if selected < len(options):
                         self.moveItemToMember(options[selected], item)
+                        terminalDisplay.contextDisplay.messageProvider = lastProvider
+                        terminalDisplay.updateDisplays()
+                        return True
                     terminalDisplay.contextDisplay.messageProvider = lastProvider
-                    return
+                    terminalDisplay.updateDisplays()
 
     def show_move_item_options(
         self, w: int, h: int, options: list[str], selected: int = -1
