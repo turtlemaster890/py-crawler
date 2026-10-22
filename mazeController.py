@@ -121,7 +121,9 @@ class mazeController:
         while True:
             option = menuHelper.menu("Actions", [option[0] for option in options])
             if option != -1:
-                return options[option][1](self.party)
+                o = options[option][1](self.party)
+                if o:
+                    return o
             else:
                 return
 
@@ -167,7 +169,7 @@ def show_room_options(
             f"│{("> " if i == selected else "  ")}{option[:nameSpace].ljust(nameSpace)} │"
         )
     out.append(
-        f"│{("> " if selected == len(options) else "  ")}{"Cancel".ljust(w - 5)} │"
+        f"│{("> " if selected == len(options) else "  ")}{"Back".ljust(w - 5)} │"
     )
     out.append("└" + "─" * (w - 2) + "┘")
     return out

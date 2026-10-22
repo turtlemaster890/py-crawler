@@ -115,10 +115,12 @@ class Player:
 
         # for i in self.inventory.items:
         #     actions.extend(i.player_actions)
-
-        option: int = menuHelper.menu("Actions", [ac[0] for ac in actions])
-        if option != -1:
-            actions[option][1](party, self)
+        while True:
+            option: int = menuHelper.menu("Actions", [ac[0] for ac in actions])
+            if option != -1:
+                actions[option][1](party, self)
+            else:
+                return
 
     def attack(self, handler: CombatHandler):
         if not self.inventory.weapon:
@@ -224,17 +226,27 @@ class Player:
     def inventory_menu(self, party: Party, _):
         options = self.inventory.items
         optionStrs = [i.name for i in options]
-        option = menuHelper.menu("Pick an item", optionStrs)
-        if option != -1:
-            it = options[option]
-            action_options: list[tuple[str, PlayerAction]] = [
-                ("Move to party", lambda party, player: self.moveItemToParty(party, it))
-            ]
-            action_options.extend(it.player_actions)
-            optionStrs = [ac[0] for ac in action_options]
-            option = menuHelper.menu("Action to take:", optionStrs)
+        while True:
+            option = menuHelper.menu("Pick an item", optionStrs)
             if option != -1:
-                action_options[option][1](party, self)
+                it = options[option]
+                action_options: list[tuple[str, PlayerAction]] = [
+                    (
+                        "Move to party",
+                        lambda party, player: self.moveItemToParty(party, it),
+                    )
+                ]
+                action_options.extend(it.player_actions)
+                act_options_strs = [ac[0] for ac in action_options]
+                while True:
+                    option = menuHelper.menu("Action to take:", act_options_strs)
+                    if option != -1:
+                        if action_options[option][1](party, self):
+                            return
+                    else:
+                        break
+            else:
+                return
 
     def startCombat(self):
         for relic in self.inventory.items:

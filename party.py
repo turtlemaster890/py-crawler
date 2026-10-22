@@ -66,7 +66,7 @@ class Party:
                 f"│{("> " if i == selected else "  ")}{option[:nameSpace].ljust(nameSpace)} │"
             )
         out.append(
-            f"│{("> " if selected == len(options) else "  ")}{"Cancel".ljust(w - 5)} │"
+            f"│{("> " if selected == len(options) else "  ")}{"Back".ljust(w - 5)} │"
         )
         out.append("└" + "─" * (w - 2) + "┘")
         return out
@@ -90,9 +90,14 @@ class Party:
                     break
                 if key == Key.enter:
                     if selected < len(options):
-                        options[selected][1]()
-                    terminalDisplay.contextDisplay.messageProvider = lastProvider
-                    return
+                        if options[selected][1]():
+                            terminalDisplay.contextDisplay.messageProvider = (
+                                lastProvider
+                            )
+                            return
+                    else:
+                        terminalDisplay.contextDisplay.messageProvider = lastProvider
+                        return
 
     def show_item_options(
         self, w: int, h: int, item: Item, options: list[str], selected: int = -1
@@ -109,7 +114,7 @@ class Party:
                 f"│{("> " if i == selected else "  ")}{option[:nameSpace].ljust(nameSpace)} │"
             )
         out.append(
-            f"│{("> " if selected == len(options) else "  ")}{"Cancel".ljust(w - 5)} │"
+            f"│{("> " if selected == len(options) else "  ")}{"Back".ljust(w - 5)} │"
         )
         out.append("└" + "─" * (w - 2) + "┘")
         return out
@@ -139,11 +144,12 @@ class Party:
     def players_menu(self, party: Party):
         options: list[Player] = self.members
         optionStrs: list[str] = [plr.name for plr in options]
-        option = menuHelper.menu("Player", optionStrs)
-        if option != -1:
-            options[option].action_menu(self)
-        else:
-            return
+        while True:
+            option = menuHelper.menu("Player", optionStrs)
+            if option != -1:
+                options[option].action_menu(self)
+            else:
+                return
 
     def show_inventory(self, w: int, h: int, selected: int = -1) -> list[str]:
         nameSpace = w - 5
@@ -158,7 +164,7 @@ class Party:
                 f"│{("> " if i == selected else "  ")}{option.name[:nameSpace].ljust(nameSpace)} │"
             )
         out.append(
-            f"│{("> " if selected == len(self.inventory.items) else "  ")}{"Cancel".ljust(w - 5)} │"
+            f"│{("> " if selected == len(self.inventory.items) else "  ")}{"Back".ljust(w - 5)} │"
         )
         out.append("└" + "─" * (w - 2) + "┘")
         return out
