@@ -1,9 +1,11 @@
 import json
+from enemy import Enemy
 import inventory
 from item import Item, Weapon, Armor, Relic
 import menuHelper
 import terminalDisplay
 import inputController
+from actions import CombatAction, PlayerAction
 from conditions import Condition
 from pynput.keyboard import Key
 from utils import key_to_delta, getRelativePath
@@ -80,11 +82,8 @@ class Player:
 
     def getTurnOptions(
         self, handler: CombatHandler
-    ) -> list[
-        tuple[str, Callable[[CombatHandler], None]]
-        | tuple[str, Callable[[CombatHandler], None], str]
-    ]:
-        actions = [
+    ) -> list[tuple[str, CombatAction] | tuple[str, CombatAction, str]]:
+        actions: list[tuple[str, CombatAction] | tuple[str, CombatAction, str]] = [
             ("Attack", self.attack),
             ("Pass", lambda h: None),
             # (
@@ -109,15 +108,29 @@ class Player:
             )
         return actions
 
+    def action_menu(self, party: Party):
+        actions: list[tuple[str, PlayerAction]] = [
+            ("View Inventory", self.inventory_menu)
+        ]
+
+        # for i in self.inventory.items:
+        #     actions.extend(i.player_actions)
+
+        option: int = menuHelper.menu("Actions", [ac[0] for ac in actions])
+        if option != -1:
+            actions[option][1](party, self)
+
     def attack(self, handler: CombatHandler):
         if not self.inventory.weapon:
             return
-        to_attack = handler.select_character(lambda c: not isinstance(c, Player))
-        damage = self.inventory.weapon.damage
+        to_attack: Player | Enemy = handler.select_character(
+            lambda c: not isinstance(c, Player)
+        )[0]
+        damage: int = self.inventory.weapon.damage
         for item in self.inventory.items:
             if isinstance(item, Relic):
                 damage = item.dealDamage(damage, self, to_attack) or damage
-        to_attack[0].takeDamage(handler, damage, self)
+        to_attack.takeDamage(handler, damage, self)
 
     def takeDamage(self, handler: CombatHandler, damage: int, attacker=None):
         for relic in self.inventory.items:
@@ -171,11 +184,14 @@ class Player:
             lambda w, h: self.pretty_print_turn_options(op, selectedOption, w, h)
         )
         lastDescProvider = terminalDisplay.descriptionDisplay.messageProvider
-        terminalDisplay.descriptionDisplay.messageProvider = lambda w, h: (
-            utils.boxify(w, h, op[selectedOption][2])
-            if len(op[selectedOption]) > 2
-            else []
-        )
+
+        def get_desc(w: int, h: int) -> list[str]:
+            option = op[selectedOption]
+            if len(option) > 2:
+                return utils.boxify(w, h, option[2])
+            return []
+
+        terminalDisplay.descriptionDisplay.messageProvider = get_desc
         # terminalDisplay.combatDisplay.messageProvider = (
         #     lambda w, h:
         # )
@@ -205,14 +221,20 @@ class Player:
             return False
         return True
 
-    def inventory_menu(self, party: Party):
+    def inventory_menu(self, party: Party, _):
         options = self.inventory.items
         optionStrs = [i.name for i in options]
-        option = menuHelper.menu("Item", optionStrs)
+        option = menuHelper.menu("Pick an item", optionStrs)
         if option != -1:
-            self.moveItemToParty(party, options[option])
-        else:
-            return
+            it = options[option]
+            action_options: list[tuple[str, PlayerAction]] = [
+                ("Move to party", lambda party, player: self.moveItemToParty(party, it))
+            ]
+            action_options.extend(it.player_actions)
+            optionStrs = [ac[0] for ac in action_options]
+            option = menuHelper.menu("Action to take:", optionStrs)
+            if option != -1:
+                action_options[option][1](party, self)
 
     def startCombat(self):
         for relic in self.inventory.items:
@@ -225,18 +247,22 @@ class Player:
     def fireball(self, handler: CombatHandler):
         if not self.inventory.weapon:
             return
-        to_attack = handler.select_character(lambda c: not isinstance(c, Player))
-        damage = self.inventory.weapon.damage * 2
+        to_attack: Player | Enemy = handler.select_character(
+            lambda c: not isinstance(c, Player)
+        )[0]
+        damage: int = self.inventory.weapon.damage * 2
         for item in self.inventory.items:
             if isinstance(item, Relic):
                 damage = item.dealDamage(damage, self, to_attack, "magic") or damage
-        to_attack[0].takeDamage(handler, damage, self)
+        to_attack.takeDamage(handler, damage, self)
 
     def scorching_ray(self, handler: CombatHandler):
-        to_attack = handler.select_character(lambda c: not isinstance(c, Player), 3, 1)
-        damage = 5
-        for item in self.inventory.items:
-            if isinstance(item, Relic):
-                damage = item.dealDamage(damage, self, to_attack, "magic") or damage
+        to_attack: list[Player | Enemy] = handler.select_character(
+            lambda c: not isinstance(c, Player), 3, 1
+        )
         for c in to_attack:
+            damage: int = 5
+            for item in self.inventory.items:
+                if isinstance(item, Relic):
+                    damage = item.dealDamage(damage, self, c, "magic") or damage
             c.takeDamage(handler, damage, self)

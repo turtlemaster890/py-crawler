@@ -114,7 +114,7 @@ class Party:
         out.append("└" + "─" * (w - 2) + "┘")
         return out
 
-    def inventory_menu(self):
+    def inventory_menu(self, party: Party):
         selected = 0
         lastProvider = terminalDisplay.contextDisplay.messageProvider
         terminalDisplay.contextDisplay.messageProvider = (
@@ -136,12 +136,12 @@ class Party:
                     terminalDisplay.contextDisplay.messageProvider = lastProvider
                     return
 
-    def players_menu(self):
+    def players_menu(self, party: Party):
         options: list[Player] = self.members
         optionStrs: list[str] = [plr.name for plr in options]
         option = menuHelper.menu("Player", optionStrs)
         if option != -1:
-            options[option].inventory_menu(self)
+            options[option].action_menu(self)
         else:
             return
 

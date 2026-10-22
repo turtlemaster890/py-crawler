@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from player import Player
-    from enemy import enemy
+    from enemy import Enemy
     from combatHandler import CombatHandler
 
 
@@ -11,7 +11,7 @@ class Condition:
         self,
         name: str,
         duration: int,
-        affected: Player | enemy,
+        affected: Player | Enemy,
         handler: CombatHandler,
     ):
         self.name = name

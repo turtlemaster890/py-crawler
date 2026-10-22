@@ -10,7 +10,7 @@ import utils
 
 if TYPE_CHECKING:
     from player import Player
-    from enemy import enemy
+    from enemy import Enemy
     from party import Party
 
 
@@ -19,7 +19,7 @@ class CombatHandler:
         self,
         party: Party,
         players: list[Player] | None = None,
-        enemies: list[enemy] | None = None,
+        enemies: list[Enemy] | None = None,
     ):
         self.party = party
         self.players = players or []
@@ -36,12 +36,12 @@ class CombatHandler:
         for enemy in self.enemies:
             enemy.combatStart(self)
 
-    def addEnemy(self, enemy: enemy):
+    def addEnemy(self, enemy: Enemy):
         enemy.combatStart(self)
         self.turn_order.append(TurnEntry(10000 / enemy.speed, enemy))
         self.enemies.append(enemy)
 
-    def removeEnemy(self, enemy: enemy):
+    def removeEnemy(self, enemy: Enemy):
         for i, entry in enumerate(self.turn_order):
             if entry.character is enemy:
                 del self.turn_order[i]
@@ -115,8 +115,8 @@ class CombatHandler:
         return out
 
     def select_character(
-        self, f: Callable[[Player | enemy], bool], count: int = 1, minimum: int = -1
-    ) -> list[Player | enemy]:
+        self, f: Callable[[Player | Enemy], bool], count: int = 1, minimum: int = -1
+    ) -> list[Player | Enemy]:
         if minimum == -1:
             minimum = count
         options = [e for e in self.turn_order if f(e.character)]

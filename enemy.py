@@ -1,19 +1,28 @@
+from dataclasses import dataclass
 from typing import Any, Self, TypedDict, TYPE_CHECKING
 import json
 import random
 from conditions import Condition
 from combatHandler import CombatHandler
+from item import RustyCoin
 import terminalDisplay
 from utils import getRelativePath
 import utils
 
 if TYPE_CHECKING:
     from combatHandler import CombatHandler
+    from player import Player
 
 
 class ActionInfo(TypedDict):
     weight: int
     damage: int
+
+
+@dataclass
+class AggroEntry:
+    value: int
+    player: Player
 
 
 class EnemyStats(TypedDict):
@@ -22,7 +31,7 @@ class EnemyStats(TypedDict):
     actions: dict[str, ActionInfo]
 
 
-class enemy:
+class Enemy:
     def __init__(
         self,
         name: str = "Enemy",
@@ -41,11 +50,13 @@ class enemy:
         self.speed: int = self.stats["speed"]
         self.health: int = self.max_health
         self.action: str = ""
-        self.aggro = []
+        self.aggro: list[AggroEntry] = []
 
     def combatStart(self, handler: CombatHandler) -> None:
         self.combatHandler = handler
-        self.aggro = [[0, player] for player in self.combatHandler.players]
+        self.aggro = [
+            AggroEntry(value=0, player=player) for player in self.combatHandler.players
+        ]
         self.decideAction()
 
     def decideAction(self) -> None:
@@ -74,9 +85,9 @@ class enemy:
         return new_enemy
 
     def turnStart(self, handler: CombatHandler) -> None:
-        self.aggro = [entry for entry in self.aggro if entry[1] in handler.players]
+        self.aggro = [entry for entry in self.aggro if entry.player in handler.players]
         for player in self.aggro:
-            player[0] /= 2
+            player.value //= 2
         self.takeAction(self.action, handler)
         self.decideAction()
 
@@ -87,11 +98,11 @@ class enemy:
         utils.wait_for_enter()
 
     def attack(self, handler: CombatHandler) -> None:
-        target = random.choice(
+        target: Player = random.choice(
             [
-                entry[1]
+                entry.player
                 for entry in self.aggro
-                if entry == min(self.aggro, key=lambda x: x[0])
+                if entry == min(self.aggro, key=lambda x: x.value)
             ]
         )
         target.takeDamage(handler, self.stats["actions"]["attack"]["damage"], self)
@@ -101,8 +112,8 @@ class enemy:
 
     def takeDamage(self, handler: CombatHandler, damage: int, attacker=None) -> None:
         for player in self.aggro:
-            if player[1] is attacker:
-                player[0] += damage
+            if player.player is attacker:
+                player.value += damage
         self.health -= damage
         if self.health <= 0:
             self.die(handler)
@@ -117,7 +128,7 @@ class enemy:
         utils.wait_for_enter()
 
 
-class Goblin(enemy):
+class Goblin(Enemy):
     def __init__(self, name: str = "Goblin") -> None:
         super().__init__(name, "goblin")
 
@@ -130,17 +141,17 @@ class Goblin(enemy):
         handler.party.funds -= stolen
 
 
-class Skeleton(enemy):
+class Skeleton(Enemy):
     def __init__(self, name: str = "Skeleton") -> None:
         super().__init__(name, "skeleton")
 
 
-class SmallSlime(enemy):
+class SmallSlime(Enemy):
     def __init__(self, name: str = "Small Slime") -> None:
         super().__init__(name, "small_slime")
 
 
-class LargeSlime(enemy):
+class LargeSlime(Enemy):
     def __init__(self, name: str = "Large Slime") -> None:
         super().__init__(name, "large_slime")
 
@@ -159,7 +170,7 @@ class LargeSlime(enemy):
         terminalDisplay.contextDisplay.print_boxify(f"{self.name} splits into two!")
 
 
-class Necromancer(enemy):
+class Necromancer(Enemy):
     def __init__(self, name: str = "Necromancer") -> None:
         super().__init__(name, "necromancer")
 
@@ -171,7 +182,7 @@ class Necromancer(enemy):
         handler.addEnemy(Skeleton())
 
 
-class NormalGuy(enemy):
+class NormalGuy(Enemy):
     def __init__(self, name: str = "Normal Guy") -> None:
         super().__init__(name, "normal_guy")
 
@@ -191,7 +202,7 @@ class NormalGuy(enemy):
         terminalDisplay.contextDisplay.print_boxify(f"{self.name} shakes your hand.")
 
 
-class Werewolf(enemy):
+class Werewolf(Enemy):
     def __init__(self, name: str = "Werewolf") -> None:
         super().__init__(name, "werewolf")
 
@@ -200,12 +211,12 @@ class Werewolf(enemy):
         handler.addEnemy(Wolf())
 
 
-class Wolf(enemy):
+class Wolf(Enemy):
     def __init__(self, name: str = "Wolf") -> None:
         super().__init__(name, "wolf")
 
 
-class Jelly(enemy):
+class Jelly(Enemy):
     def __init__(self, name: str = "Jelly") -> None:
         super().__init__(name, "jelly")
 
@@ -217,7 +228,7 @@ class Jelly(enemy):
         handler.addEnemy(BabyJelly())
 
 
-class BabyJelly(enemy):
+class BabyJelly(Enemy):
     def __init__(self, name: str = "Baby Jelly") -> None:
         super().__init__(name, "baby_jelly")
         self.growth = 0
@@ -234,18 +245,18 @@ class BabyJelly(enemy):
             terminalDisplay.contextDisplay.print_boxify(f"{self.name} sits there.")
 
 
-class StoneTitan(enemy):
+class StoneTitan(Enemy):
     def __init__(self, name: str = "Stone Titan") -> None:
         super().__init__(name, "stone_titan")
         self.coreCharge = 0
         self.bursts = 0
 
     def attack(self, handler: CombatHandler) -> None:
-        target = random.choice(
+        target: Player = random.choice(
             [
-                entry[1]
+                entry.player
                 for entry in self.aggro
-                if entry == min(self.aggro, key=lambda x: x[0])
+                if entry == min(self.aggro, key=lambda x: x.value)
             ]
         )
         damage: int = self.stats["actions"]["attack"]["damage"] + (5 * self.bursts)
@@ -281,16 +292,16 @@ class StoneTitan(enemy):
         )
 
 
-class Mimic(enemy):
+class Mimic(Enemy):
     def __init__(self, name: str = "Mimic") -> None:
         super().__init__(name, "mimic")
 
     def bite(self, handler: CombatHandler):
-        target = random.choice(
+        target: Player = random.choice(
             [
-                entry[1]
+                entry.player
                 for entry in self.aggro
-                if entry == min(self.aggro, key=lambda x: x[0])
+                if entry == min(self.aggro, key=lambda x: x.value)
             ]
         )
         target.takeDamage(handler, 3, self)
@@ -299,11 +310,19 @@ class Mimic(enemy):
         )
         if random.randint(0, 2) == 2:
             utils.wait_for_enter()
-            spilled_coins = random.randint(30, 65)
-            terminalDisplay.contextDisplay.print_boxify(
-                f"¢{spilled_coins} spills from {self.name}'s mouth!"
-            )
-            handler.party.funds += spilled_coins
+            coins = random.randint(0, 1) == 1
+            if coins:
+                spilled_coins = random.randint(30, 65)
+                terminalDisplay.contextDisplay.print_boxify(
+                    f"¢{spilled_coins} spills from {self.name}'s mouth!"
+                )
+                handler.party.funds += spilled_coins
+            else:
+                it = RustyCoin()
+                target.inventory.add(it)
+                terminalDisplay.contextDisplay.print_boxify(
+                    f"{self.name} drops a {it.name}. {target.name} picks it up."
+                )
 
 
 enemy_type_to_class = {
@@ -321,5 +340,5 @@ enemy_type_to_class = {
 
 
 def from_json(j: dict[str, object]):
-    _class = enemy_type_to_class.get(j["enemy_type"], enemy)  # type: ignore
+    _class = enemy_type_to_class.get(j["enemy_type"], Enemy)  # type: ignore
     return _class.from_json(j)

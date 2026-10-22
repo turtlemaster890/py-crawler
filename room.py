@@ -1,10 +1,11 @@
-from typing import Callable, Self
+from typing import Self
 
+from actions import PartyAction
 from direction import direction
 from colorama import Fore
-import enemy
+from item import ManaBooster, QuickBoots, ThornedAmulet
 from shop import Shop
-from item import *
+from enemy import Enemy, Mimic, StoneTitan
 import terminalDisplay
 import party
 import random
@@ -18,17 +19,17 @@ class Room:
     def __init__(
         self,
         connections: set[direction] | None = None,
-        enemies: list[enemy.enemy] | None = None,
+        enemies: list[Enemy] | None = None,
     ) -> None:
         if connections is None:
             connections = set()
         if enemies is None:
             enemies = []
         self.connections: set[direction] = connections
-        self.enemies: list[enemy.enemy] = enemies
+        self.enemies: list[Enemy] = enemies
         self.colour: str = Fore.LIGHTBLACK_EX
         self.selectedColour: str = Fore.WHITE
-        self.room_actions = []
+        self.room_actions: list[tuple[str, PartyAction]] = []
 
     def to_json(self):
         return {
@@ -42,7 +43,7 @@ class Room:
     @classmethod
     def from_json(cls, j) -> Self:
         new_room: Self = cls({direction[d] for d in j["connections"]})
-        new_room.enemies = [enemy.from_json(e) for e in j["enemies"]]
+        new_room.enemies = [Enemy.from_json(e) for e in j["enemies"]]
         new_room.colour = j["colour"]
         new_room.selectedColour = j["selected_colour"]
         return new_room
@@ -74,7 +75,7 @@ class StartRoom(Room):
 
 class EndRoom(Room):
     def __init__(self, connections: set[direction] | None = None, enemies=None) -> None:
-        super().__init__(connections, enemies=[enemy.StoneTitan()])
+        super().__init__(connections, enemies=[StoneTitan()])
         self.colour: str = Fore.RED
         self.selectedColour: str = Fore.LIGHTRED_EX
 
@@ -100,9 +101,7 @@ class ShopRoom(Room):
         )
         self.colour: str = Fore.YELLOW
         self.selectedColour: str = Fore.LIGHTYELLOW_EX
-        self.room_actions: list[tuple[str, Callable[..., None]]] = [
-            ("Open Shop", self.shop.displayShop)
-        ]
+        self.room_actions = [("Open Shop", self.shop.displayShop)]
 
     def to_json(self):
         j = super().to_json()
@@ -144,7 +143,7 @@ class ChestRoom(Room):
                 f"The chest bites {triggering_player.name}!"
             )
             utils.wait_for_enter()
-            return CombatHandler(party, party.members, [enemy.Mimic()])
+            return CombatHandler(party, party.members, [Mimic()])
 
     def to_json(self):
         j = super().to_json()

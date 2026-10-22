@@ -3,7 +3,7 @@ import random
 import enemy
 
 
-def encounterFactory() -> list[enemy.enemy]:
+def encounterFactory() -> list[enemy.Enemy]:
     return random.choice(
         [
             [],

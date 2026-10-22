@@ -1,3 +1,4 @@
+from actions import PartyAction
 import menuHelper
 from direction import direction
 from maze import maze, pretty_print_list
@@ -110,22 +111,17 @@ class mazeController:
         return
 
     def room_options(self):
-        options = [
+        options: list[tuple[str, PartyAction]] = [
             ("View Inventory", self.party.inventory_menu),
-            ("View Player Inventory", self.party.players_menu),
+            ("Player Actions", self.party.players_menu),
         ]
         current_room: Room | None = self.maze[self.party.pos.y][self.party.pos.x]
         assert isinstance(current_room, Room)
-        options.extend(
-            [
-                (action[0], lambda: action[1](self.party))
-                for action in current_room.room_actions
-            ]
-        )
+        options.extend(current_room.room_actions)
         while True:
             option = menuHelper.menu("Actions", [option[0] for option in options])
             if option != -1:
-                return options[option][1]()
+                return options[option][1](self.party)
             else:
                 return
 

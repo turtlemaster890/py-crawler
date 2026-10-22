@@ -1,12 +1,30 @@
+import random
+from typing import TYPE_CHECKING
+
+from actions import PartyAction, PlayerAction
+import terminalDisplay
+import utils
+
+if TYPE_CHECKING:
+    from player import Player
+    from party import Party
+    from enemy import Enemy
+    from combatHandler import CombatHandler
+    from conditions import Condition
+
+
 class Item:
-    item_type = "item"
-    description = ""
+    item_type: str = "item"
+    description: str = ""
+
+    player_actions: list[tuple[str, PlayerAction]] = []
+    party_actions: list[tuple[str, PartyAction]] = []
 
     def __init__(
         self,
         name: str,
-    ):
-        self.name = name
+    ) -> None:
+        self.name: str = name
 
     def to_json(self) -> dict[str, object]:
         return {"item_type": self.item_type, "name": self.name}
@@ -14,6 +32,37 @@ class Item:
     @classmethod
     def from_json(cls, j):
         return cls(j["name"])
+
+
+class RustyCoin(Item):
+    item_type = "rustyCoin"
+    description = "A coin. It is shiny on one side, and tarnished on the other."
+
+    def __init__(self, name: str = "Rusty Coin") -> None:
+        super().__init__(name)
+        self.player_actions = [("flip", self.flip)]
+
+    def flip(self, party: Party, player: Player):
+        heads: bool = random.randint(0, 1) == 1
+        terminalDisplay.contextDisplay.print_boxify(
+            f"{player.name} flips the {self.name}. It lands on {"heads" if heads else "tails"}."
+        )
+        utils.wait_for_enter()
+        if heads:
+            terminalDisplay.contextDisplay.print_boxify(
+                f"The shiny face glows slightly, as the coin begins to flake away into shimmers of light. "
+                f"{player.name} suddenly feels very fast."
+            )
+            player.speed += 20
+            utils.wait_for_enter()
+        else:
+            terminalDisplay.contextDisplay.print_boxify(
+                f"The tarnished side seems to melt in {player.name}'s hand, as the coin fades away into nothingness."
+                f"{player.name} feels a slight twinge in their hand."
+            )
+            player.health -= 1
+            utils.wait_for_enter()
+        player.inventory.remove(self)
 
 
 class Weapon(Item):
@@ -54,39 +103,51 @@ class Relic(Item):
     def __init__(
         self,
         name: str,
-    ):
-        self.combat = None
-        self.player = None
+    ) -> None:
+        self.combat: CombatHandler | None = None
+        self.player: Player | None = None
         super().__init__(name)
 
-    def combatStart(self, handler=None):
+    def combatStart(self, handler: CombatHandler | None = None):
         self.combat = handler
 
-    def turnStart(self):
+    def turnStart(self) -> None:
         pass
 
-    def turnEnd(self):
+    def turnEnd(self) -> None:
         pass
 
-    def takeDamage(self, amount, attacker=None, defender=None, damage_type=None):
+    def takeDamage(
+        self,
+        amount: int,
+        attacker: Player | Enemy | None = None,
+        defender: Player | Enemy | None = None,
+        damage_type: str = "",
+    ) -> int | None:
         pass
 
-    def die(self):
+    def die(self) -> None:
         pass
 
-    def dealDamage(self, amount, attacker=None, defender=None, damage_type=None):
+    def dealDamage(
+        self,
+        amount: int,
+        attacker: Player | Enemy | None = None,
+        defender: Player | Enemy | None = None,
+        damage_type: str = "",
+    ) -> int | None:
         pass
 
-    def enemyDeath(self, enemy):
+    def enemyDeath(self, enemy: Player | Enemy) -> None:
         pass
 
-    def inflictCondition(self, condition, target):
+    def inflictCondition(self, condition: Condition, target: Player | Enemy) -> None:
         pass
 
-    def equip(self, player):
+    def equip(self, player: Player) -> None:
         self.player = player
 
-    def unequip(self, player):
+    def unequip(self, player: Player) -> None:
         self.player = None
 
 
@@ -119,8 +180,14 @@ class ThornedAmulet(Relic):
     def __init__(self, name: str = "Thorned Amulet"):
         super().__init__(name)
 
-    def takeDamage(self, amount, attacker=None, defender=None, damage_type=None):
-        if attacker:
+    def takeDamage(
+        self,
+        amount: int,
+        attacker: Player | Enemy | None = None,
+        defender: Player | Enemy | None = None,
+        damage_type: str = "",
+    ) -> int | None:
+        if attacker and self.combat:
             return_damage = max(1, int(amount * 0.25))
             attacker.takeDamage(self.combat, return_damage, self.player)
 
@@ -132,7 +199,7 @@ class QuickBoots(Relic):
     def __init__(self, name: str = "Quick Boots"):
         super().__init__(name)
 
-    def equip(self, player):
+    def equip(self, player: Player):
         super().equip(player)
         player.speed += 10
 
