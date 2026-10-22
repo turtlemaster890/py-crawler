@@ -1,4 +1,5 @@
 from Pos import Pos
+import menuHelper
 from player import Player
 from inventory import Inventory
 from item import Item
@@ -134,6 +135,15 @@ class Party:
                         break
                     terminalDisplay.contextDisplay.messageProvider = lastProvider
                     return
+
+    def players_menu(self):
+        options: list[Player] = self.members
+        optionStrs: list[str] = [plr.name for plr in options]
+        option = menuHelper.menu("Player", optionStrs)
+        if option != -1:
+            options[option].inventory_menu(self)
+        else:
+            return
 
     def show_inventory(self, w: int, h: int, selected: int = -1) -> list[str]:
         nameSpace = w - 5

@@ -1,6 +1,7 @@
 import json
 import inventory
 from item import Item, Weapon, Armor, Relic
+import menuHelper
 import terminalDisplay
 import inputController
 from conditions import Condition
@@ -203,6 +204,15 @@ class Player:
             self.inventory.add(item)
             return False
         return True
+
+    def inventory_menu(self, party: Party):
+        options = self.inventory.items
+        optionStrs = [i.name for i in options]
+        option = menuHelper.menu("Item", optionStrs)
+        if option != -1:
+            self.moveItemToParty(party, options[option])
+        else:
+            return
 
     def startCombat(self):
         for relic in self.inventory.items:

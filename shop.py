@@ -95,6 +95,9 @@ class Shop:
                     if selectedItem >= len(self.items):
                         # utils.removePrintFunction("shop")
                         terminalDisplay.contextDisplay.messageProvider = lastProvider
+                        terminalDisplay.descriptionDisplay.messageProvider = (
+                            lastDescProvider
+                        )
                         return
                     price = self.items[selectedItem][1]
                     if party.funds >= price:

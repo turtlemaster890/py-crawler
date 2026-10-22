@@ -122,12 +122,12 @@ class Goblin(enemy):
         super().__init__(name, "goblin")
 
     def rob(self, handler: CombatHandler) -> None:
-        stolen: int = random.randint(3, 7)
+        stolen: int = min(random.randint(3, 7), handler.party.funds)
         terminalDisplay.updateDisplays()
         terminalDisplay.contextDisplay.print_boxify(
             f"{self.name} steals {stolen} from you!"
         )
-        handler.party.funds -= min(stolen, handler.party.funds)
+        handler.party.funds -= stolen
 
 
 class Skeleton(enemy):

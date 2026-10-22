@@ -110,7 +110,10 @@ class mazeController:
         return
 
     def room_options(self):
-        options = [("View Inventory", self.party.inventory_menu)]
+        options = [
+            ("View Inventory", self.party.inventory_menu),
+            ("View Player Inventory", self.party.players_menu),
+        ]
         current_room: Room | None = self.maze[self.party.pos.y][self.party.pos.x]
         assert isinstance(current_room, Room)
         options.extend(
@@ -121,7 +124,7 @@ class mazeController:
         )
         while True:
             option = menuHelper.menu("Actions", [option[0] for option in options])
-            if option is not None:
+            if option != -1:
                 return options[option][1]()
             else:
                 return

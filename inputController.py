@@ -31,6 +31,8 @@ def update():
             if ch in (b"\x00", b"\xe0"):
                 ch2 = msvcrt.getch()
                 key = arrow_map.get(ch2)
+            elif ch == b"\x08":
+                key = Key.backspace
             elif ch == b"\r":
                 key = Key.enter
             elif ch == b"\x1b":
@@ -41,13 +43,14 @@ def update():
                 raise KeyboardInterrupt
             else:
                 try:
-                    char_str = ch.decode("utf-8").lower()
+                    char_str = ch.decode("utf-8")  # .lower()
                     key = KeyCode.from_char(char_str)
                 except UnicodeDecodeError:
                     continue
 
             if key:
                 lastKey = key
+
         time.sleep(0.01)
 
 

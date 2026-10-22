@@ -1,11 +1,13 @@
-from pynput.keyboard import Key
+from typing import Callable
+
+from pynput.keyboard import Key, KeyCode
 
 import inputController
 import terminalDisplay
 import utils
 
 
-def menu(menu_name: str, options: list[str], back: bool = True) -> int | None:
+def menu(menu_name: str, options: list[str], back: bool = True) -> int:
     selected = 0
     lastProvider = terminalDisplay.contextDisplay.messageProvider
     terminalDisplay.contextDisplay.messageProvider = lambda w, h: show_menu(
@@ -13,10 +15,10 @@ def menu(menu_name: str, options: list[str], back: bool = True) -> int | None:
     )
 
     while True:
-        selected %= len(options) + 1 if back else 0
+        selected %= len(options) + (1 if back else 0)
         terminalDisplay.updateDisplays()
         while True:
-            key: Key | inputController.KeyCode | None = inputController.getKey()
+            key: Key | KeyCode | None = inputController.getKey()
             if key and key in utils.key_to_delta:
                 selected += utils.key_to_delta[key]
                 break
@@ -25,7 +27,35 @@ def menu(menu_name: str, options: list[str], back: bool = True) -> int | None:
                     terminalDisplay.contextDisplay.messageProvider = lastProvider
                     return selected
                 terminalDisplay.contextDisplay.messageProvider = lastProvider
-                return
+                return -1
+
+
+def inputMenu(menu_name: str, max_len: int = -1) -> str:
+    o = ""
+    lastProvider: Callable[[int, int], list[str]] | None = (
+        terminalDisplay.contextDisplay.messageProvider
+    )
+    terminalDisplay.contextDisplay.messageProvider = lambda w, h: show_input_menu(
+        w, h, menu_name, o
+    )
+    while True:
+        terminalDisplay.updateDisplays()
+        while True:
+            key: Key | KeyCode | None = inputController.getKey()
+            if key:
+                if key == Key.backspace:
+                    if len(o) > 0:
+                        o = o[:-1]
+                elif key == Key.space:
+                    o += " "
+                elif key == Key.enter:
+                    if len(o) > 0:
+                        terminalDisplay.contextDisplay.messageProvider = lastProvider
+                        return o
+                elif isinstance(key, KeyCode) and key.char:
+                    if len(o) < max_len and max_len != -1:
+                        o += key.char
+                break
 
 
 def show_menu(
@@ -51,5 +81,15 @@ def show_menu(
         out.append(
             f"│{("> " if selected == len(options) else "  ")}{"Back".ljust(w - 5)} │"
         )
+    out.append("└" + "─" * (w - 2) + "┘")
+    return out
+
+
+def show_input_menu(w: int, h: int, title: str, curr_output: str) -> list[str]:
+    out = []
+    out.append("┌" + "─" * (w - 2) + "┐")
+    out.append("│" + title.center(w - 2) + "│")
+    out.append("├" + "─" * (w - 2) + "┤")
+    out.append("│" + curr_output[: w - 2].ljust(w - 2) + "│")
     out.append("└" + "─" * (w - 2) + "┘")
     return out

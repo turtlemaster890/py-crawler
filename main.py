@@ -7,6 +7,7 @@ import inputController
 from combatHandler import CombatHandler
 from mazeController import mazeController
 import saves
+import startMenu
 import utils
 import colorama
 
@@ -40,12 +41,9 @@ def main():
                 mz, party = saves.load(save)
         except FileNotFoundError, json.JSONDecodeError, KeyError:
             # We do not already have a save file
-            player1 = Player(name="Player1", class_type="warrior")
-            player2 = Player(name="Player2", class_type="mage")
-            player3 = Player(name="Player3", class_type="rogue")
-            player4 = Player(name="Player4", class_type="warrior")
+            plrs = startMenu.pick_players(4)
 
-            party = Party(Pos(14, 6), [player1, player2, player3, player4])
+            party = Party(Pos(14, 6), plrs)
             party.funds = 900
             mz = gen_main_path(party.pos, 50, 28, 13)
 
