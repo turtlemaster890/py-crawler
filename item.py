@@ -123,6 +123,8 @@ class Staff(Weapon):
         ]
 
     def fireball(self, player: Player, handler: CombatHandler):
+        from player import Player
+
         to_attack: Player | Enemy = handler.select_character(
             lambda c: not isinstance(c, Player)
         )[0]
