@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from player import Player
 
 type CombatAction = Callable[[CombatHandler], None]
-type PartyAction = Callable[[Party], CombatHandler | None]
+type PartyAction = Callable[[Party], CombatHandler | Any]
 type PlayerAction = Callable[[Party, Player], Any]
 
 
