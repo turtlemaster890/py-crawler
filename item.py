@@ -74,7 +74,7 @@ class SlimeBall(Item):
         super().__init__(name)
         self.combat_actions = [CombatActionEntry(f"Throw {self.name}", self.throw)]
 
-    def throw(self, combatHandler: CombatHandler) -> None:
+    def throw(self, player: Player, combatHandler: CombatHandler) -> None:
         target: Player | Enemy = combatHandler.select_character(
             lambda c: isinstance(c, Enemy)
         )[0]
@@ -110,6 +110,27 @@ class Bone(Weapon):
     def __init__(self, name: str = "Bone") -> None:
         super().__init__(name)
         self.damage = 7
+
+
+class Staff(Weapon):
+    item_type: str = "staff"
+
+    def __init__(self, name: str = "Staff") -> None:
+        super().__init__(name)
+        self.damage = 3
+        self.combat_actions = [
+            CombatActionEntry("Fireball", self.fireball, "High single-target damage", 5)
+        ]
+
+    def fireball(self, player: Player, handler: CombatHandler):
+        to_attack: Player | Enemy = handler.select_character(
+            lambda c: not isinstance(c, Player)
+        )[0]
+        damage: int = self.damage * 2
+        for item in player.inventory.items:
+            if isinstance(item, Relic):
+                damage = item.dealDamage(damage, player, to_attack, "magic") or damage
+        to_attack.takeDamage(handler, damage, player)
 
 
 class Armor(Item):
@@ -246,6 +267,7 @@ item_type_to_class = {
     "quickBoots": QuickBoots,
     "rustyCoin": RustyCoin,
     "bone": Bone,
+    "staff": Staff,
 }
 
 

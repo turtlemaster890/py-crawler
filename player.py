@@ -83,7 +83,7 @@ class Player:
     def getTurnOptions(self, handler: CombatHandler) -> list[CombatActionEntry]:
         actions: list[CombatActionEntry] = [
             CombatActionEntry("Attack", self.attack),
-            CombatActionEntry("Pass", lambda h: None),
+            CombatActionEntry("Pass", lambda p, h: None),
             # (
             #     "kill other player",
             #     lambda h: h.select_character(
@@ -92,21 +92,23 @@ class Player:
             #     "Hehe silly",
             # ),
             CombatActionEntry(
-                "Fireball", self.fireball, "High single-target damage", 5
-            ),
-            CombatActionEntry(
                 "Scorching Ray", self.scorching_ray, "Multi-target magic beam", 10
             ),
         ]
         for i in self.inventory.items:
             actions.extend(i.combat_actions)
+        if self.inventory.weapon:
+            actions.extend(self.inventory.weapon.combat_actions)
+        if self.inventory.armor:
+            actions.extend(self.inventory.armor.combat_actions)
         if utils.DEBUG:
             actions.append(
                 CombatActionEntry(
                     "debug.win",
-                    lambda h: [[c.takeDamage(h, 1000) for c in h.enemies.copy()], None][
-                        1
-                    ],
+                    lambda p, h: [
+                        [c.takeDamage(h, 1000, p) for c in h.enemies.copy()],
+                        None,
+                    ][1],
                     "Win.",
                 )
             )
@@ -126,7 +128,7 @@ class Player:
             else:
                 return
 
-    def attack(self, handler: CombatHandler):
+    def attack(self, player: Player, handler: CombatHandler):
         if not self.inventory.weapon:
             return
         to_attack: Player | Enemy = handler.select_character(
@@ -218,7 +220,7 @@ class Player:
                         lastDescProvider
                     )
                     self.stamina -= op[selectedOption].stamina_cost
-                    op[selectedOption].action(handler)
+                    op[selectedOption].action(self, handler)
                     return
 
     def moveItemToParty(self, party: Party, item: Item) -> bool:
@@ -264,19 +266,7 @@ class Player:
     def leaveCombat(self):
         self.conditions = []
 
-    def fireball(self, handler: CombatHandler):
-        if not self.inventory.weapon:
-            return
-        to_attack: Player | Enemy = handler.select_character(
-            lambda c: not isinstance(c, Player)
-        )[0]
-        damage: int = self.inventory.weapon.damage * 2
-        for item in self.inventory.items:
-            if isinstance(item, Relic):
-                damage = item.dealDamage(damage, self, to_attack, "magic") or damage
-        to_attack.takeDamage(handler, damage, self)
-
-    def scorching_ray(self, handler: CombatHandler):
+    def scorching_ray(self, player: Player, handler: CombatHandler):
         to_attack: list[Player | Enemy] = handler.select_character(
             lambda c: not isinstance(c, Player), 3, 1
         )

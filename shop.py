@@ -1,3 +1,4 @@
+import random
 from typing import TYPE_CHECKING
 from item import Item
 import item
@@ -12,9 +13,23 @@ from pynput.keyboard import Key
 from colorama import Fore, Style
 
 
+def make_shop():
+    items: list[tuple[tuple[item.Item, int], int]] = [
+        ((item.ManaBooster(), 250), 2),
+        ((item.QuickBoots(), 200), 3),
+        ((item.ThornedAmulet(), 375), 1),
+        ((item.Staff(), 500), 1)
+    ]
+
+    return random.choices([e[0] for e in items], [e[1] for e in items], k=3)
+
+
 class Shop:
-    def __init__(self, items: list[tuple[Item, int]]):
-        self.items: list[tuple[Item, int]] = items
+    def __init__(self, items: list[tuple[Item, int]] = []):
+        if items:
+            self.items: list[tuple[Item, int]] = items
+        else:
+            self.items = make_shop()
 
     def to_json(self):
         return [(i.to_json(), c) for i, c in self.items]

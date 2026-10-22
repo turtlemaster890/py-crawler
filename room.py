@@ -4,7 +4,7 @@ from actions import PartyAction
 from direction import direction
 from colorama import Fore
 from item import ManaBooster, QuickBoots, ThornedAmulet
-from shop import Shop
+from shop import Shop, make_shop
 from enemy import Enemy, Mimic, StoneTitan
 import enemy
 import terminalDisplay
@@ -93,13 +93,7 @@ class ShopRoom(Room):
         super().__init__(connections)
         self.has_action = True
         self.enemies = []
-        self.shop = Shop(
-            [
-                (ManaBooster(), 150),
-                (QuickBoots(), 100),
-                (ThornedAmulet(), 400),
-            ]
-        )
+        self.shop = Shop()
         self.colour: str = Fore.YELLOW
         self.selectedColour: str = Fore.LIGHTYELLOW_EX
         self.room_actions = [("Open Shop", self.shop.displayShop)]

@@ -113,7 +113,9 @@ class Enemy:
             f"{self.name} attacks {target.name} for {self.stats["actions"]["attack"]["damage"]} damage."
         )
 
-    def takeDamage(self, handler: CombatHandler, damage: int, attacker=None) -> None:
+    def takeDamage(
+        self, handler: CombatHandler, damage: int, attacker: Player | None = None
+    ) -> None:
         for player in self.aggro:
             if player.player is attacker:
                 player.value += damage
