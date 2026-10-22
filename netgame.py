@@ -23,7 +23,27 @@ def apply_message(controller, squad, msg):
 
     return failure
 
-def make_snapshot(controller):
+def handle_join(party, msg, start_pos):
+    if not isinstance(msg, dict):
+        return None, "join message must be an object"
+
+    indexes = msg.get("characters")
+    if not isinstance(indexes, list):
+        return None, "characters must be a list"
+
+    for i in indexes:
+        if type(i) is not int:
+            return None, "character numbers must be whole numbers"
+        if i < 0 or i >= len(party.members):
+            return None, f"there is no character number {i}"
+    players = [party.members[i] for i in indexes]
+    try:
+        squad = party.create_squad(start_pos, players)
+    except ValueError as e:
+        return None, str(e)
+    return squad, None
+
+def make_snapshot(controller, you=None):
     party = controller.party
 
     squads = []
@@ -45,6 +65,8 @@ def make_snapshot(controller):
         })
 
     return {
+        "type": "snapshot",
+        "you": you,
         "width": controller.width,
         "height": controller.height,
         "squads": squads,

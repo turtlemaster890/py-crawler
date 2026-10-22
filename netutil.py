@@ -14,7 +14,7 @@ class MessageSocket:
         while b"\n" not in self.buffer:
             try:
                 chunk = self.sock.recv(1024)
-            except ConnectionError:
+            except OSError:
                 return None
             if not chunk:
                 return None
