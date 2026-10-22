@@ -127,8 +127,10 @@ class mazeController:
             option = menuHelper.menu("Actions", [option[0] for option in options])
             if option != -1:
                 o = options[option][1](self.party)
-                if o:
+                if isinstance(o, CombatHandler):
                     return o
+                if o:
+                    return
             else:
                 return
 

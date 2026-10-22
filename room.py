@@ -139,6 +139,7 @@ class ChestRoom(Room):
             terminalDisplay.contextDisplay.print_boxify("Contained inside is ¢300!")
             utils.wait_for_enter()
             party.funds += 300
+            return True
         else:
             terminalDisplay.contextDisplay.print_boxify(
                 f"The chest bites {triggering_player.name}!"

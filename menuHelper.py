@@ -69,13 +69,21 @@ def show_menu(
     back: bool = True,
 ) -> list[str]:
     nameSpace: int = w - 5
+    maxOptions: int = h - 4 - back
     # longestName = max([len(item[0].name) for item in self.items])
     # additionalChars = max(0, longestName - 8)
     out = []
     out.append("┌" + "─" * (w - 2) + "┐")
     out.append("│" + title.center(w - 2) + "│")
     out.append("├" + "─" * (w - 2) + "┤")
+    start_point = 0
+    if selected != -1 and selected >= maxOptions:
+        start_point = selected - maxOptions + (selected < len(options))
     for i, option in enumerate(options):
+        if i < start_point:
+            continue
+        if i >= start_point + maxOptions:
+            continue
         out.append(
             f"│{("> " if i == selected else "  ")}{option[:nameSpace].ljust(nameSpace)} │"
         )

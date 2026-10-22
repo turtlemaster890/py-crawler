@@ -43,7 +43,7 @@ class RustyCoin(Item):
         super().__init__(name)
         self.player_actions = [("flip", self.flip)]
 
-    def flip(self, party: Party, player: Player) -> None:
+    def flip(self, party: Party, player: Player) -> bool:
         heads: bool = random.randint(0, 1) == 1
         terminalDisplay.contextDisplay.print_boxify(
             f"{player.name} flips the {self.name}. It lands on {"heads" if heads else "tails"}."
@@ -64,6 +64,7 @@ class RustyCoin(Item):
             player.health -= 1
             utils.wait_for_enter()
         player.inventory.remove(self)
+        return True
 
 
 class SlimeBall(Item):

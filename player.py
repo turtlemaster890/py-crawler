@@ -91,9 +91,11 @@ class Player:
             #     )[0].takeDamage(h, 1000),
             #     "Hehe silly",
             # ),
-            CombatActionEntry("Fireball", self.fireball, "High single-target damage"),
             CombatActionEntry(
-                "Scorching Ray", self.scorching_ray, "Multi-target magic beam"
+                "Fireball", self.fireball, "High single-target damage", 5
+            ),
+            CombatActionEntry(
+                "Scorching Ray", self.scorching_ray, "Multi-target magic beam", 10
             ),
         ]
         for i in self.inventory.items:
@@ -191,8 +193,11 @@ class Player:
 
         def get_desc(w: int, h: int) -> list[str]:
             option = op[selectedOption]
-            if option.description:
-                return utils.boxify(w, h, option.description)
+            st_cst = ""
+            if option.stamina_cost:
+                st_cst = f"Stamina Cost: {option.stamina_cost} "
+            if option.description or st_cst:
+                return utils.boxify(w, h, f"{st_cst}{option.description}")
             return []
 
         terminalDisplay.descriptionDisplay.messageProvider = get_desc
@@ -212,6 +217,7 @@ class Player:
                     terminalDisplay.descriptionDisplay.messageProvider = (
                         lastDescProvider
                     )
+                    self.stamina -= op[selectedOption].stamina_cost
                     op[selectedOption].action(handler)
                     return
 

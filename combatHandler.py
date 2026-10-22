@@ -15,7 +15,6 @@ if TYPE_CHECKING:
     from item import Item
 
 
-
 class CombatHandler:
     def __init__(
         self,
@@ -169,6 +168,7 @@ class CombatHandler:
         out = []
         # "│ " (2) + " │ " (3) + " ### AV │" (8) = 13 characters
         nameSpace = w - 14
+        maxOptions: int = h - 5
 
         out.append("┌" + "─" * (w - 2) + "┐")
         out.append(
@@ -180,18 +180,30 @@ class CombatHandler:
         )
         out.append("├" + "─" * (w - 2) + "┤")
         realOptions = -1
+        start_point = 0
+        realHovered = len(self.turn_order)
+        if hovered < len(options):
+            realHovered = self.turn_order.index(options[hovered])
+        if realHovered >= maxOptions:
+            start_point = (
+                realHovered - maxOptions + (realHovered < len(self.turn_order))
+            )
         for i, entry in enumerate(self.turn_order):
+            if i < start_point:
+                continue
+            if i >= start_point + maxOptions:
+                continue
             if entry in options:
                 realOptions += 1
             sel_str = (
                 ">["
-                if (realOptions == hovered and entry in options and entry in selected)
+                if (i == realHovered and entry in options and entry in selected)
                 else (
                     " ["
                     if (entry in options and entry in selected)
                     else (
                         "> "
-                        if realOptions == hovered and entry in options
+                        if i == realHovered and entry in options
                         else ("  " if entry in options else " ")
                     )
                 )
