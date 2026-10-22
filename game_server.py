@@ -37,7 +37,13 @@ clients = {}
 
 def broadcast():
     with lock:
-        pass
+        for ms, squad in clients.items():
+            if squad is None:
+                continue
+            squad_index = party.squads.index(squad)
+            snapshot = make_snapshot(controller, squad_index)
+            ms.send_msg(snapshot)
+            
 
 def serve_client(conn):
     print("a client has connected")
@@ -51,7 +57,19 @@ def serve_client(conn):
                 break
 
             with lock:
-                print(msg)
+                msg_type = msg.get("type")
+                if msg_type == "join":
+                    squad, error = handle_join(party, msg, START)
+                    if error is None:
+                        clients[ms] = squad
+                    else:
+                        ms.send_msg({"type":"error", "message":error})
+                elif msg_type == "move":
+                    squad = clients[ms]
+                    if squad is not None:
+                        handler, success, squad = apply_message(controller, squad, msg)
+                        clients[ms] = squad
+                        
 
             broadcast()
     finally:

@@ -33,7 +33,7 @@ def build_view(snap):
         grid[pos.y][pos.x] = room
         discovered.add(pos)
 
-    my_pos = Pos.from_json(snap["squads"][0]["pos"])
+    my_pos = Pos.from_json(snap["squads"][snap["you"]]["pos"])
 
     return grid, discovered, my_pos
 
@@ -61,7 +61,7 @@ def receiver(ms, inbox):
         inbox.put(None)
 
 def handle(msg):
-    if not isinstance(msg, dict):
+    if isinstance(msg, dict):
         kind = msg.get("type")
         if kind == "snapshot":
             render(msg)
@@ -94,6 +94,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     print("\033[?25l", end="")
     server_gone = False
     try:
+        ms.send_msg({"type":"join","characters":[0]})
         while True:
             if not drain(inbox):
                 server_gone = True
