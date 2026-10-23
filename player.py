@@ -158,6 +158,9 @@ class Player:
         if self.health <= 0:
             handler.removePlayer(self)
 
+    def applyCondition(self, condition: Condition, handler: CombatHandler):
+        self.conditions.append(condition)
+
     def pretty_print_turn_options(
         self,
         options: list[CombatActionEntry],

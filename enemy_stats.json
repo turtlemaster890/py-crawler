@@ -150,5 +150,18 @@
                 "weight": 1
             }
         }
+    },
+    "pyromaniac": {
+        "speed": 100,
+        "health": 50,
+        "actions": {
+            "attack": {
+                "damage": 3,
+                "weight": 2
+            },
+            "molotov": {
+                "weight": 1
+            }
+        }
     }
 }

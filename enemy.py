@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Self, TypedDict, TYPE_CHECKING
 import json
 import random
-from conditions import Condition
+from conditions import Condition, Poisioned
 from combatHandler import CombatHandler
 from item import Bone, Item, RustyCoin
 import terminalDisplay
@@ -349,6 +349,18 @@ class Mimic(Enemy):
                 )
 
 
+class Pyromaniac(Enemy):
+    def __init__(self, name: str = "Pyromaniac") -> None:
+        super().__init__(name, "pyromaniac")
+
+    def molotov(self, handler: CombatHandler):
+        terminalDisplay.contextDisplay.print_boxify(
+            f"{self.name} throws a glass bottle. Flames rise up in the room."
+        )
+        for p in handler.players:
+            p.applyCondition(Poisioned(3, p, handler, "Burning"), handler)
+
+
 enemy_type_to_class = {
     "goblin": Goblin,
     "skeleton": Skeleton,
@@ -361,6 +373,7 @@ enemy_type_to_class = {
     "baby_jelly": BabyJelly,
     "stone_titan": StoneTitan,
     "mimic": Mimic,
+    "pyromaniac": Pyromaniac,
 }
 
 

@@ -20,5 +20,6 @@ def encounterFactory() -> list[enemy.Enemy]:
             [enemy.NormalGuy()],
             [enemy.Necromancer()],
             [enemy.Jelly() for _ in range(8)],
+            [enemy.Pyromaniac()]
         ]
     )

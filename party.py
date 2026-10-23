@@ -129,26 +129,33 @@ class Party:
         return out
 
     def inventory_menu(self, party: Party):
-        selected = 0
-        lastProvider = terminalDisplay.contextDisplay.messageProvider
-        terminalDisplay.contextDisplay.messageProvider = (
-            lambda w, h: self.show_inventory(w, h, selected)
-        )
+        # selected = 0
+        # lastProvider = terminalDisplay.contextDisplay.messageProvider
+        # terminalDisplay.contextDisplay.messageProvider = (
+        #     lambda w, h: self.show_inventory(w, h, selected)
+        # )
 
+        # while True:
+        #     selected %= len(self.inventory.items) + 1
+        #     terminalDisplay.updateDisplays()
+        #     while True:
+        #         key = inputController.getKey()
+        #         if key and key in utils.key_to_delta:
+        #             selected += utils.key_to_delta[key]
+        #             break
+        #         if key == Key.enter:
+        #             if selected < len(self.inventory.items):
+        #                 self.item_menu(self.inventory.items[selected])
+        #                 break
+        #             terminalDisplay.contextDisplay.messageProvider = lastProvider
+        #             return
         while True:
-            selected %= len(self.inventory.items) + 1
-            terminalDisplay.updateDisplays()
-            while True:
-                key = inputController.getKey()
-                if key and key in utils.key_to_delta:
-                    selected += utils.key_to_delta[key]
-                    break
-                if key == Key.enter:
-                    if selected < len(self.inventory.items):
-                        self.item_menu(self.inventory.items[selected])
-                        break
-                    terminalDisplay.contextDisplay.messageProvider = lastProvider
+            option = menuHelper.menu("Items", [i.name for i in self.inventory.items])
+            if option != -1:
+                if self.item_menu(self.inventory.items[option]):
                     return
+            else:
+                return
 
     def players_menu(self, party: Party):
         options: list[Player] = self.members

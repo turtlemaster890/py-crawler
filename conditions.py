@@ -31,22 +31,30 @@ class Condition:
         pass
 
     def takeDamage(
-        self, amount, attacker=None, defender=None, damage_type=None
-    ) -> None:
+        self,
+        amount: int,
+        attacker: Player | Enemy | None = None,
+        defender: Player | Enemy | None = None,
+        damage_type: str = "",
+    ) -> int | None:
         pass
 
     def die(self) -> None:
         pass
 
     def dealDamage(
-        self, amount, attacker=None, defender=None, damage_type=None
-    ) -> None:
+        self,
+        amount: int,
+        attacker: Player | Enemy | None = None,
+        defender: Player | Enemy | None = None,
+        damage_type: str = "",
+    ) -> int | None:
         pass
 
-    def enemyDeath(self, enemy) -> None:
+    def enemyDeath(self, enemy: Enemy | Player) -> None:
         pass
 
-    def inflictCondition(self, condition, target) -> None:
+    def inflictCondition(self, condition: Condition, target: Player | Enemy) -> None:
         pass
 
 
@@ -63,3 +71,38 @@ class Slimed(Condition):
     def turnStart(self) -> None:
         super().turnStart()
         self.affected.speed -= 5
+
+
+class Poisioned(Condition):
+    def __init__(
+        self,
+        duration: int,
+        affected: Player | Enemy,
+        handler: CombatHandler,
+        name: str = "Poisoned",
+    ) -> None:
+        super().__init__(name, duration, affected, handler)
+
+    def turnStart(self) -> None:
+        super().turnStart()
+        self.affected.takeDamage(self.combat, 2)
+
+
+class Strength(Condition):
+    def __init__(
+        self,
+        duration: int,
+        affected: Player | Enemy,
+        handler: CombatHandler,
+        name: str = "Strength",
+    ) -> None:
+        super().__init__(name, duration, affected, handler)
+
+    def dealDamage(
+        self,
+        amount: int,
+        attacker: Player | Enemy | None = None,
+        defender: Player | Enemy | None = None,
+        damage_type: str = "",
+    ) -> int | None:
+        return amount + 2
