@@ -1,6 +1,5 @@
 import random
 from typing import TYPE_CHECKING
-from item import Item
 import item
 import utils
 
@@ -18,16 +17,17 @@ def make_shop():
         ((item.ManaBooster(), 250), 2),
         ((item.QuickBoots(), 200), 3),
         ((item.ThornedAmulet(), 375), 1),
-        ((item.Staff(), 500), 1)
+        ((item.Staff(), 500), 1),
+        ((item.HealthPotion(), 125), 2),
     ]
 
     return random.choices([e[0] for e in items], [e[1] for e in items], k=3)
 
 
 class Shop:
-    def __init__(self, items: list[tuple[Item, int]] = []):
+    def __init__(self, items: list[tuple[item.Item, int]] = []):
         if items:
-            self.items: list[tuple[Item, int]] = items
+            self.items: list[tuple[item.Item, int]] = items
         else:
             self.items = make_shop()
 

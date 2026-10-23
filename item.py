@@ -41,7 +41,7 @@ class RustyCoin(Item):
 
     def __init__(self, name: str = "Rusty Coin") -> None:
         super().__init__(name)
-        self.player_actions = [("flip", self.flip)]
+        self.player_actions = [("Flip", self.flip)]
 
     def flip(self, party: Party, player: Player) -> bool:
         heads: bool = random.randint(0, 1) == 1
@@ -209,6 +209,27 @@ class Consumable(Item):
         super().__init__(name)
 
 
+class HealthPotion(Consumable):
+    item_type = "healthPotion"
+
+    def __init__(self, name: str = "Health Potion") -> None:
+        super().__init__(name)
+        self.player_actions = [("Drink", self.drink)]
+        self.combat_actions = [CombatActionEntry("Drink potion", self.drink_combat)]
+
+    def drink(self, party: Party, player: Player) -> bool:
+        player.health = min(player.max_health, player.health + 30)
+        terminalDisplay.contextDisplay.print_boxify(
+            f"{player.name} drinks the {self.name}."
+        )
+        utils.wait_for_enter()
+        player.inventory.remove(self)
+        return True
+
+    def drink_combat(self, player: Player, handler: CombatHandler) -> None:
+        self.drink(handler.party, player)
+
+
 class ManaBooster(Relic):
     item_type: str = "manaBooster"
     description = "Magic damage deals +2"
@@ -270,6 +291,7 @@ item_type_to_class = {
     "rustyCoin": RustyCoin,
     "bone": Bone,
     "staff": Staff,
+    "healthPotion": HealthPotion
 }
 
 

@@ -369,6 +369,7 @@ enemy_type_to_class = {
     "necromancer": Necromancer,
     "normal_guy": NormalGuy,
     "werewolf": Werewolf,
+    "wolf": Wolf,
     "jelly": Jelly,
     "baby_jelly": BabyJelly,
     "stone_titan": StoneTitan,
