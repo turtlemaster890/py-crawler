@@ -3,6 +3,7 @@ from enemy import Enemy
 import inventory
 from item import Item, Weapon, Armor, Relic
 import menuHelper
+import playerClass
 import terminalDisplay
 import inputController
 from actions import CombatActionEntry, PlayerAction
@@ -39,6 +40,7 @@ class Player:
     def __init__(self, name: str = "Player", class_type: str = "warrior"):
         self.name = name
         self.class_type = class_type
+        self.player_class = playerClass.classFromStr(class_type)
         self.inventory = inventory.PlayerInventory()
 
         with open(getRelativePath("player_stats.json"), "r") as f:
@@ -101,6 +103,7 @@ class Player:
             actions.extend(self.inventory.weapon.combat_actions)
         if self.inventory.armor:
             actions.extend(self.inventory.armor.combat_actions)
+        actions.extend(self.player_class.combat_actions)
         if utils.DEBUG:
             actions.append(
                 CombatActionEntry(
@@ -118,6 +121,7 @@ class Player:
         actions: list[tuple[str, PlayerAction]] = [
             ("View Inventory", self.inventory_menu)
         ]
+        actions.extend(self.player_class.player_actions)
 
         # for i in self.inventory.items:
         #     actions.extend(i.player_actions)
@@ -144,6 +148,8 @@ class Player:
         for relic in self.inventory.items:
             if isinstance(relic, Relic):
                 damage = relic.takeDamage(damage, attacker, self) or damage
+        if self.inventory.armor:
+            damage = max(1, damage - self.inventory.armor.defense)
         self.health -= damage
         if self.health <= 0:
             self.die(handler)
@@ -183,6 +189,7 @@ class Player:
         return out
 
     def turnStart(self, handler: CombatHandler):
+        self.stamina = min(self.max_stamina, self.stamina + 1)
         for relic in self.inventory.items:
             if isinstance(relic, Relic):
                 relic.turnStart()
@@ -261,10 +268,11 @@ class Player:
             else:
                 return
 
-    def startCombat(self):
+    def startCombat(self, handler: CombatHandler):
         for relic in self.inventory.items:
             if isinstance(relic, Relic):
-                relic.combatStart()
+                relic.player = self
+                relic.combatStart(handler)
 
     def leaveCombat(self):
         self.conditions = []

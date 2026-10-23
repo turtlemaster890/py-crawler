@@ -36,6 +36,8 @@ class CombatHandler:
         terminalDisplay.combatDisplay.messageProvider = self.print_turn_order_list
         for enemy in self.enemies:
             enemy.combatStart(self)
+        for player in self.players:
+            player.startCombat(self)
 
     def addEnemy(self, enemy: Enemy):
         enemy.combatStart(self)

@@ -34,5 +34,17 @@
             "armor": "leather_armor",
             "items": []
         }
+    },
+    "tank": {
+        "base_stats": {
+            "health": 125,
+            "speed": 65,
+            "stamina": 30
+        },
+        "starting_items": {
+            "weapon": "stick",
+            "armor": "platemail",
+            "items": []
+        }
     }
 }

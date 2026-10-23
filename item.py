@@ -75,6 +75,7 @@ class SlimeBall(Item):
         self.combat_actions = [CombatActionEntry(f"Throw {self.name}", self.throw)]
 
     def throw(self, player: Player, combatHandler: CombatHandler) -> None:
+        from enemy import Enemy
         target: Player | Enemy = combatHandler.select_character(
             lambda c: isinstance(c, Enemy)
         )[0]
@@ -143,6 +144,7 @@ class Armor(Item):
         name: str,
     ) -> None:
         super().__init__(name)
+        self.defense = 2
 
 
 class Relic(Item):
@@ -291,7 +293,8 @@ item_type_to_class = {
     "rustyCoin": RustyCoin,
     "bone": Bone,
     "staff": Staff,
-    "healthPotion": HealthPotion
+    "healthPotion": HealthPotion,
+    "slimeball": SlimeBall
 }
 
 
