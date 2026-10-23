@@ -19,6 +19,7 @@ def make_shop():
         ((item.ThornedAmulet(), 375), 1),
         ((item.Staff(), 500), 1),
         ((item.HealthPotion(), 125), 2),
+        ((item.Key(), 50), 4),
     ]
 
     return random.choices([e[0] for e in items], [e[1] for e in items], k=3)
@@ -78,7 +79,7 @@ class Shop:
         out.append("└" + "─" * (w - 2) + "┘")
         return out
 
-    def displayShop(self, party: Party):
+    def displayShop(self, party: Party, room):
         # if len(self.items) == 0:
         #     return
         # utils.addPrintFunction("shop", lambda: self.pretty_print(party.funds, selectedItem), 2)

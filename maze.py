@@ -3,7 +3,7 @@ from encounters import encounterFactory
 import random
 import utils
 from Pos import Pos
-from room import Room, StartRoom, EndRoom, ShopRoom, ChestRoom
+from room import Room, StartRoom, EndRoom, ShopRoom, ChestRoom, LockedRoom
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -14,7 +14,12 @@ from colorama import Style
 
 # colorama_init()
 
-room_weights: dict[type[Room], int] = {Room: 10, ChestRoom: 2, ShopRoom: 1}
+room_weights: dict[type[Room], int] = {
+    Room: 15,
+    ChestRoom: 4,
+    ShopRoom: 2,
+    LockedRoom: 1,
+}
 
 add_up = {
     "·": "╵",
@@ -82,7 +87,7 @@ def pretty_print(maze: maze, discovered_positions: set[Pos], current_position: P
     for y, row in enumerate(maze):
         for x, r in enumerate(row):
             if not isinstance(r, Room) or (
-                not Pos(x, y) in discovered_positions and not utils.DEBUG
+                not Pos(x, y) in discovered_positions and not utils.DEBUG_VIEW
             ):
                 print(" ", end=Style.RESET_ALL)
             else:
@@ -113,7 +118,7 @@ def pretty_print_list(
                 if x < len(row):
                     r = row[x]
                     if not isinstance(r, Room) or (
-                        not Pos(x, y) in discovered_positions and not utils.DEBUG
+                        not Pos(x, y) in discovered_positions and not utils.DEBUG_VIEW
                     ):
                         line_chars.append(" ")
                     else:
@@ -122,7 +127,7 @@ def pretty_print_list(
                             if current_position == Pos(x, y)
                             else (Style.DIM + r.colour)
                         )
-                        char = connections_to_char(r.connections)
+                        char = connections_to_char(r.list_connections())
                         line_chars.append(f"{colour}{char}{Style.RESET_ALL}")
                 else:
                     line_chars.append(" ")

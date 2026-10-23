@@ -3,12 +3,11 @@ from typing import Self
 from actions import PartyAction
 from direction import direction
 from colorama import Fore
-from item import ManaBooster, QuickBoots, ThornedAmulet
-from shop import Shop, make_shop
+from shop import Shop
 from enemy import Enemy, Mimic, StoneTitan
 import enemy
 import terminalDisplay
-import party
+from party import Party
 import random
 import utils
 from combatHandler import CombatHandler
@@ -54,6 +53,13 @@ class Room:
 
     def make_connection(self, direction: direction) -> None:
         self.connections.add(direction)
+
+    def list_connections(self) -> set[direction]:
+        o: set[direction] = set()
+        for d in direction:
+            if self.has_connection(d):
+                o.add(d)
+        return o
 
     def __repr__(self) -> str:
         return f"R({[d.name for d in self.connections]})"
@@ -120,7 +126,7 @@ class ChestRoom(Room):
         self.chest_opened = False
         self.room_actions = [("Open Chest", self.open_chest)]
 
-    def open_chest(self, party: party.Party):
+    def open_chest(self, party: Party, room):
         self.chest_opened = True
         self.room_actions = []
         self.description = "An opened chest stands in the middle of this room."
@@ -139,7 +145,11 @@ class ChestRoom(Room):
                 f"The chest bites {triggering_player.name}!"
             )
             utils.wait_for_enter()
-            return CombatHandler(party, party.members, [Mimic()])
+            mimic = Mimic()
+            mimic.speed = 10000
+            handler = CombatHandler(party, party.members, [mimic])
+            mimic.speed = 85
+            return handler
 
     def to_json(self):
         j = super().to_json()
@@ -157,12 +167,52 @@ class ChestRoom(Room):
         return new_room
 
 
+class LockedRoom(Room):
+    description = "A padlocked gate stands at the exits to this room."
+
+    def __init__(
+        self, connections: set[direction] | None = None, enemies: list[Enemy] = []
+    ) -> None:
+        super().__init__(connections, [])
+        self.locked_connections: set[direction] = set()
+        self.locked = True
+
+    def make_connection(self, direction: direction) -> None:
+        self.locked_connections.add(direction)
+        # return super().make_connection(direction)
+
+    def has_connection(self, direction: direction) -> bool:
+        if super().has_connection(direction):
+            return True
+        if direction in self.locked_connections and not self.locked:
+            return True
+        return False
+
+    def unlock(self, party: Party):
+        self.locked = False
+
+    def to_json(self):
+        j = super().to_json()
+        j["room_type"] = "locked"
+        j["locked_connections"] = [c.name for c in self.locked_connections]
+        j["locked"] = self.locked
+        return j
+
+    @classmethod
+    def from_json(cls, j) -> Self:
+        new_room = super().from_json(j)
+        new_room.locked = j["locked"]
+        new_room.locked_connections = {direction[d] for d in j["locked_connections"]}
+        return new_room
+
+
 str_to_room_type = {
     "room": Room,
     "start": StartRoom,
     "end": EndRoom,
     "shop": ShopRoom,
     "chest": ChestRoom,
+    "locked": LockedRoom,
 }
 
 

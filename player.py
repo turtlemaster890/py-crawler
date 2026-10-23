@@ -104,7 +104,7 @@ class Player:
         if self.inventory.armor:
             actions.extend(self.inventory.armor.combat_actions)
         actions.extend(self.player_class.combat_actions)
-        if utils.DEBUG:
+        if utils.DEBUG_WIN_ACTION:
             actions.append(
                 CombatActionEntry(
                     "debug.win",

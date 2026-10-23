@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from party import Party
     from enemy import Enemy
     from combatHandler import CombatHandler
+    from room import Room
 
 
 class Item:
@@ -76,11 +77,43 @@ class SlimeBall(Item):
 
     def throw(self, player: Player, combatHandler: CombatHandler) -> None:
         from enemy import Enemy
+
         target: Player | Enemy = combatHandler.select_character(
             lambda c: isinstance(c, Enemy)
         )[0]
         assert isinstance(target, Enemy)
         target.applyCondition(Slimed(3, target, combatHandler), combatHandler)
+
+
+class Key(Item):
+    item_type = "key"
+
+    def __init__(self, name: str = "Key") -> None:
+        super().__init__(name)
+        self.party_actions = [(f"Use {self.name}", self.use)]
+
+    def use(self, party: Party, room: Room):
+        from room import LockedRoom
+
+        if isinstance(room, LockedRoom):
+            if room.locked:
+                room.locked = False
+                terminalDisplay.contextDisplay.print_boxify(
+                    f"The {self.name} slides perfectly into the lock. You hear a 'click'."
+                )
+                for connection in room.list_connections():
+                    party.discovered_positions.add(party.pos + connection)
+                party.inventory.remove(self)
+            else:
+                terminalDisplay.contextDisplay.print_boxify(
+                    "This room is already unlocked!"
+                )
+        else:
+            terminalDisplay.contextDisplay.print_boxify(
+                f"The {self.name} can only be used on a locked room."
+            )
+        utils.wait_for_enter()
+        return True
 
 
 class Weapon(Item):
@@ -294,7 +327,8 @@ item_type_to_class = {
     "bone": Bone,
     "staff": Staff,
     "healthPotion": HealthPotion,
-    "slimeball": SlimeBall
+    "slimeball": SlimeBall,
+    "key": Key,
 }
 
 

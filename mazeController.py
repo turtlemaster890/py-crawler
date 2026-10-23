@@ -75,7 +75,7 @@ class mazeController:
         newRoom = self.maze[newPos.y][newPos.x]
         if isinstance(newRoom, Room) and currentRoom.has_connection(moveDirection):
             self.party.discovered_positions.add(newPos)
-            for connection in newRoom.connections:
+            for connection in newRoom.list_connections():
                 self.party.discovered_positions.add(newPos + connection)
             self.party.pos = newPos
             # newRoom.enter_room(self.party)
@@ -126,7 +126,7 @@ class mazeController:
         while True:
             option = menuHelper.menu("Actions", [option[0] for option in options])
             if option != -1:
-                o = options[option][1](self.party)
+                o = options[option][1](self.party, current_room)
                 if isinstance(o, CombatHandler):
                     return o
                 if o:

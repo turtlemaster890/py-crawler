@@ -1,3 +1,5 @@
+from typing import Any, Callable
+
 from Pos import Pos
 import menuHelper
 from player import Player
@@ -80,9 +82,12 @@ class Party:
         out.append("└" + "─" * (w - 2) + "┘")
         return out
 
-    def item_menu(self, item: Item):
+    def item_menu(self, item: Item, room):
         selected = 0
-        options = [("Move to player", lambda: self.move_to_member_menu(item))]
+        options: list[tuple[str, Callable[[], Any]]] = [
+            ("Move to player", lambda: self.move_to_member_menu(item))
+        ]
+        options.extend([(a[0], lambda: a[1](self, room)) for a in item.party_actions])
         lastProvider = terminalDisplay.contextDisplay.messageProvider
         terminalDisplay.contextDisplay.messageProvider = (
             lambda w, h: self.show_item_options(
@@ -128,7 +133,7 @@ class Party:
         out.append("└" + "─" * (w - 2) + "┘")
         return out
 
-    def inventory_menu(self, party: Party):
+    def inventory_menu(self, party: Party, room):
         # selected = 0
         # lastProvider = terminalDisplay.contextDisplay.messageProvider
         # terminalDisplay.contextDisplay.messageProvider = (
@@ -152,12 +157,12 @@ class Party:
         while True:
             option = menuHelper.menu("Items", [i.name for i in self.inventory.items])
             if option != -1:
-                if self.item_menu(self.inventory.items[option]):
+                if self.item_menu(self.inventory.items[option], room):
                     return
             else:
                 return
 
-    def players_menu(self, party: Party):
+    def players_menu(self, party: Party, room):
         options: list[Player] = self.members
         optionStrs: list[str] = [plr.name for plr in options]
         while True:
