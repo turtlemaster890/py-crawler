@@ -166,7 +166,9 @@ class Staff(Weapon):
         damage: int = self.damage * 2
         for item in player.inventory.items:
             if isinstance(item, Relic):
-                damage = item.dealDamage(damage, player, to_attack, "magic") or damage
+                r = item.dealDamage(damage, player, to_attack, "magic")
+                if r is not None:
+                    damage = r
         to_attack.takeDamage(handler, damage, player)
         return True
 

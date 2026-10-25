@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Self, TypedDict, TYPE_CHECKING
 import json
 import random
-from conditions import Condition, Poisoned, applyDamageHooks
+from conditions import Burning, Condition, ConditionReturnActions, applyDamageHooks
 from combatHandler import CombatHandler
 from item import Bone, Item, RustyCoin
 import terminalDisplay
@@ -86,18 +86,26 @@ class Enemy:
         return new_enemy
 
     def turnStart(self, handler: CombatHandler) -> None:
-        for cond in self.conditions:
-            cond.turnStart()
+        if self.tickConditions():
+            return
         self.aggro = [entry for entry in self.aggro if entry.player in handler.players]
         for player in self.aggro:
             player.value //= 2
         self.takeAction(self.action, handler)
         self.decideAction()
 
+    def tickConditions(self) -> bool:
+        skip_turn = False
+        for cond in self.conditions[:]:
+            if cond.turnStart() == ConditionReturnActions.SKIP_TURN:
+                skip_turn = True
+        return skip_turn
+
     def inspect(self):
-        terminalDisplay.contextDisplay.print_boxify(
-            f"Health: {self.health}/{self.max_health}"
-        )
+        text = f"Health: {self.health}/{self.max_health}"
+        if self.conditions:
+            text += f" Conditions: {', '.join(c.name for c in self.conditions)}"
+        terminalDisplay.contextDisplay.print_boxify(text)
         utils.wait_for_enter()
 
     def takeAction(self, action: str, handler: CombatHandler) -> None:
@@ -188,8 +196,8 @@ class LargeSlime(Enemy):
         super().__init__(name, "large_slime")
 
     def turnStart(self, handler: CombatHandler) -> None:
-        for cond in self.conditions:
-            cond.turnStart()
+        if self.tickConditions():
+            return
         if self.health <= self.max_health / 2:
             self.takeAction("split", handler)
         else:
@@ -300,9 +308,9 @@ class StoneTitan(Enemy):
         )
 
     def turnStart(self, handler: CombatHandler) -> None:
+        if self.tickConditions():
+            return
         if self.coreCharge >= 5:
-            for cond in self.conditions:
-                cond.turnStart()
             self.takeAction("core_burst", handler)
             self.decideAction()
         else:
@@ -370,7 +378,7 @@ class Pyromaniac(Enemy):
             f"{self.name} throws a glass bottle. Flames rise up in the room."
         )
         for p in handler.players:
-            p.applyCondition(Poisoned(3, p, handler, "Burning"), handler)
+            p.applyCondition(Burning(3, p, handler), handler)
 
 
 enemy_type_to_class = {

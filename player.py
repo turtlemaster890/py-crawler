@@ -7,7 +7,7 @@ import playerClass
 import terminalDisplay
 import inputController
 from actions import CombatActionEntry, PlayerAction
-from conditions import Condition, applyDamageHooks
+from conditions import Condition, ConditionReturnActions, applyDamageHooks
 from pynput.keyboard import Key
 from utils import key_to_delta, getRelativePath
 from typing import TYPE_CHECKING, Callable, Self, TypedDict
@@ -83,14 +83,10 @@ class Player:
         return new_player
 
     def inspect(self):
-        terminalDisplay.contextDisplay.print_boxify(
-            f"Health: {self.health}/{self.max_health} Stamina: {self.stamina}"
-            + (
-                f"Conditions: {", ".join([cond.name for cond in self.conditions])}"
-                if self.conditions
-                else ""
-            )
-        )
+        text = f"Health: {self.health}/{self.max_health} Stamina: {self.stamina}/{self.max_stamina}"
+        if self.conditions:
+            text += f" Conditions: {", ".join([cond.name for cond in self.conditions])}"
+        terminalDisplay.contextDisplay.print_boxify(text)
         utils.wait_for_enter()
 
     def getTurnOptions(self, handler: CombatHandler) -> list[CombatActionEntry]:
@@ -157,7 +153,9 @@ class Player:
         damage: int = self.inventory.weapon.damage
         for item in self.inventory.items:
             if isinstance(item, Relic):
-                damage = item.dealDamage(damage, self, to_attack) or damage
+                r = item.dealDamage(damage, self, to_attack)
+                if r is not None:
+                    damage = r
         to_attack.takeDamage(handler, damage, self)
         return True
 
@@ -167,8 +165,10 @@ class Player:
         damage = applyDamageHooks(damage, attacker, self, damage_type)
         for relic in self.inventory.items:
             if isinstance(relic, Relic):
-                damage = relic.takeDamage(damage, attacker, self, damage_type) or damage
-        if self.inventory.armor:
+                r = relic.takeDamage(damage, attacker, self, damage_type)
+                if r is not None:
+                    damage = r
+        if self.inventory.armor and damage > 0:
             damage = max(1, damage - self.inventory.armor.defense)
         self.health -= damage
         if self.health <= 0:
@@ -216,11 +216,15 @@ class Player:
 
     def turnStart(self, handler: CombatHandler) -> None:
         self.stamina: int = min(self.max_stamina, self.stamina + 1)
+        skip_turn = False
         for relic in self.inventory.items:
             if isinstance(relic, Relic):
                 relic.turnStart()
         for condition in self.conditions[:]:
-            condition.turnStart()
+            if condition.turnStart() == ConditionReturnActions.SKIP_TURN:
+                skip_turn = True
+        if skip_turn:
+            return
         op: list[CombatActionEntry] = self.getTurnOptions(handler)
         selectedOption = 0
         lastProvider: Callable[[int, int], list[str]] | None = (
@@ -318,7 +322,9 @@ class Player:
             damage: int = 5
             for item in self.inventory.items:
                 if isinstance(item, Relic):
-                    damage = item.dealDamage(damage, self, c, "magic") or damage
+                    r = item.dealDamage(damage, self, c, "magic")
+                    if r is not None:
+                        damage = r
             c.takeDamage(handler, damage, self)
         return True
 
