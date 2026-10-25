@@ -1,9 +1,5 @@
 from typing import TYPE_CHECKING
 
-from combatHandler import CombatHandler
-from enemy import Enemy
-from player import Player
-
 if TYPE_CHECKING:
     from player import Player
     from enemy import Enemy
@@ -25,8 +21,9 @@ class Condition:
 
     def changeDuration(self, amount: int) -> None:
         self.duration += amount
-        if self.duration <= 0:
+        if self.duration <= 0 and self in self.affected.conditions:
             self.affected.conditions.remove(self)
+            self.onRemove()
 
     def turnStart(self) -> None:
         self.changeDuration(-1)
@@ -61,6 +58,12 @@ class Condition:
     def inflictCondition(self, condition: Condition, target: Player | Enemy) -> None:
         pass
 
+    def onApply(self) -> None:
+        pass
+
+    def onRemove(self) -> None:
+        pass
+
 
 class Slimed(Condition):
     def __init__(
@@ -72,9 +75,11 @@ class Slimed(Condition):
     ) -> None:
         super().__init__(name, duration, affected, handler)
 
-    def turnStart(self) -> None:
-        super().turnStart()
+    def onApply(self) -> None:
         self.affected.speed -= 5
+
+    def onRemove(self) -> None:
+        self.affected.speed += 5
 
 
 class Poisoned(Condition):
@@ -118,7 +123,7 @@ class Weakness(Condition):
         duration: int,
         affected: Player | Enemy,
         handler: CombatHandler,
-        name: str = "",
+        name: str = "Weakness",
     ) -> None:
         super().__init__(name, duration, affected, handler)
 
@@ -130,3 +135,22 @@ class Weakness(Condition):
         damage_type: str = "",
     ) -> int | None:
         return amount - 2
+
+
+def applyDamageHooks(
+    amount: int,
+    attacker: Player | Enemy | None,
+    defender: Player | Enemy,
+    damage_type: str = "",
+):
+    if attacker is not None:
+        for cond in attacker.conditions[:]:
+            r = cond.dealDamage(amount, attacker, defender, damage_type)
+            if r is not None:
+                amount = r
+
+    for cond in defender.conditions[:]:
+        r = cond.takeDamage(amount, attacker, defender, damage_type)
+        if r is not None:
+            amount = r
+    return max(0, amount)

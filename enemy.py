@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Self, TypedDict, TYPE_CHECKING
 import json
 import random
-from conditions import Condition, Poisoned
+from conditions import Condition, Poisoned, applyDamageHooks
 from combatHandler import CombatHandler
 from item import Bone, Item, RustyCoin
 import terminalDisplay
@@ -126,6 +126,7 @@ class Enemy:
         attacker: Player | None = None,
         damage_type: str = "",
     ) -> None:
+        damage = applyDamageHooks(damage, attacker, self, damage_type)
         for player in self.aggro:
             if player.player is attacker:
                 player.value += damage
@@ -154,6 +155,7 @@ class Enemy:
 
     def applyCondition(self, condition: Condition, handler: CombatHandler) -> None:
         self.conditions.append(condition)
+        condition.onApply()
 
 
 class Goblin(Enemy):
@@ -288,7 +290,7 @@ class StoneTitan(Enemy):
             [
                 entry.player
                 for entry in self.aggro
-                if entry == min(self.aggro, key=lambda x: x.value)
+                if entry == max(self.aggro, key=lambda x: x.value)
             ]
         )
         damage: int = self.stats["actions"]["attack"]["damage"] + (5 * self.bursts)

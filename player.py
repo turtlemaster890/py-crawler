@@ -7,7 +7,7 @@ import playerClass
 import terminalDisplay
 import inputController
 from actions import CombatActionEntry, PlayerAction
-from conditions import Condition
+from conditions import Condition, applyDamageHooks
 from pynput.keyboard import Key
 from utils import key_to_delta, getRelativePath
 from typing import TYPE_CHECKING, Callable, Self, TypedDict
@@ -164,6 +164,7 @@ class Player:
     def takeDamage(
         self, handler: CombatHandler, damage: int, attacker=None, damage_type: str = ""
     ) -> None:
+        damage = applyDamageHooks(damage, attacker, self, damage_type)
         for relic in self.inventory.items:
             if isinstance(relic, Relic):
                 damage = relic.takeDamage(damage, attacker, self, damage_type) or damage
@@ -178,13 +179,14 @@ class Player:
         for relic in self.inventory.items:
             if isinstance(relic, Relic):
                 relic.die()
-        for condition in self.conditions:
+        for condition in self.conditions[:]:
             condition.die()
         if self.health <= 0:
             handler.removePlayer(self)
 
     def applyCondition(self, condition: Condition, handler: CombatHandler) -> None:
         self.conditions.append(condition)
+        condition.onApply()
 
     def has_condition(self, condition: type[Condition]) -> Condition | None:
         for cond in self.conditions:
@@ -217,7 +219,7 @@ class Player:
         for relic in self.inventory.items:
             if isinstance(relic, Relic):
                 relic.turnStart()
-        for condition in self.conditions:
+        for condition in self.conditions[:]:
             condition.turnStart()
         op: list[CombatActionEntry] = self.getTurnOptions(handler)
         selectedOption = 0
@@ -305,7 +307,8 @@ class Player:
                 relic.combatStart(handler)
 
     def leaveCombat(self) -> None:
-        self.conditions = []
+        for c in self.conditions[:]:
+            c.changeDuration(-c.duration)
 
     def scorching_ray(self, player: Player, handler: CombatHandler) -> bool:
         to_attack: list[Player | Enemy] = handler.select_character(
@@ -318,3 +321,14 @@ class Player:
                     damage = item.dealDamage(damage, self, c, "magic") or damage
             c.takeDamage(handler, damage, self)
         return True
+
+    def modifyOutgoing(
+        self, damage: int, target: Player | Enemy, damage_type: str = ""
+    ):
+        for src in [
+            i for i in self.inventory.items if isinstance(i, Relic)
+        ] + self.conditions:
+            r = src.dealDamage(damage, self, target, damage_type)
+            if r is not None:
+                damage = r
+        return max(0, damage)

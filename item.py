@@ -3,8 +3,6 @@ from typing import TYPE_CHECKING, Self
 
 from actions import CombatActionEntry, PartyAction, PlayerAction
 from conditions import Condition, Poisoned, Slimed
-from enemy import Enemy
-from player import Player
 import terminalDisplay
 import utils
 
@@ -279,7 +277,7 @@ class AntidoteBottle(Consumable):
     def drink(self, player: Player, handler: CombatHandler) -> bool:
         cond = player.has_condition(Poisoned)
         if cond:
-            cond.duration = 0
+            cond.changeDuration(-cond.duration)
             player.inventory.remove(self)
             terminalDisplay.contextDisplay.print_boxify(
                 f"{player.name} drinks the bottle of antidote. They feel more relaxed now."
