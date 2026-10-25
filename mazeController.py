@@ -82,6 +82,9 @@ class mazeController:
             terminalDisplay.contextDisplay.print_boxify("Autosaving...")
             saves.save(self.maze, self.party)
             if newRoom.enemies:
+                if newRoom.entry_message:
+                    terminalDisplay.contextDisplay.type_print(newRoom.entry_message)
+                    utils.wait_for_enter()
                 return (
                     CombatHandler(self.party, self.party.members, newRoom.enemies),
                     True,

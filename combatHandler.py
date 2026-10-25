@@ -22,6 +22,7 @@ class CombatHandler:
         players: list[Player] | None = None,
         enemies: list[Enemy] | None = None,
     ):
+        self.victory = False
         self.party = party
         self.players = players or []
         self.enemies = enemies or []

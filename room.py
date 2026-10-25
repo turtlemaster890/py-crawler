@@ -15,6 +15,7 @@ from combatHandler import CombatHandler
 
 class Room:
     description = ""
+    entry_message: str = ""
 
     def __init__(
         self,
@@ -81,6 +82,9 @@ class StartRoom(Room):
 
 
 class EndRoom(Room):
+    description = "A vast chamber, filled with stale air. The air hums with a low, grinding vibration."
+    entry_message = "The floor trembles. A Stone Titan drags itself upright, its core glowing faintly."
+
     def __init__(self, connections: set[direction] | None = None, enemies=None) -> None:
         super().__init__(connections, enemies=[StoneTitan()])
         self.colour: str = Fore.RED

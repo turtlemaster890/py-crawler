@@ -10,7 +10,7 @@ from conditions import (
     inflict,
 )
 from combatHandler import CombatHandler
-from item import Bone, Item, RustyCoin
+from item import Bone, Item, ManaBooster, QuickBoots, RustyCoin, ThornedAmulet
 import terminalDisplay
 from utils import getRelativePath
 import utils
@@ -334,6 +334,25 @@ class StoneTitan(Enemy):
         super().__init__(name, "stone_titan")
         self.coreCharge = 0
         self.bursts = 0
+        self.enraged = False
+        self.loot_table = [
+            (1, [ThornedAmulet()]),
+            (1, [QuickBoots()]),
+            (1, [ManaBooster()]),
+        ]
+
+    def to_json(self):
+        j = super().to_json()
+        j.update(core_charge=self.coreCharge, bursts=self.bursts, enraged=self.enraged)
+        return j
+
+    @classmethod
+    def from_json(cls, j) -> Self:
+        t = super().from_json(j)
+        t.coreCharge = j.get("core_charge", 0)
+        t.bursts = j.get("bursts", 0)
+        t.enraged = j.get("enraged", 0)
+        return t
 
     def attack(self, handler: CombatHandler) -> None:
         target: Player = random.choice(
@@ -352,23 +371,39 @@ class StoneTitan(Enemy):
     def turnStart(self, handler: CombatHandler) -> None:
         if self.tickConditions():
             return
+        if not self.enraged and self.health >= self.max_health / 2:
+            self.enrage(handler)
         if self.coreCharge >= 5:
             self.takeAction("core_burst", handler)
             self.decideAction()
         else:
             super().turnStart(handler)
 
+    def enrage(self, handler: CombatHandler) -> None:
+        self.enraged = True
+        self.speed += 30
+        self.coreCharge = max(self.coreCharge, 3)
+        terminalDisplay.contextDisplay.print_boxify(
+            f"Cracks spread across {self.name}. Its core beings to pulse faster."
+        )
+        utils.wait_for_enter()
+
     def slam(self, handler: CombatHandler) -> None:
-        for player in handler.players:
+        for player in handler.players[:]:
             player.takeDamage(handler, 5 + (2 * self.bursts), self)
-            self.applyInflict({"type": "stunned", "duration": 1}, player, handler)
 
         terminalDisplay.contextDisplay.print_boxify(
             f"{self.name} slams the ground and a shockwave appears."
         )
+        if self.enraged and handler.players:
+            self.applyInflict(
+                {"type": "stunned", "duration": 1, "chance": 0.5},
+                random.choice(handler.players),
+                handler,
+            )
 
     def charge(self, handler: CombatHandler) -> None:
-        self.coreCharge += 1
+        self.coreCharge += 2 if self.enraged else 1
         terminalDisplay.contextDisplay.print_boxify(f"{self.name}'s core glows.")
 
     def core_burst(self, handler: CombatHandler) -> None:
@@ -377,6 +412,13 @@ class StoneTitan(Enemy):
         terminalDisplay.contextDisplay.print_boxify(
             f"{self.name} bursts into a glowing light. It seems... stronger now?"
         )
+
+    def die(self, handler: CombatHandler) -> None:
+        super().die(handler)
+        handler.party.funds += 500
+        terminalDisplay.contextDisplay.print_boxify("You find ¢500 in the rubble.")
+        utils.wait_for_enter()
+        handler.victory = True
 
 
 class Mimic(Enemy):

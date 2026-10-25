@@ -1,6 +1,6 @@
 from maze import Pos, gen_main_path, maze
 from direction import direction
-from player import Player
+import menuHelper
 from party import Party
 import json
 import inputController
@@ -8,6 +8,7 @@ from combatHandler import CombatHandler
 from mazeController import mazeController
 import saves
 import startMenu
+import terminalDisplay
 import utils
 import colorama
 
@@ -24,6 +25,18 @@ combat_handler: CombatHandler | None = None
 mz: maze
 
 party: Party
+
+
+def victory_screen(party: Party) -> None:
+    terminalDisplay.contextDisplay.type_print(
+        "The stone titan crumbles to dust. Daylight spils into the chamber."
+    )
+    utils.wait_for_enter()
+    terminalDisplay.contextDisplay.print_boxify(f"Victory! Party funds: ¢{party.funds}")
+    utils.wait_for_enter()
+    if menuHelper.menu("Dungeon cleared!", ["Keep Exploring", "Quit"], False) == 1:
+        utils.clear()
+        raise SystemExit("Thanks for playing!")
 
 
 def main():
@@ -56,12 +69,14 @@ def main():
                     party, party.members, current_room.enemies
                 )
 
-
         while True:
             while combat_handler:
                 if not combat_handler.combat():
+                    won = combat_handler.victory
                     combat_handler = None
                     saves.save(mz, party)
+                    if won:
+                        victory_screen(party)
             combat_handler = mController.tick()
     finally:
         print("\033[?25h", end="")
