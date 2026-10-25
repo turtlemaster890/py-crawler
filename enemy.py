@@ -2,7 +2,13 @@ from dataclasses import dataclass
 from typing import Any, Self, TypedDict, TYPE_CHECKING
 import json
 import random
-from conditions import Burning, Condition, ConditionReturnActions, applyDamageHooks
+from conditions import (
+    Burning,
+    Condition,
+    ConditionReturnActions,
+    applyDamageHooks,
+    inflict,
+)
 from combatHandler import CombatHandler
 from item import Bone, Item, RustyCoin
 import terminalDisplay
@@ -87,6 +93,10 @@ class Enemy:
 
     def turnStart(self, handler: CombatHandler) -> None:
         if self.tickConditions():
+            terminalDisplay.contextDisplay.print_boxify(
+                f"{self.name} stands still, seemingly frozen."
+            )
+            utils.wait_for_enter()
             return
         self.aggro = [entry for entry in self.aggro if entry.player in handler.players]
         for player in self.aggro:
@@ -112,6 +122,10 @@ class Enemy:
         action_method: Any | None = getattr(self, action, None)
         if action_method:
             action_method(handler)
+        else:
+            info = self.stats["actions"].get(action, {})
+            if "inflict" in info:
+                self.inflictAction(info, handler)
         utils.wait_for_enter()
 
     def attack(self, handler: CombatHandler) -> None:
@@ -126,6 +140,10 @@ class Enemy:
         terminalDisplay.contextDisplay.print_boxify(
             f"{self.name} attacks {target.name} for {self.stats["actions"]["attack"]["damage"]} damage."
         )
+        spec = self.stats["actions"]["attack"].get("inflict")
+        if spec:
+            utils.wait_for_enter()
+            self.applyInflict(spec, target, handler)
 
     def takeDamage(
         self,
@@ -164,6 +182,30 @@ class Enemy:
     def applyCondition(self, condition: Condition, handler: CombatHandler) -> None:
         self.conditions.append(condition)
         condition.onApply()
+
+    def applyInflict(
+        self, spec: dict, target: Player | Enemy, handler: CombatHandler
+    ) -> None:
+        if target.health <= 0:
+            return
+        cond = inflict(spec, target, handler)
+        if cond:
+            terminalDisplay.contextDisplay.print_boxify(
+                f"{target.name} if {cond.name}!"
+            )
+
+    def inflictAction(self, info: dict, handler: CombatHandler) -> None:
+        if info.get("text"):
+            terminalDisplay.contextDisplay.print_boxify(
+                info["text"].format(enemy=self.name)
+            )
+        targets = (
+            handler.players[:]
+            if info.get("target") == "all"
+            else [random.choice(handler.players)]
+        )
+        for t in targets:
+            self.applyInflict(info["inflict"], t, handler)
 
 
 class Goblin(Enemy):
@@ -319,6 +361,7 @@ class StoneTitan(Enemy):
     def slam(self, handler: CombatHandler) -> None:
         for player in handler.players:
             player.takeDamage(handler, 5 + (2 * self.bursts), self)
+            self.applyInflict({"type": "stunned", "duration": 1}, player, handler)
 
         terminalDisplay.contextDisplay.print_boxify(
             f"{self.name} slams the ground and a shockwave appears."

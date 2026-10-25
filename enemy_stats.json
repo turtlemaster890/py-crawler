@@ -39,7 +39,12 @@
         "actions": {
             "attack": {
                 "weight": 1,
-                "damage": 5
+                "damage": 5,
+                "inflict": {
+                    "type": "slimed",
+                    "duration": 3,
+                    "chance": 0.5
+                }
             },
             "split": {
                 "weight": 0,
@@ -58,6 +63,15 @@
             "raise_undead": {
                 "weight": 2,
                 "damage": 0
+            },
+            "curse": {
+                "weight": 1,
+                "target": "all",
+                "text": "{enemy} chants a withering curse.",
+                "inflict": {
+                    "type": "weakness",
+                    "duration": 3
+                }
             }
         }
     },
@@ -95,7 +109,12 @@
         "actions": {
             "attack": {
                 "weight": 1,
-                "damage": 7
+                "damage": 7,
+                "inflict": {
+                    "type": "bleeding",
+                    "duration": 3,
+                    "chance": 0.4
+                }
             }
         }
     },
@@ -157,7 +176,12 @@
         "actions": {
             "attack": {
                 "damage": 3,
-                "weight": 2
+                "weight": 2,
+                "inflict": {
+                    "type": "burning",
+                    "duration": 3,
+                    "chance": 0.3
+                }
             },
             "molotov": {
                 "weight": 1

@@ -1,3 +1,4 @@
+import random
 from typing import TYPE_CHECKING
 from enum import Enum
 
@@ -89,6 +90,17 @@ class Slimed(Condition):
 
     def onRemove(self) -> None:
         self.affected.speed += 5
+
+
+class Chilled(Slimed):
+    def __init__(
+        self,
+        duration: int,
+        affected: Player | Enemy,
+        handler: CombatHandler,
+        name: str = "Chilled",
+    ) -> None:
+        super().__init__(duration, affected, handler, name)
 
 
 class Poisoned(Condition):
@@ -250,3 +262,29 @@ def applyDamageHooks(
         if r is not None:
             amount = r
     return max(0, amount)
+
+
+condition_types: dict[str, type[Condition]] = {
+    "poisoned": Poisoned,
+    "burning": Burning,
+    "bleeding": Bleeding,
+    "stunned": Stunned,
+    "slimed": Slimed,
+    "weakness": Weakness,
+    "strength": Strength,
+    "regen": Regen,
+    "chilled": Chilled,
+}
+
+
+def inflict(spec: dict, target: Enemy | Player, handler) -> Condition | None:
+    if random.random() > spec.get("chance", 1):
+        return None
+    cls = condition_types[spec["type"]]
+    for c in target.conditions:
+        if type(c) is cls:
+            c.duration = max(c.duration, spec["duration"])
+            return c
+    cond = cls(spec["duration"], target, handler)  # type: ignore
+    target.applyCondition(cond, handler)
+    return cond

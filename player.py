@@ -151,11 +151,7 @@ class Player:
             lambda c: not isinstance(c, Player)
         )[0]
         damage: int = self.inventory.weapon.damage
-        for item in self.inventory.items:
-            if isinstance(item, Relic):
-                r = item.dealDamage(damage, self, to_attack)
-                if r is not None:
-                    damage = r
+        damage = self.relicDamage(damage, to_attack)
         to_attack.takeDamage(handler, damage, self)
         return True
 
@@ -193,6 +189,16 @@ class Player:
             if isinstance(cond, condition):
                 return cond
 
+    def relicDamage(
+        self, damage: int, target: Player | Enemy, damage_type: str = ""
+    ) -> int:
+        for item in self.inventory.items:
+            if isinstance(item, Relic):
+                r = item.dealDamage(damage, self, target, damage_type)
+                if r is not None:
+                    damage = r
+        return damage
+
     def pretty_print_turn_options(
         self,
         options: list[CombatActionEntry],
@@ -224,6 +230,10 @@ class Player:
             if condition.turnStart() == ConditionReturnActions.SKIP_TURN:
                 skip_turn = True
         if skip_turn:
+            terminalDisplay.contextDisplay.print_boxify(
+                f"{self.name} stands still, seemingly frozen."
+            )
+            utils.wait_for_enter()
             return
         op: list[CombatActionEntry] = self.getTurnOptions(handler)
         selectedOption = 0
@@ -320,11 +330,7 @@ class Player:
         )
         for c in to_attack:
             damage: int = 5
-            for item in self.inventory.items:
-                if isinstance(item, Relic):
-                    r = item.dealDamage(damage, self, c, "magic")
-                    if r is not None:
-                        damage = r
+            damage = self.relicDamage(damage, c, "magic")
             c.takeDamage(handler, damage, self)
         return True
 
