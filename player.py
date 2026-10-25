@@ -85,6 +85,11 @@ class Player:
     def inspect(self):
         terminalDisplay.contextDisplay.print_boxify(
             f"Health: {self.health}/{self.max_health} Stamina: {self.stamina}"
+            + (
+                f"Conditions: {", ".join([cond.name for cond in self.conditions])}"
+                if self.conditions
+                else ""
+            )
         )
         utils.wait_for_enter()
 
