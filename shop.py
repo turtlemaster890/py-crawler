@@ -20,6 +20,8 @@ def make_shop():
         ((item.Staff(), 500), 1),
         ((item.HealthPotion(), 125), 2),
         ((item.Key(), 50), 4),
+        ((item.AntidoteBottle(), 25), 5),
+        ((item.AntidoticCharm(), 350), 1),
     ]
 
     return random.choices([e[0] for e in items], [e[1] for e in items], k=3)

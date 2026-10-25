@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Self, TypedDict, TYPE_CHECKING
 import json
 import random
-from conditions import Condition, Poisioned
+from conditions import Condition, Poisoned
 from combatHandler import CombatHandler
 from item import Bone, Item, RustyCoin
 import terminalDisplay
@@ -120,7 +120,11 @@ class Enemy:
         )
 
     def takeDamage(
-        self, handler: CombatHandler, damage: int, attacker: Player | None = None
+        self,
+        handler: CombatHandler,
+        damage: int,
+        attacker: Player | None = None,
+        damage_type: str = "",
     ) -> None:
         for player in self.aggro:
             if player.player is attacker:
@@ -364,7 +368,7 @@ class Pyromaniac(Enemy):
             f"{self.name} throws a glass bottle. Flames rise up in the room."
         )
         for p in handler.players:
-            p.applyCondition(Poisioned(3, p, handler, "Burning"), handler)
+            p.applyCondition(Poisoned(3, p, handler, "Burning"), handler)
 
 
 enemy_type_to_class = {

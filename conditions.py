@@ -1,5 +1,9 @@
 from typing import TYPE_CHECKING
 
+from combatHandler import CombatHandler
+from enemy import Enemy
+from player import Player
+
 if TYPE_CHECKING:
     from player import Player
     from enemy import Enemy
@@ -73,7 +77,7 @@ class Slimed(Condition):
         self.affected.speed -= 5
 
 
-class Poisioned(Condition):
+class Poisoned(Condition):
     def __init__(
         self,
         duration: int,
@@ -85,7 +89,7 @@ class Poisioned(Condition):
 
     def turnStart(self) -> None:
         super().turnStart()
-        self.affected.takeDamage(self.combat, 2)
+        self.affected.takeDamage(self.combat, 2, None, "poison")
 
 
 class Strength(Condition):
@@ -106,3 +110,23 @@ class Strength(Condition):
         damage_type: str = "",
     ) -> int | None:
         return amount + 2
+
+
+class Weakness(Condition):
+    def __init__(
+        self,
+        duration: int,
+        affected: Player | Enemy,
+        handler: CombatHandler,
+        name: str = "",
+    ) -> None:
+        super().__init__(name, duration, affected, handler)
+
+    def dealDamage(
+        self,
+        amount: int,
+        attacker: Player | Enemy | None = None,
+        defender: Player | Enemy | None = None,
+        damage_type: str = "",
+    ) -> int | None:
+        return amount - 2

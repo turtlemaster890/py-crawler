@@ -156,10 +156,12 @@ class Player:
         to_attack.takeDamage(handler, damage, self)
         return True
 
-    def takeDamage(self, handler: CombatHandler, damage: int, attacker=None) -> None:
+    def takeDamage(
+        self, handler: CombatHandler, damage: int, attacker=None, damage_type: str = ""
+    ) -> None:
         for relic in self.inventory.items:
             if isinstance(relic, Relic):
-                damage = relic.takeDamage(damage, attacker, self) or damage
+                damage = relic.takeDamage(damage, attacker, self, damage_type) or damage
         if self.inventory.armor:
             damage = max(1, damage - self.inventory.armor.defense)
         self.health -= damage
@@ -178,6 +180,11 @@ class Player:
 
     def applyCondition(self, condition: Condition, handler: CombatHandler) -> None:
         self.conditions.append(condition)
+
+    def has_condition(self, condition: type[Condition]) -> Condition | None:
+        for cond in self.conditions:
+            if isinstance(cond, condition):
+                return cond
 
     def pretty_print_turn_options(
         self,

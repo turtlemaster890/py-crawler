@@ -2,7 +2,9 @@ import random
 from typing import TYPE_CHECKING, Self
 
 from actions import CombatActionEntry, PartyAction, PlayerAction
-from conditions import Condition, Slimed
+from conditions import Condition, Poisoned, Slimed
+from enemy import Enemy
+from player import Player
 import terminalDisplay
 import utils
 
@@ -267,6 +269,28 @@ class HealthPotion(Consumable):
         return self.drink(handler.party, player)
 
 
+class AntidoteBottle(Consumable):
+    item_type = "antidoteBottle"
+
+    def __init__(self, name: str = "Bottle of Antidote") -> None:
+        super().__init__(name)
+        self.combat_actions = [CombatActionEntry("Drink Antidote", self.drink)]
+
+    def drink(self, player: Player, handler: CombatHandler) -> bool:
+        cond = player.has_condition(Poisoned)
+        if cond:
+            cond.duration = 0
+            player.inventory.remove(self)
+            terminalDisplay.contextDisplay.print_boxify(
+                f"{player.name} drinks the bottle of antidote. They feel more relaxed now."
+            )
+            utils.wait_for_enter()
+            return True
+        terminalDisplay.contextDisplay.print_boxify(f"{player.name} isn't poisoned!")
+        utils.wait_for_enter()
+        return False
+
+
 class ManaBooster(Relic):
     item_type: str = "manaBooster"
     description = "Magic damage deals +2"
@@ -316,6 +340,24 @@ class QuickBoots(Relic):
         player.speed -= 10
 
 
+class AntidoticCharm(Relic):
+    item_type: str = "antidoticCharm"
+    description = "Prevents damage from poison"
+
+    def __init__(self, name: str = "Antidotic Charm") -> None:
+        super().__init__(name)
+
+    def takeDamage(
+        self,
+        amount: int,
+        attacker: Player | Enemy | None = None,
+        defender: Player | Enemy | None = None,
+        damage_type: str = "",
+    ) -> int | None:
+        if damage_type == "poison":
+            return 0
+
+
 item_type_to_class = {
     "item": Item,
     "weapon": Weapon,
@@ -331,6 +373,8 @@ item_type_to_class = {
     "healthPotion": HealthPotion,
     "slimeball": SlimeBall,
     "key": Key,
+    "antidoticCharm": AntidoticCharm,
+    "antidoteBottle": AntidoteBottle,
 }
 
 
