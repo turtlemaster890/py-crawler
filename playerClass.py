@@ -13,11 +13,12 @@ class PlayerClass:
 
 class Tank(PlayerClass):
     @staticmethod
-    def taunt(player: Player, handler: CombatHandler):
+    def taunt(player: Player, handler: CombatHandler) -> bool:
         for enemy in handler.enemies:
             for ag in enemy.aggro:
                 if ag.player is player:
                     ag.value += 35
+        return True
 
     combat_actions = [CombatActionEntry("Taunt", taunt, "Taunt all enemies", 2)]
 

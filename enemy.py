@@ -94,6 +94,12 @@ class Enemy:
         self.takeAction(self.action, handler)
         self.decideAction()
 
+    def inspect(self):
+        terminalDisplay.contextDisplay.print_boxify(
+            f"Health: {self.health}/{self.max_health}"
+        )
+        utils.wait_for_enter()
+
     def takeAction(self, action: str, handler: CombatHandler) -> None:
         action_method: Any | None = getattr(self, action, None)
         if action_method:

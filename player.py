@@ -10,7 +10,7 @@ from actions import CombatActionEntry, PlayerAction
 from conditions import Condition
 from pynput.keyboard import Key
 from utils import key_to_delta, getRelativePath
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING, Callable, Self, TypedDict
 
 import utils
 
@@ -37,22 +37,22 @@ class PlayerStats(TypedDict):
 
 
 class Player:
-    def __init__(self, name: str = "Player", class_type: str = "warrior"):
-        self.name = name
-        self.class_type = class_type
+    def __init__(self, name: str = "Player", class_type: str = "warrior") -> None:
+        self.name: str = name
+        self.class_type: str = class_type
         self.player_class = playerClass.classFromStr(class_type)
         self.inventory = inventory.PlayerInventory()
 
         with open(getRelativePath("player_stats.json"), "r") as f:
             all_stats: dict[str, PlayerStats] = json.load(f)
-            self.stats = all_stats[self.class_type]
+            self.stats: PlayerStats = all_stats[self.class_type]
 
         self.combat: CombatHandler | None = None
-        self.speed = self.stats["base_stats"]["speed"]
-        self.max_health = self.stats["base_stats"]["health"]
-        self.health = self.max_health
-        self.max_stamina = self.stats["base_stats"]["stamina"]
-        self.stamina = self.max_stamina
+        self.speed: int = self.stats["base_stats"]["speed"]
+        self.max_health: int = self.stats["base_stats"]["health"]
+        self.health: int = self.max_health
+        self.max_stamina: int = self.stats["base_stats"]["stamina"]
+        self.stamina: int = self.max_stamina
         self.conditions: list[Condition] = []
         self.inventory.equip(Weapon(self.stats["starting_items"]["weapon"]))
         self.inventory.equip(Armor(self.stats["starting_items"]["armor"]))
@@ -72,8 +72,8 @@ class Player:
         }
 
     @classmethod
-    def from_json(cls, j):
-        new_player = cls(name=j["name"], class_type=j["class_type"])
+    def from_json(cls, j) -> Self:
+        new_player: Self = cls(name=j["name"], class_type=j["class_type"])
         new_player.inventory = inventory.from_json(j["inventory"])
         new_player.speed = j["speed"]
         new_player.max_health = j["max_health"]
@@ -82,10 +82,16 @@ class Player:
         new_player.stamina = j["stamina"]
         return new_player
 
+    def inspect(self):
+        terminalDisplay.contextDisplay.print_boxify(
+            f"Health: {self.health}/{self.max_health} Stamina: {self.stamina}"
+        )
+        utils.wait_for_enter()
+
     def getTurnOptions(self, handler: CombatHandler) -> list[CombatActionEntry]:
         actions: list[CombatActionEntry] = [
             CombatActionEntry("Attack", self.attack),
-            CombatActionEntry("Pass", lambda p, h: None),
+            CombatActionEntry("Pass", lambda p, h: True),
             # (
             #     "kill other player",
             #     lambda h: h.select_character(
@@ -95,6 +101,11 @@ class Player:
             # ),
             CombatActionEntry(
                 "Scorching Ray", self.scorching_ray, "Multi-target magic beam", 10
+            ),
+            CombatActionEntry(
+                "Inspect",
+                lambda p, h: h.select_character(lambda c: True)[0].inspect(),
+                "Inspect Entry.",
             ),
         ]
         for i in self.inventory.items:
@@ -110,14 +121,14 @@ class Player:
                     "debug.win",
                     lambda p, h: [
                         [c.takeDamage(h, 1000, p) for c in h.enemies.copy()],
-                        None,
+                        True,
                     ][1],
                     "Win.",
                 )
             )
         return [action for action in actions if action.stamina_cost <= self.stamina]
 
-    def action_menu(self, party: Party):
+    def action_menu(self, party: Party) -> None:
         actions: list[tuple[str, PlayerAction]] = [
             ("View Inventory", self.inventory_menu)
         ]
@@ -132,9 +143,9 @@ class Player:
             else:
                 return
 
-    def attack(self, player: Player, handler: CombatHandler):
+    def attack(self, player: Player, handler: CombatHandler) -> bool:
         if not self.inventory.weapon:
-            return
+            return False
         to_attack: Player | Enemy = handler.select_character(
             lambda c: not isinstance(c, Player)
         )[0]
@@ -143,8 +154,9 @@ class Player:
             if isinstance(item, Relic):
                 damage = item.dealDamage(damage, self, to_attack) or damage
         to_attack.takeDamage(handler, damage, self)
+        return True
 
-    def takeDamage(self, handler: CombatHandler, damage: int, attacker=None):
+    def takeDamage(self, handler: CombatHandler, damage: int, attacker=None) -> None:
         for relic in self.inventory.items:
             if isinstance(relic, Relic):
                 damage = relic.takeDamage(damage, attacker, self) or damage
@@ -154,7 +166,7 @@ class Player:
         if self.health <= 0:
             self.die(handler)
 
-    def die(self, handler: CombatHandler):
+    def die(self, handler: CombatHandler) -> None:
         print(f"Player {self.name} dies!")
         for relic in self.inventory.items:
             if isinstance(relic, Relic):
@@ -164,7 +176,7 @@ class Player:
         if self.health <= 0:
             handler.removePlayer(self)
 
-    def applyCondition(self, condition: Condition, handler: CombatHandler):
+    def applyCondition(self, condition: Condition, handler: CombatHandler) -> None:
         self.conditions.append(condition)
 
     def pretty_print_turn_options(
@@ -174,12 +186,12 @@ class Player:
         w: int,
         h: int,
     ) -> list[str]:
-        content_width = w - 2
-        content_height = h - 2
+        content_width: int = w - 2
+        content_height: int = h - 2
         out: list[str] = []
         out.append("┌" + "─" * content_width + "┐")
         for i in range(min(content_height, len(options))):
-            opt = options[i]
+            opt: CombatActionEntry = options[i]
             out.append(
                 "│"
                 + (("> " if i == selected else "  ") + opt.name).ljust(content_width)
@@ -188,26 +200,30 @@ class Player:
         out.append("└" + "─" * content_width + "┘")
         return out
 
-    def turnStart(self, handler: CombatHandler):
-        self.stamina = min(self.max_stamina, self.stamina + 1)
+    def turnStart(self, handler: CombatHandler) -> None:
+        self.stamina: int = min(self.max_stamina, self.stamina + 1)
         for relic in self.inventory.items:
             if isinstance(relic, Relic):
                 relic.turnStart()
         for condition in self.conditions:
             condition.turnStart()
-        op = self.getTurnOptions(handler)
+        op: list[CombatActionEntry] = self.getTurnOptions(handler)
         selectedOption = 0
-        lastProvider = terminalDisplay.contextDisplay.messageProvider
+        lastProvider: Callable[[int, int], list[str]] | None = (
+            terminalDisplay.contextDisplay.messageProvider
+        )
         terminalDisplay.contextDisplay.messageProvider = (
             lambda w, h: self.pretty_print_turn_options(op, selectedOption, w, h)
         )
-        lastDescProvider = terminalDisplay.descriptionDisplay.messageProvider
+        lastDescProvider: Callable[[int, int], list[str]] | None = (
+            terminalDisplay.descriptionDisplay.messageProvider
+        )
 
         def get_desc(w: int, h: int) -> list[str]:
-            option = op[selectedOption]
-            st_cst = ""
+            option: CombatActionEntry = op[selectedOption]
+            st_cst: str = ""
             if option.stamina_cost:
-                st_cst = f"Stamina Cost: {option.stamina_cost} "
+                st_cst: str = f"Stamina Cost: {option.stamina_cost} "
             if option.description or st_cst:
                 return utils.boxify(w, h, f"{st_cst}{option.description}")
             return []
@@ -220,18 +236,20 @@ class Player:
             selectedOption %= len(op)
             terminalDisplay.updateDisplays()
             while True:
-                key = inputController.getKey()
+                key: Key | menuHelper.KeyCode | None = inputController.getKey()
                 if key in key_to_delta:
                     selectedOption += key_to_delta[key]
                     break
                 if key == Key.enter:
-                    terminalDisplay.contextDisplay.messageProvider = lastProvider
-                    terminalDisplay.descriptionDisplay.messageProvider = (
-                        lastDescProvider
-                    )
                     self.stamina -= op[selectedOption].stamina_cost
-                    op[selectedOption].action(self, handler)
-                    return
+                    if op[selectedOption].action(self, handler):
+                        terminalDisplay.contextDisplay.messageProvider = lastProvider
+                        terminalDisplay.descriptionDisplay.messageProvider = (
+                            lastDescProvider
+                        )
+                        return
+                    else:
+                        break
 
     def moveItemToParty(self, party: Party, item: Item) -> bool:
         if item not in self.inventory:
@@ -243,13 +261,13 @@ class Player:
             return False
         return True
 
-    def inventory_menu(self, party: Party, _):
-        options = self.inventory.items
-        optionStrs = [i.name for i in options]
+    def inventory_menu(self, party: Party, _) -> None:
+        options: list[Item] = self.inventory.items
+        optionStrs: list[str] = [i.name for i in options]
         while True:
-            option = menuHelper.menu("Pick an item", optionStrs)
+            option: int = menuHelper.menu("Pick an item", optionStrs)
             if option != -1:
-                it = options[option]
+                it: Item = options[option]
                 action_options: list[tuple[str, PlayerAction]] = [
                     (
                         "Move to party",
@@ -257,9 +275,9 @@ class Player:
                     )
                 ]
                 action_options.extend(it.player_actions)
-                act_options_strs = [ac[0] for ac in action_options]
+                act_options_strs: list[str] = [ac[0] for ac in action_options]
                 while True:
-                    option = menuHelper.menu("Action to take:", act_options_strs)
+                    option: int = menuHelper.menu("Action to take:", act_options_strs)
                     if option != -1:
                         if action_options[option][1](party, self):
                             return
@@ -268,16 +286,16 @@ class Player:
             else:
                 return
 
-    def startCombat(self, handler: CombatHandler):
+    def startCombat(self, handler: CombatHandler) -> None:
         for relic in self.inventory.items:
             if isinstance(relic, Relic):
                 relic.player = self
                 relic.combatStart(handler)
 
-    def leaveCombat(self):
+    def leaveCombat(self) -> None:
         self.conditions = []
 
-    def scorching_ray(self, player: Player, handler: CombatHandler):
+    def scorching_ray(self, player: Player, handler: CombatHandler) -> bool:
         to_attack: list[Player | Enemy] = handler.select_character(
             lambda c: not isinstance(c, Player), 3, 1
         )
@@ -287,3 +305,4 @@ class Player:
                 if isinstance(item, Relic):
                     damage = item.dealDamage(damage, self, c, "magic") or damage
             c.takeDamage(handler, damage, self)
+        return True

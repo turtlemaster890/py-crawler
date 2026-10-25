@@ -16,6 +16,12 @@ from colorama import Style
 
 room_weights: dict[type[Room], int] = {
     Room: 15,
+    ChestRoom: 2,
+    ShopRoom: 1,
+}
+
+branch_room_weights: dict[type[Room], int] = {
+    Room: 10,
     ChestRoom: 4,
     ShopRoom: 2,
     LockedRoom: 1,
@@ -232,7 +238,9 @@ def gen_branch(
                     maze[newPos.y][newPos.x] = maze[newPos.y][
                         newPos.x
                     ] = random.choices(
-                        list(room_weights.keys()), list(room_weights.values()), k=1
+                        list(branch_room_weights.keys()),
+                        list(branch_room_weights.values()),
+                        k=1,
                     )[
                         0
                     ](

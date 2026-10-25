@@ -75,7 +75,7 @@ class SlimeBall(Item):
         super().__init__(name)
         self.combat_actions = [CombatActionEntry(f"Throw {self.name}", self.throw)]
 
-    def throw(self, player: Player, combatHandler: CombatHandler) -> None:
+    def throw(self, player: Player, combatHandler: CombatHandler) -> bool:
         from enemy import Enemy
 
         target: Player | Enemy = combatHandler.select_character(
@@ -83,6 +83,7 @@ class SlimeBall(Item):
         )[0]
         assert isinstance(target, Enemy)
         target.applyCondition(Slimed(3, target, combatHandler), combatHandler)
+        return True
 
 
 class Key(Item):
@@ -156,7 +157,7 @@ class Staff(Weapon):
             CombatActionEntry("Fireball", self.fireball, "High single-target damage", 5)
         ]
 
-    def fireball(self, player: Player, handler: CombatHandler):
+    def fireball(self, player: Player, handler: CombatHandler) -> bool:
         from player import Player
 
         to_attack: Player | Enemy = handler.select_character(
@@ -167,6 +168,7 @@ class Staff(Weapon):
             if isinstance(item, Relic):
                 damage = item.dealDamage(damage, player, to_attack, "magic") or damage
         to_attack.takeDamage(handler, damage, player)
+        return True
 
 
 class Armor(Item):
@@ -261,8 +263,8 @@ class HealthPotion(Consumable):
         player.inventory.remove(self)
         return True
 
-    def drink_combat(self, player: Player, handler: CombatHandler) -> None:
-        self.drink(handler.party, player)
+    def drink_combat(self, player: Player, handler: CombatHandler) -> bool:
+        return self.drink(handler.party, player)
 
 
 class ManaBooster(Relic):

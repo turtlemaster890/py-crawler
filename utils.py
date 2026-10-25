@@ -5,7 +5,7 @@ import inputController
 from typing import Any, Callable
 from pynput.keyboard import Key
 
-DEBUG_END_COMBAT = True
+DEBUG_END_COMBAT = False
 DEBUG_WIN_ACTION = True
 DEBUG_VIEW = False
 
