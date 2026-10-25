@@ -48,7 +48,6 @@ def main():
             party = Party(Pos(14, 6), [player1, player2, player3, player4])
             party.funds = 900
             mz = gen_main_path(party.squads[0].pos, 50, 28, 13)
-
         mController = mazeController(mz, 28, 13, party)
         current_room = mz[party.squads[0].pos.y][party.squads[0].pos.x]
         if current_room:

@@ -164,35 +164,9 @@ class Player:
         for condition in self.conditions:
             condition.turnStart()
         op = self.getTurnOptions(handler)
-        selectedOption = 0
-        lastProvider = terminalDisplay.contextDisplay.messageProvider
-        terminalDisplay.contextDisplay.messageProvider = (
-            lambda w, h: self.pretty_print_turn_options(op, selectedOption, w, h)
-        )
-        lastDescProvider = terminalDisplay.descriptionDisplay.messageProvider
-        terminalDisplay.descriptionDisplay.messageProvider = lambda w, h: (
-            utils.boxify(w, h, op[selectedOption][2])
-            if len(op[selectedOption]) > 2
-            else []
-        )
-        # terminalDisplay.combatDisplay.messageProvider = (
-        #     lambda w, h:
-        # )
-        while True:
-            selectedOption %= len(op)
-            terminalDisplay.updateDisplays()
-            while True:
-                key = inputController.getKey()
-                if key in key_to_delta:
-                    selectedOption += key_to_delta[key]
-                    break
-                if key == Key.enter:
-                    terminalDisplay.contextDisplay.messageProvider = lastProvider
-                    terminalDisplay.descriptionDisplay.messageProvider = (
-                        lastDescProvider
-                    )
-                    op[selectedOption][1](handler)
-                    return
+        index = handler.choose_action(self, op)
+        op[index][1](handler)
+        return
 
     def moveItemToParty(self, party: Party, item: Item) -> bool:
         if item not in self.inventory:

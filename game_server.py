@@ -68,7 +68,6 @@ def serve_client(conn):
                     squad = clients[ms]
                     if squad is not None:
                         handler, success, squad = apply_message(controller, squad, msg)
-                        clients[ms] = squad
                         
 
             broadcast()

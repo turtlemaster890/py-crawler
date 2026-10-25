@@ -89,9 +89,6 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     ms = MessageSocket(s)
     inbox = queue.Queue()
     threading.Thread(target=receiver, args=(ms, inbox), daemon=True).start()
-    colorama.init(autoreset=True)
-    utils.clear()
-    print("\033[?25l", end="")
     server_gone = False
     try:
         ms.send_msg({"type":"join","characters":[0]})
@@ -106,7 +103,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 ms.send_msg({"type": "move", "dir": KEYS[key]})
             time.sleep(0.001)
     finally:
-        print("\033[?25l", end="")
+        print("\033[?25h", end="")
         terminalDisplay.moveCursor(0, 26)
     if server_gone:
         print("Server disconnected")

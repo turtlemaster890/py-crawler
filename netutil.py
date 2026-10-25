@@ -7,8 +7,11 @@ class MessageSocket:
 
 
     def send_msg(self, obj):
-        line = json.dumps(obj) + "\n"
-        self.sock.sendall(line.encode())
+        try:
+            line = json.dumps(obj) + "\n"
+            self.sock.sendall(line.encode())
+        except OSError:
+            pass
 
     def recv_msg(self):
         while b"\n" not in self.buffer:

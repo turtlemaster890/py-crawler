@@ -55,6 +55,33 @@ class CombatHandler:
                 self.players.remove(player)
                 return
 
+    def choose_action(self, player, options) -> int:
+        selected_option = 0
+        lastProvider = terminalDisplay.contextDisplay.messageProvider
+        terminalDisplay.contextDisplay.messageProvider = (
+            lambda w, h: player.pretty_print_turn_options(options, selected_option, w, h)
+        )
+        lastDescProvider = terminalDisplay.descriptionDisplay.messageProvider
+        terminalDisplay.descriptionDisplay.messageProvider = lambda w, h: (
+            utils.boxify(w, h, options[selected_option][2])
+            if len(options[selected_option]) > 2
+            else []
+        )
+        while True:
+            selected_option %= len(options)
+            terminalDisplay.updateDisplays()
+            while True:
+                key = inputController.getKey()
+                if key in utils.key_to_delta:
+                    selected_option += utils.key_to_delta[key]
+                    break
+                if key == Key.enter:
+                    terminalDisplay.contextDisplay.messageProvider = lastProvider
+                    terminalDisplay.descriptionDisplay.messageProvider = (
+                        lastDescProvider
+                    )
+                    return selected_option
+
     def combat(self) -> bool:
         if utils.DEBUG:
             self.enemies = []
@@ -114,12 +141,7 @@ class CombatHandler:
         out.append("└" + "─" * (w - 2) + "┘")
         return out
 
-    def select_character(
-        self, f: Callable[[Player | enemy], bool], count: int = 1, minimum: int = -1
-    ) -> list[Player | enemy]:
-        if minimum == -1:
-            minimum = count
-        options = [e for e in self.turn_order if f(e.character)]
+    def choose_targets(self, options, count, minimum) -> list[int]:
         hovered = 0
         selected: list[TurnEntry] = []
         terminalDisplay.combatDisplay.messageProvider = (
@@ -147,11 +169,15 @@ class CombatHandler:
                             terminalDisplay.combatDisplay.messageProvider = (
                                 self.print_turn_order_list
                             )
-                            return [option.character for option in selected]
-                    # terminalDisplay.combatDisplay.messageProvider = (
-                    #     self.print_turn_order_list
-                    # )
-                    # return [option.character for option in selected]
+                            return [options.index(e) for e in selected]
+
+    def select_character(
+        self, f, count: int = 1, minimum: int = -1):
+        if minimum == -1:
+            minimum = count
+        options = [e for e in self.turn_order if f(e.character)]
+        chosen = self.choose_targets(options, count, minimum)
+        return [options[i].character for i in chosen]
 
     def print_turn_order_list_select(
         self,
