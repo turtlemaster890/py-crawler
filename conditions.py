@@ -2,10 +2,6 @@ import random
 from typing import TYPE_CHECKING
 from enum import Enum
 
-from combatHandler import CombatHandler
-from enemy import Enemy
-from player import Player
-
 if TYPE_CHECKING:
     from player import Player
     from enemy import Enemy

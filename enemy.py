@@ -191,7 +191,7 @@ class Enemy:
         cond = inflict(spec, target, handler)
         if cond:
             terminalDisplay.contextDisplay.print_boxify(
-                f"{target.name} if {cond.name}!"
+                f"{target.name} is {cond.name}!"
             )
 
     def inflictAction(self, info: dict, handler: CombatHandler) -> None:
