@@ -1,3 +1,4 @@
+from dataclasses import replace
 import json
 from enemy import Enemy
 import inventory
@@ -109,8 +110,9 @@ class Player:
                 "Inspect Entry.",
             ),
         ]
-        for i in self.inventory.items:
-            actions.extend(i.combat_actions)
+        for it, n in inventory.group_items(self.inventory.items):
+            for a in it.combat_actions:
+                actions.append(replace(a, name=f"{a.name} (x{n})") if n > 1 else a)
         if self.inventory.weapon:
             actions.extend(self.inventory.weapon.combat_actions)
         if self.inventory.armor:
@@ -290,29 +292,28 @@ class Player:
         return True
 
     def inventory_menu(self, party: Party, _) -> None:
-        options: list[Item] = self.inventory.items
-        optionStrs: list[str] = [i.name for i in options]
         while True:
-            option: int = menuHelper.menu("Pick an item", optionStrs)
-            if option != -1:
-                it: Item = options[option]
-                action_options: list[tuple[str, PlayerAction]] = [
-                    (
-                        "Move to party",
-                        lambda party, player: self.moveItemToParty(party, it),
-                    )
-                ]
-                action_options.extend(it.player_actions)
-                act_options_strs: list[str] = [ac[0] for ac in action_options]
-                while True:
-                    option: int = menuHelper.menu("Action to take:", act_options_strs)
-                    if option != -1:
-                        if action_options[option][1](party, self):
-                            return
-                    else:
-                        break
-            else:
+            groups = inventory.group_items(self.inventory.items)
+            option: int = menuHelper.menu(
+                "Pick an item", [inventory.stack_label(i, n) for i, n in groups]
+            )
+            if option == -1:
                 return
+            it: Item = groups[option][0]
+            action_options: list[tuple[str, PlayerAction]] = [
+                (
+                    "Move to party",
+                    lambda party, player: self.moveItemToParty(party, it),
+                )
+            ]
+            action_options.extend(it.player_actions)
+            act_options_strs: list[str] = [ac[0] for ac in action_options]
+            while True:
+                act: int = menuHelper.menu("Action to take:", act_options_strs)
+                if act == -1:
+                    break
+                if action_options[option][1](party, self):
+                    return
 
     def startCombat(self, handler: CombatHandler) -> None:
         for relic in self.inventory.items:

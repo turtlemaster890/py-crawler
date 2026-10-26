@@ -1,15 +1,18 @@
-from typing import Any, Callable
+from typing import Any, Callable, TYPE_CHECKING
 
 from Pos import Pos
 import menuHelper
 from player import Player
-from inventory import Inventory
+from inventory import Inventory, group_items, stack_label
 from item import Armor, Item, Weapon
 from inventory import Inventory
 import terminalDisplay
 import inputController
 import utils
 from pynput.keyboard import Key
+
+if TYPE_CHECKING:
+    from room import Room
 
 
 class Party:
@@ -38,7 +41,15 @@ class Party:
             return True
         return True
 
-    def move_to_member_menu(self, item: Item):
+    def moveStackToMember(self, member: Player, item: Item) -> int:
+        same = [
+            i
+            for i in self.inventory.items
+            if i.item_type == item.item_type and i.name == item.name
+        ]
+        return sum(self.moveItemToMember(member, i) for i in same)
+
+    def move_to_member_menu(self, item: Item, count: int = 1):
         selected = 0
         options = self.members
         lastProvider = terminalDisplay.contextDisplay.messageProvider
@@ -57,7 +68,10 @@ class Party:
                     break
                 if key == Key.enter:
                     if selected < len(options):
-                        self.moveItemToMember(options[selected], item)
+                        if count > 1:
+                            self.moveStackToMember(options[selected], item)
+                        else:
+                            self.moveItemToMember(options[selected], item)
                         terminalDisplay.contextDisplay.messageProvider = lastProvider
                         terminalDisplay.updateDisplays()
                         return True
@@ -84,11 +98,18 @@ class Party:
         out.append("└" + "─" * (w - 2) + "┘")
         return out
 
-    def item_menu(self, item: Item, room):
+    def item_menu(self, item: Item, room: Room, count: int = 1):
         selected = 0
         options: list[tuple[str, Callable[[], Any]]] = [
             ("Move to player", lambda: self.move_to_member_menu(item))
         ]
+        if count > 1 and not isinstance(item, (Weapon, Armor)):
+            options.append(
+                (
+                    f"Move all {count} to player",
+                    lambda: self.move_to_member_menu(item, count),
+                )
+            )
         options.extend([(a[0], lambda: a[1](self, room)) for a in item.party_actions])
         lastProvider = terminalDisplay.contextDisplay.messageProvider
         terminalDisplay.contextDisplay.messageProvider = (
@@ -157,11 +178,12 @@ class Party:
         #             terminalDisplay.contextDisplay.messageProvider = lastProvider
         #             return
         while True:
-            option = menuHelper.menu("Items", [i.name for i in self.inventory.items])
-            if option != -1:
-                if self.item_menu(self.inventory.items[option], room):
-                    return
-            else:
+            groups = group_items(self.inventory.items)
+            option = menuHelper.menu("Items", [stack_label(i, n) for i, n in groups])
+            if option == -1:
+                return
+            item, count = groups[option]
+            if self.item_menu(item, room, count):
                 return
 
     def players_menu(self, party: Party, room):

@@ -44,7 +44,12 @@ class mazeController:
         for connection in startRoom.connections:
             self.party.discovered_positions.add(startPos + connection)
         terminalDisplay.mazeDisplay.messageProvider = lambda x, y: pretty_print_list(
-            x, y, self.maze, self.party.discovered_positions, self.party.pos
+            x,
+            y,
+            self.maze,
+            self.party.discovered_positions,
+            self.party.pos,
+            self.party.floor,
         )
         terminalDisplay.descriptionDisplay.messageProvider = (
             lambda w, h: self.print_description(w, h)

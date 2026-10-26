@@ -189,7 +189,7 @@ class Relic(Item):
 
     def __init__(
         self,
-        name: str,
+        name: str = "Relic",
     ) -> None:
         self.combat: CombatHandler | None = None
         self.player: Player | None = None

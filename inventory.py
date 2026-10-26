@@ -73,6 +73,17 @@ class PlayerInventory(Inventory):
             return equiped_armor
 
 
+def group_items(items: list[Item]) -> list[tuple[Item, int]]:
+    groups: dict[tuple[str, str], list[Item]] = {}
+    for it in items:
+        groups.setdefault((it.item_type, it.name), []).append(it)
+    return [(g[0], len(g)) for g in groups.values()]
+
+
+def stack_label(item: Item, count: int) -> str:
+    return f"{item.name} (x{count})" if count > 1 else item.name
+
+
 inventory_type_to_class = {"inventory": Inventory, "player_inventory": PlayerInventory}
 
 

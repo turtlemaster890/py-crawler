@@ -110,12 +110,17 @@ def pretty_print(maze: maze, discovered_positions: set[Pos], current_position: P
 
 
 def pretty_print_list(
-    w: int, h: int, maze: maze, discovered_positions: set[Pos], current_position: Pos
+    w: int,
+    h: int,
+    maze: maze,
+    discovered_positions: set[Pos],
+    current_position: Pos,
+    floor: int = 1,
 ) -> list[str]:
     content_width = w - 2
     content_height = h - 2
 
-    out = ["┌" + "─" * content_width + "┐"]
+    out = ["┌" + f" Floor {floor} ".center(content_width, "─") + "┐"]
     for y in range(content_height):
         if y < len(maze):
             row = maze[y]

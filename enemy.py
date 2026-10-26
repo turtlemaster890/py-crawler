@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Self, TypedDict, TYPE_CHECKING
+from typing import Any, Self, Sequence, TypedDict, TYPE_CHECKING
 import json
 import random
 from conditions import (
@@ -10,7 +10,17 @@ from conditions import (
     inflict,
 )
 from combatHandler import CombatHandler
-from item import Bone, Item, ManaBooster, QuickBoots, RustyCoin, ThornedAmulet
+from item import (
+    AntidoticCharm,
+    Bone,
+    HealthPotion,
+    Item,
+    ManaBooster,
+    QuickBoots,
+    Relic,
+    RustyCoin,
+    ThornedAmulet,
+)
 import terminalDisplay
 from utils import getRelativePath
 import utils
@@ -58,7 +68,7 @@ class Enemy:
         self.health: int = self.max_health
         self.action: str = ""
         self.aggro: list[AggroEntry] = []
-        self.loot_table: list[tuple[int, list[Item]]] = [(1, [])]
+        self.loot_table: list[tuple[int, Sequence[Item]]] = [(1, [])]
 
     def scale(self, floor: int) -> None:
         f = floor - 1
@@ -177,7 +187,7 @@ class Enemy:
         terminalDisplay.updateDisplays()
         terminalDisplay.contextDisplay.print_boxify(f"{self.name} has been defeated!")
         utils.wait_for_enter()
-        drops: list[Item] = random.choices(
+        drops: Sequence[Item] = random.choices(
             [l[1] for l in self.loot_table], [l[0] for l in self.loot_table], k=1
         )[0]
         if drops:
@@ -344,11 +354,6 @@ class StoneTitan(Enemy):
         self.coreCharge = 0
         self.bursts = 0
         self.enraged = False
-        self.loot_table = [
-            (1, [ThornedAmulet()]),
-            (1, [QuickBoots()]),
-            (1, [ManaBooster()]),
-        ]
 
     def to_json(self):
         j = super().to_json()
@@ -423,6 +428,17 @@ class StoneTitan(Enemy):
         )
 
     def die(self, handler: CombatHandler) -> None:
+        floor = handler.party.floor
+        relics: list[type[Relic]] = [
+            ThornedAmulet,
+            QuickBoots,
+            ManaBooster,
+            AntidoticCharm,
+        ]
+        picks = random.sample(relics, k=min(len(relics), 1 + floor // 3))
+        self.loot_table = [
+            (1, [r() for r in picks] + [HealthPotion() for _ in range(floor)])
+        ]
         super().die(handler)
         reward = 500 * handler.party.floor
         handler.party.funds += reward
