@@ -26,6 +26,10 @@ class CombatHandler:
         self.party = party
         self.players = players or []
         self.enemies = enemies or []
+        for enemy in self.enemies:
+            enemy.combatStart(self)
+        for player in self.players:
+            player.startCombat(self)
         self.turn_order: list[TurnEntry] = []
         for character in self.players + self.enemies:
             av: float = 10000 / character.speed
@@ -35,10 +39,6 @@ class CombatHandler:
             self.turn_order[i].av -= self.turn_order[0].av
         self.turn_order[0].av = 0
         terminalDisplay.combatDisplay.messageProvider = self.print_turn_order_list
-        for enemy in self.enemies:
-            enemy.combatStart(self)
-        for player in self.players:
-            player.startCombat(self)
 
     def addEnemy(self, enemy: Enemy):
         enemy.scale(self.party.floor)

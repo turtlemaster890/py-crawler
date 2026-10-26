@@ -11,15 +11,12 @@ from conditions import (
 )
 from combatHandler import CombatHandler
 from item import (
-    AntidoticCharm,
+    RELIC_POOL,
     Bone,
     HealthPotion,
     Item,
-    ManaBooster,
-    QuickBoots,
     Relic,
     RustyCoin,
-    ThornedAmulet,
 )
 import terminalDisplay
 from utils import getRelativePath
@@ -183,6 +180,10 @@ class Enemy:
         self.health: int = min(self.max_health, self.health + amount)
 
     def die(self, handler: CombatHandler) -> None:
+        for p in handler.players:
+            for r in p.inventory.items:
+                if isinstance(r, Relic):
+                    r.enemyDeath(self)
         handler.removeEnemy(self)
         terminalDisplay.updateDisplays()
         terminalDisplay.contextDisplay.print_boxify(f"{self.name} has been defeated!")
@@ -429,12 +430,7 @@ class StoneTitan(Enemy):
 
     def die(self, handler: CombatHandler) -> None:
         floor = handler.party.floor
-        relics: list[type[Relic]] = [
-            ThornedAmulet,
-            QuickBoots,
-            ManaBooster,
-            AntidoticCharm,
-        ]
+        relics: list[type[Relic]] = RELIC_POOL
         picks = random.sample(relics, k=min(len(relics), 1 + floor // 3))
         self.loot_table = [
             (1, [r() for r in picks] + [HealthPotion() for _ in range(floor)])

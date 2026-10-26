@@ -1,8 +1,10 @@
 import random
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Any, Self
 
 from actions import CombatActionEntry, PartyAction, PlayerAction
 from conditions import Condition, Poisoned, Slimed
+from enemy import Enemy
+from player import Player
 import terminalDisplay
 import utils
 
@@ -198,6 +200,9 @@ class Relic(Item):
     def combatStart(self, handler: CombatHandler | None = None) -> None:
         self.combat = handler
 
+    def combatEnd(self) -> None:
+        self.combat = None
+
     def turnStart(self) -> None:
         pass
 
@@ -326,18 +331,22 @@ class ThornedAmulet(Relic):
 
 class QuickBoots(Relic):
     item_type: str = "quickBoots"
-    description = "+10 speed"
+    description = "+10 speed in combat"
 
     def __init__(self, name: str = "Quick Boots") -> None:
         super().__init__(name)
+        self.active = False
 
-    def equip(self, player: Player) -> None:
-        super().equip(player)
-        player.speed += 10
+    def combatStart(self, handler: CombatHandler | None = None) -> None:
+        super().combatStart(handler)
+        if self.player and not self.active:
+            self.player.speed += 10
+            self.active = True
 
-    def unequip(self, player) -> None:
-        super().unequip(player)
-        player.speed -= 10
+    def combatEnd(self) -> None:
+        if self.player and self.active:
+            self.player.speed -= 10
+            self.active = False
 
 
 class AntidoticCharm(Relic):
@@ -358,7 +367,169 @@ class AntidoticCharm(Relic):
             return 0
 
 
-item_type_to_class = {
+class VampiricFang(Relic):
+    item_type: str = "vampiricFang"
+    description = "Heal 20% of damage you deal"
+
+    def __init__(self, name: str = "Vampiric Fang") -> None:
+        super().__init__(name)
+
+    def dealDamage(
+        self,
+        amount: int,
+        attacker: Player | Enemy | None = None,
+        defender: Player | Enemy | None = None,
+        damage_type: str = "",
+    ) -> int | None:
+        if attacker is not None:
+            attacker.health = min(
+                attacker.max_health, attacker.health + max(1, amount // 5)
+            )
+
+
+class BulwarkCharm(Relic):
+    item_type: str = "bulwarkCharm"
+    description = "Take 1 less damage from a hit"
+
+    def __init__(self, name: str = "Bulwark Charm") -> None:
+        super().__init__(name)
+
+    def takeDamage(
+        self,
+        amount: int,
+        attacker: Player | Enemy | None = None,
+        defender: Player | Enemy | None = None,
+        damage_type: str = "",
+    ) -> int | None:
+        if amount > 1:
+            return amount - 1
+
+
+class BerserkerBand(Relic):
+    item_type: str = "berserkerBand"
+    description = "+3 damage while at or below half health"
+
+    def __init__(self, name: str = "Berserker Band") -> None:
+        super().__init__(name)
+
+    def dealDamage(
+        self,
+        amount: int,
+        attacker: Player | Enemy | None = None,
+        defender: Player | Enemy | None = None,
+        damage_type: str = "",
+    ) -> int | None:
+        if attacker is not None and attacker.health <= attacker.max_health / 2:
+            return amount + 3
+
+
+class GlassIdol(Relic):
+    item_type: str = "glassIdol"
+    description = "Deal 50% more damage, take 50% more damage"
+
+    def __init__(self, name: str = "Glass Idol") -> None:
+        super().__init__(name)
+
+    def dealDamage(
+        self,
+        amount: int,
+        attacker: Player | Enemy | None = None,
+        defender: Player | Enemy | None = None,
+        damage_type: str = "",
+    ) -> int | None:
+        return amount * 3 // 2
+
+    def takeDamage(
+        self,
+        amount: int,
+        attacker: Player | Enemy | None = None,
+        defender: Player | Enemy | None = None,
+        damage_type: str = "",
+    ) -> int | None:
+        return amount * 3 // 2
+
+
+class ScavengerPurse(Relic):
+    item_type: str = "scavengerPurse"
+    description = "Enemies drop ¢3-8 when they die"
+
+    def __init__(self, name: str = "Scavenger's Purse") -> None:
+        super().__init__(name)
+
+    def enemyDeath(self, enemy: Player | Enemy) -> None:
+        if self.combat:
+            self.combat.party.funds += random.randint(3, 8)
+
+
+class PhoenixFeather(Relic):
+    item_type: str = "phoenixFeather"
+    description = "One revive at 1/3 health"
+
+    def __init__(self, name: str = "Phoenix Feather") -> None:
+        super().__init__(name)
+
+    def die(self) -> None:
+        p = self.player
+        if p and p.health <= 0:
+            p.health = max(1, p.max_health // 3)
+            p.inventory.remove(self)
+            terminalDisplay.contextDisplay.print_boxify(
+                f"{p.name}'s {self.name} bursts into flame. They rise again!"
+            )
+            utils.wait_for_enter()
+
+
+class VenomRing(Relic):
+    item_type: str = "venomRing"
+    description = "30% chance to poison what you hit"
+
+    def __init__(self, name: str = "Venom Ring") -> None:
+        super().__init__(name)
+
+    def dealDamage(
+        self,
+        amount: int,
+        attacker: Player | Enemy | None = None,
+        defender: Player | Enemy | None = None,
+        damage_type: str = "",
+    ) -> int | None:
+        if defender is not None and self.combat:
+            from conditions import inflict
+
+            inflict(
+                {"type": "poisoned", "duration": 3, "chance": 0.3},
+                defender,
+                self.combat,
+            )
+
+
+class RegenBand(Relic):
+    item_type: str = "regenBand"
+    description = "Heal 2 health at the start of turn"
+
+    def __init__(self, name: str = "Regen Band") -> None:
+        super().__init__(name)
+
+    def turnStart(self) -> None:
+        p = self.player
+        if p:
+            p.health = min(p.max_health, p.health + 2)
+
+
+class EnergyCrystal(Relic):
+    item_type: str = "energyCrystal"
+    description = "+2 stamina at start of turn"
+
+    def __init__(self, name: str = "Energy Crystal") -> None:
+        super().__init__(name)
+
+    def turnStart(self) -> None:
+        p = self.player
+        if p:
+            p.stamina = min(p.max_stamina, p.stamina + 2)
+
+
+item_type_to_class: dict[str, type[Item]] = {
     "item": Item,
     "weapon": Weapon,
     "armor": Armor,
@@ -375,9 +546,36 @@ item_type_to_class = {
     "key": Key,
     "antidoticCharm": AntidoticCharm,
     "antidoteBottle": AntidoteBottle,
+    "vampiricFang": VampiricFang,
+    "bulwarkCharm": BulwarkCharm,
+    "berserkerBand": BerserkerBand,
+    "glassIdol": GlassIdol,
+    "scavengerPurse": ScavengerPurse,
+    "phoenixFeather": PhoenixFeather,
+    "venomRing": VenomRing,
+    "regenBand": RegenBand,
+    "energyCrystal": EnergyCrystal,
 }
 
 
-def from_json(j: dict[str, object]):
-    _class = item_type_to_class.get(j["item_type"], Item)  # type: ignore
+def from_json(j: dict[str, Any]) -> Any:
+    type: str = j["item_type"]
+    _class: type[Item] = item_type_to_class.get(j["item_type"], Item)
     return _class.from_json(j)
+
+
+RELIC_POOL = [
+    ManaBooster,
+    ThornedAmulet,
+    QuickBoots,
+    AntidoticCharm,
+    VampiricFang,
+    BulwarkCharm,
+    BerserkerBand,
+    GlassIdol,
+    ScavengerPurse,
+    PhoenixFeather,
+    VenomRing,
+    RegenBand,
+    EnergyCrystal,
+]

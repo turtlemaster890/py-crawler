@@ -173,14 +173,15 @@ class Player:
             self.die(handler)
 
     def die(self, handler: CombatHandler) -> None:
-        print(f"Player {self.name} dies!")
-        for relic in self.inventory.items:
+        for relic in self.inventory.items[:]:
             if isinstance(relic, Relic):
                 relic.die()
+        if self.health > 0:
+            return
+        print(f"Player {self.name} dies!")
         for condition in self.conditions[:]:
             condition.die()
-        if self.health <= 0:
-            handler.removePlayer(self)
+        handler.removePlayer(self)
 
     def applyCondition(self, condition: Condition, handler: CombatHandler) -> None:
         self.conditions.append(condition)
@@ -324,6 +325,9 @@ class Player:
     def leaveCombat(self) -> None:
         for c in self.conditions[:]:
             c.changeDuration(-c.duration)
+        for r in self.inventory.items:
+            if isinstance(r, Relic):
+                r.combatEnd()
 
     def scorching_ray(self, player: Player, handler: CombatHandler) -> bool:
         to_attack: list[Player | Enemy] = handler.select_character(

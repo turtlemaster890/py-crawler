@@ -143,8 +143,8 @@
         }
     },
     "stone_titan": {
-        "speed": 50,
-        "health": 250,
+        "speed": 90,
+        "health": 400,
         "actions": {
             "attack": {
                 "weight": 3,
