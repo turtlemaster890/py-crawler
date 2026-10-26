@@ -44,6 +44,7 @@ class Enemy:
         enemy_type: str = "goblin",
         handler: CombatHandler | None = None,
     ) -> None:
+        self.damage_mult: float = 1.0
         self.enemy_type: str = enemy_type or "goblin"
         self.name: str = name or "Enemy"
         self.combatHandler: CombatHandler | None = handler
@@ -58,6 +59,12 @@ class Enemy:
         self.action: str = ""
         self.aggro: list[AggroEntry] = []
         self.loot_table: list[tuple[int, list[Item]]] = [(1, [])]
+
+    def scale(self, floor: int) -> None:
+        f = floor - 1
+        self.max_health = round(self.max_health * (1 + 0.25 * f))
+        self.health = self.max_health
+        self.damage_mult = 1 + 0.15 * f
 
     def combatStart(self, handler: CombatHandler) -> None:
         self.combatHandler = handler
@@ -81,6 +88,7 @@ class Enemy:
             "max_health": self.max_health,
             "speed": self.speed,
             "health": self.health,
+            "damage_mult": self.damage_mult,
         }
 
     @classmethod
@@ -89,6 +97,7 @@ class Enemy:
         new_enemy.max_health = j["max_health"]
         new_enemy.speed = j["speed"]
         new_enemy.health = j["health"]
+        new_enemy.damage_mult = j.get("damage_mult", 1.0)
         return new_enemy
 
     def turnStart(self, handler: CombatHandler) -> None:
@@ -415,8 +424,11 @@ class StoneTitan(Enemy):
 
     def die(self, handler: CombatHandler) -> None:
         super().die(handler)
-        handler.party.funds += 500
-        terminalDisplay.contextDisplay.print_boxify("You find ¢500 in the rubble.")
+        reward = 500 * handler.party.floor
+        handler.party.funds += reward
+        terminalDisplay.contextDisplay.print_boxify(
+            f"You find ¢{reward} in the rubble."
+        )
         utils.wait_for_enter()
         handler.victory = True
 

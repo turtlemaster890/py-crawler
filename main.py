@@ -27,16 +27,41 @@ mz: maze
 party: Party
 
 
-def victory_screen(party: Party) -> None:
+def victory_screen(party: Party) -> bool:
     terminalDisplay.contextDisplay.type_print(
-        "The stone titan crumbles to dust. Daylight spils into the chamber."
+        "The stone titan crumbles to dust. A stairway opens up in the ground."
     )
     utils.wait_for_enter()
-    terminalDisplay.contextDisplay.print_boxify(f"Victory! Party funds: ¢{party.funds}")
+    terminalDisplay.contextDisplay.print_boxify(
+        f"FLOOR {party.floor} CLEARED! Party funds: ¢{party.funds}"
+    )
     utils.wait_for_enter()
-    if menuHelper.menu("Dungeon cleared!", ["Keep Exploring", "Quit"], False) == 1:
+    c = menuHelper.menu(
+        "Floor cleared!",
+        [f"Descend to floor {party.floor + 1}", "Keep Exploring", "Quit"],
+        False,
+    )
+    if c == 2:
         utils.clear()
         raise SystemExit("Thanks for playing!")
+    return c == 0
+
+
+def descend(party: Party) -> maze:
+    party.descent_requested = False
+    party.floor += 1
+    party.pos = Pos(14, 6)
+    party.discovered_positions = {party.pos}
+    for m in party.members:
+        m.health = min(m.max_health, m.health + m.max_health // 2)
+        m.stamina = m.max_stamina
+    return gen_main_path(party.pos, 50, 28, 13, party.floor)
+
+
+def next_floor(party: Party):
+    new_maze = descend(party)
+    saves.save(new_maze, party)
+    return new_maze, mazeController(new_maze, 28, 13, party)
 
 
 def main():
@@ -75,9 +100,11 @@ def main():
                     won = combat_handler.victory
                     combat_handler = None
                     saves.save(mz, party)
-                    if won:
-                        victory_screen(party)
+                    if won and victory_screen(party):
+                        mz, mController = next_floor(party)
             combat_handler = mController.tick()
+            if party.descent_requested:
+                mz, mController = next_floor(party)
     finally:
         print("\033[?25h", end="")
 

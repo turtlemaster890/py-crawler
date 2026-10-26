@@ -125,7 +125,7 @@ class mazeController:
         ]
         current_room: Room | None = self.maze[self.party.pos.y][self.party.pos.x]
         assert isinstance(current_room, Room)
-        options.extend(current_room.room_actions)
+        options.extend(current_room.get_room_actions())
         while True:
             option = menuHelper.menu("Actions", [option[0] for option in options])
             if option != -1:

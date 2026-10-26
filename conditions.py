@@ -247,6 +247,7 @@ def applyDamageHooks(
     defender: Player | Enemy,
     damage_type: str = "",
 ):
+    amount = round(amount * getattr(attacker, "damage_mult", 1.0))
     if attacker is not None:
         for cond in attacker.conditions[:]:
             r = cond.dealDamage(amount, attacker, defender, damage_type)

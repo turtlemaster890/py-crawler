@@ -3,6 +3,7 @@ from typing import Self
 from actions import PartyAction
 from direction import direction
 from colorama import Fore
+import menuHelper
 from shop import Shop
 from enemy import Enemy, Mimic, StoneTitan
 import enemy
@@ -49,6 +50,9 @@ class Room:
         new_room.selectedColour = j["selected_colour"]
         return new_room
 
+    def get_room_actions(self) -> list[tuple[str, PartyAction]]:
+        return self.room_actions
+
     def has_connection(self, direction: direction) -> bool:
         return direction in self.connections
 
@@ -82,13 +86,34 @@ class StartRoom(Room):
 
 
 class EndRoom(Room):
-    description = "A vast chamber, filled with stale air. The air hums with a low, grinding vibration."
     entry_message = "The floor trembles. A Stone Titan drags itself upright, its core glowing faintly."
 
     def __init__(self, connections: set[direction] | None = None, enemies=None) -> None:
         super().__init__(connections, enemies=[StoneTitan()])
         self.colour: str = Fore.RED
         self.selectedColour: str = Fore.LIGHTRED_EX
+
+    @property
+    def description(self) -> str:
+        if self.enemies:
+            return "A vast chamber, filled with stale air. The air hums with a low, grinding vibration."
+        return (
+            "The Stone Titan's remains lie scattered. A stairway is open in the floor."
+        )
+
+    def get_room_actions(self):
+        actions = list(self.room_actions)
+        if not self.enemies:
+            actions.append(("Descend Stairs", self.descend))
+        return actions
+
+    def descend(self, party: Party, room) -> bool:
+        choice = menuHelper.menu(
+            f"Descend to floor {party.floor + 1}?", ["Descend", "Stay"], False
+        )
+        if choice == 0:
+            party.descent_requested = True
+        return True
 
     def to_json(self):
         j = super().to_json()
@@ -150,6 +175,7 @@ class ChestRoom(Room):
             )
             utils.wait_for_enter()
             mimic = Mimic()
+            mimic.scale(party.floor)
             mimic.speed = 10000
             handler = CombatHandler(party, party.members, [mimic])
             mimic.speed = 85

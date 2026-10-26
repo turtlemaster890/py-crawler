@@ -148,7 +148,7 @@ def pretty_print_list(
 
 
 # step 1: generate path to boss room
-def gen_main_path(startPos: Pos, maxSteps: int, x: int, y: int):
+def gen_main_path(startPos: Pos, maxSteps: int, x: int, y: int, floor: int = 1):
     maze: list[list[Room | None]] = []
     for _ in range(y):
         maze.append([None] * x)
@@ -190,17 +190,25 @@ def gen_main_path(startPos: Pos, maxSteps: int, x: int, y: int):
     maze[currentPos.y][currentPos.x] = EndRoom(currentRoom.connections)
     if currentPos in branch_positions:
         branch_positions.remove(currentPos)
-    to_return = gen_branches(maze, branch_positions, x, y, 12)
-    open_room_spots = [
-        (x, y)
-        for y in range(len(maze))
-        for x in range(len(maze[y]))
-        if type(maze[y][x]) == Room
-    ]
-    shopRoomSpot = random.choice(open_room_spots)
-    shopRoomSpotRoom = maze[shopRoomSpot[1]][shopRoomSpot[0]]
-    assert isinstance(shopRoomSpotRoom, Room)
-    maze[shopRoomSpot[1]][shopRoomSpot[0]] = ShopRoom(shopRoomSpotRoom.connections)
+    maze = gen_branches(maze, branch_positions, x, y, 12)
+    # open_room_spots = [
+    #     (x, y)
+    #     for y in range(len(maze))
+    #     for x in range(len(maze[y]))
+    #     if type(maze[y][x]) == Room
+    # ]
+    # shopRoomSpot = random.choice(open_room_spots)
+    # shopRoomSpotRoom = maze[shopRoomSpot[1]][shopRoomSpot[0]]
+    # assert isinstance(shopRoomSpotRoom, Room)
+    # maze[shopRoomSpot[1]][shopRoomSpot[0]] = ShopRoom(shopRoomSpotRoom.connections)
+    if floor > 1:
+        for row in maze:
+            for rm in row:
+                if type(rm) is Room:
+                    rm.enemies = encounterFactory(floor)
+                if isinstance(rm, Room):
+                    for e in rm.enemies:
+                        e.scale(floor)
     return maze
 
 

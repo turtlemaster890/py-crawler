@@ -41,6 +41,7 @@ class CombatHandler:
             player.startCombat(self)
 
     def addEnemy(self, enemy: Enemy):
+        enemy.scale(self.party.floor)
         enemy.combatStart(self)
         self.turn_order.append(TurnEntry(10000 / enemy.speed, enemy))
         self.enemies.append(enemy)

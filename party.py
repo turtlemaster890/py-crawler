@@ -14,6 +14,8 @@ from pynput.keyboard import Key
 
 class Party:
     def __init__(self, pos: Pos, members: list[Player]):
+        self.floor = 1
+        self.descent_requested = False
         self.pos = pos
         self.discovered_positions: set[Pos] = {pos}
         self.members = members
@@ -197,6 +199,7 @@ class Party:
             "members": [m.to_json() for m in self.members],
             "inventory": self.inventory.to_json(),
             "funds": self.funds,
+            "floor": self.floor,
         }
 
     @classmethod
@@ -209,4 +212,5 @@ class Party:
         )
         new_party.inventory = Inventory.from_json(j["inventory"])
         new_party.funds = j["funds"]
+        new_party.floor = j.get("floor", 1)
         return new_party
