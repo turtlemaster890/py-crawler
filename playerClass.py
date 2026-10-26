@@ -30,6 +30,9 @@ class Tank(PlayerClass):
             for ag in enemy.aggro:
                 if ag.player is player:
                     ag.value += 35
+        say(
+            f"{player.name} yells out an obscenity. All the enemies seem very angered at them."
+        )
         return True
 
     combat_actions = [CombatActionEntry("Taunt", taunt, "Taunt all enemies", 2)]
@@ -74,7 +77,9 @@ class Mage(PlayerClass):
 
     @staticmethod
     def arcane_barrier(player: Player, handler: CombatHandler):
-        ally = handler.select_character(lambda c: c in handler.players)[0]
+        ally = handler.select_character(
+            lambda c: c in handler.players and c is not player
+        )[0]
         ally.applyCondition(conditions.Shield(100, ally, handler, absorb=12), handler)
         say(
             f"{player.name} casts a spell on {ally.name}. They suddenly feel protected."
