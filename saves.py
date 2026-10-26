@@ -60,6 +60,7 @@ def select_save_file() -> None:
                         del options[selected]
                         break
                 terminalDisplay.mazeDisplay.messageProvider = lastProvider
+                utils.clear()
                 return
 
 

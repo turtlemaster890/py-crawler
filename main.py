@@ -70,11 +70,11 @@ def main():
     global party, mz, combat_handler
     try:
         colorama.init(autoreset=True)
-        utils.clear()
         print("\033[?25l", end="")
         w = 120
-        h = 50
+        h = 45
         sys.stdout.write(f"\x1b[8;{h};{w}t")
+        utils.clear()
 
         saves.select_save_file()
 
