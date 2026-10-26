@@ -2,6 +2,10 @@ import random
 from typing import TYPE_CHECKING
 from enum import Enum
 
+from combatHandler import CombatHandler
+from enemy import Enemy
+from player import Player
+
 if TYPE_CHECKING:
     from player import Player
     from enemy import Enemy
@@ -239,6 +243,35 @@ class Shield(Condition):
         if self.absorb <= 0:
             self.changeDuration(-self.duration)
         return amount - blocked
+
+
+class Rotten(Condition):
+    def __init__(
+        self,
+        duration: int,
+        affected: Player | Enemy,
+        handler: CombatHandler,
+        name: str = "Rotten",
+    ) -> None:
+        super().__init__(duration, affected, handler, name)
+
+    def turnStart(self) -> None | ConditionReturnActions:
+        self.affected.takeDamage(self.combat, 5)
+
+    def turnEnd(self) -> None:
+        self.affected.takeDamage(self.combat, 5)
+
+    def dealDamage(
+        self,
+        amount: int,
+        attacker: Player | Enemy | None = None,
+        defender: Player | Enemy | None = None,
+        damage_type: str = "",
+    ) -> int | None:
+        self.affected.takeDamage(self.combat, 5)
+
+    def onApply(self) -> None:
+        self.affected.takeDamage(self.combat, 5)
 
 
 def applyDamageHooks(

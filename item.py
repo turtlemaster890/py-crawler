@@ -186,6 +186,14 @@ class Armor(Item):
         self.defense = 2
 
 
+class ZombieCrown(Armor):
+    item_type = "zombieCrown"
+
+    def __init__(self, name: str = "Zombie Crown") -> None:
+        super().__init__(name)
+        self.defense = 15
+
+
 class Relic(Item):
     item_type = "relic"
 
@@ -555,6 +563,7 @@ item_type_to_class: dict[str, type[Item]] = {
     "venomRing": VenomRing,
     "regenBand": RegenBand,
     "energyCrystal": EnergyCrystal,
+    "zombieCrown": ZombieCrown,
 }
 
 

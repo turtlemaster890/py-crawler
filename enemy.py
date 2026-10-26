@@ -6,6 +6,7 @@ from conditions import (
     Burning,
     Condition,
     ConditionReturnActions,
+    Rotten,
     applyDamageHooks,
     inflict,
 )
@@ -17,6 +18,7 @@ from item import (
     Item,
     Relic,
     RustyCoin,
+    ZombieCrown,
 )
 import terminalDisplay
 from utils import getRelativePath
@@ -440,6 +442,33 @@ class StoneTitan(Enemy):
         handler.party.funds += reward
         terminalDisplay.contextDisplay.print_boxify(
             f"You find ¢{reward} in the rubble."
+        )
+        utils.wait_for_enter()
+        handler.victory = True
+
+
+class ZombieKing(Enemy):
+    def __init__(self, name: str = "Zombie King") -> None:
+        super().__init__(name, "zombie_king")
+
+    def reinforce(self, handler: CombatHandler) -> None:
+        terminalDisplay.contextDisplay.print_boxify(
+            f"{self.name} raises their hand. Many enemies come from the ground, but they seem... off."
+        )
+        enemy_pool: list[type[Enemy]] = [Goblin, Skeleton, Wolf, Pyromaniac]
+        for e in random.choices(enemy_pool, k=4):
+            enemy = e()
+            enemy.applyCondition(Rotten(1, enemy, handler), handler)
+            handler.addEnemy(enemy)
+
+    def die(self, handler: CombatHandler) -> None:
+        floor = handler.party.floor
+        self.loot_table = [(1, [ZombieCrown()])]
+        super().die(handler)
+        reward = 500 * handler.party.floor
+        handler.party.funds += reward
+        terminalDisplay.contextDisplay.print_boxify(
+            f"You find ¢{reward} in {self.name}'s oversized shirt."
         )
         utils.wait_for_enter()
         handler.victory = True

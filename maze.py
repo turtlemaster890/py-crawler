@@ -1,5 +1,5 @@
 from direction import direction
-from encounters import encounterFactory
+from encounters import bossEncounterFactory, encounterFactory
 import random
 import utils
 from Pos import Pos
@@ -211,6 +211,8 @@ def gen_main_path(startPos: Pos, maxSteps: int, x: int, y: int, floor: int = 1):
             for rm in row:
                 if type(rm) is Room:
                     rm.enemies = encounterFactory(floor)
+                if type(rm) is EndRoom:
+                    rm.enemies = bossEncounterFactory(floor)
                 if isinstance(rm, Room):
                     for e in rm.enemies:
                         e.scale(floor)

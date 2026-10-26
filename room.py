@@ -5,7 +5,7 @@ from direction import direction
 from colorama import Fore
 import menuHelper
 from shop import Shop
-from enemy import Enemy, Mimic, StoneTitan
+from enemy import Enemy, Mimic
 import enemy
 import terminalDisplay
 from party import Party
@@ -89,7 +89,7 @@ class EndRoom(Room):
     entry_message = "The floor trembles. A Stone Titan drags itself upright, its core glowing faintly."
 
     def __init__(self, connections: set[direction] | None = None, enemies=None) -> None:
-        super().__init__(connections, enemies=[StoneTitan()])
+        super().__init__(connections, enemies=None)
         self.colour: str = Fore.RED
         self.selectedColour: str = Fore.LIGHTRED_EX
 

@@ -161,6 +161,19 @@
             }
         }
     },
+    "zombie_king": {
+        "speed": 110,
+        "health": 250,
+        "actions": {
+            "attack": {
+                "weight": 3,
+                "damage": 5
+            },
+            "reinforce": {
+                "weight": 1
+            }
+        }
+    },
     "mimic": {
         "speed": 85,
         "health": 20,

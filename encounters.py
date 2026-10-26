@@ -22,8 +22,19 @@ ENCOUNTERS: list[tuple[int, int, Callable[[], list[enemy.Enemy]]]] = [
     (4, 2, lambda: [enemy.Pyromaniac(), enemy.Necromancer()]),
 ]
 
+BOSS_ENCOUNTERS: list[tuple[int, int, Callable[[], list[enemy.Enemy]]]] = [
+    (1, 2, lambda: [enemy.StoneTitan()]),
+    (2, 2, lambda: [enemy.ZombieKing()]),
+    (3, 1, lambda: [enemy.StoneTitan(), enemy.ZombieKing()]),
+]
+
 
 def encounterFactory(floor: int = 1) -> list[enemy.Enemy]:
     options = [(w, f) for min_floor, w, f in ENCOUNTERS if floor >= min_floor]
     options.append((max(1, 10 - floor), lambda: []))
+    return random.choices(options, [o[0] for o in options])[0][1]()
+
+
+def bossEncounterFactory(floor: int = 1) -> list[enemy.Enemy]:
+    options = [(w, f) for min_floor, w, f in BOSS_ENCOUNTERS if floor >= min_floor]
     return random.choices(options, [o[0] for o in options])[0][1]()
