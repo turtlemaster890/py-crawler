@@ -11,6 +11,8 @@ from netgame import *
 from netutil import MessageSocket
 import threading
 import terminalDisplay
+from combatHandler import CombatResult
+from netcombat import NetworkCombatHandler
 
 saves.SAVE_LOCATION = Path(tempfile.mkdtemp())
 saves.save_file = saves.SAVE_LOCATION / "server_save.json"
@@ -30,7 +32,49 @@ controller = mazeController(mz, 28, 13, party)
 party.squads.clear()
 
 lock = threading.Lock()
+fighting = set()
 clients = {}
+PAUSE = 0.3
+
+def fight_notify(members, msg):
+    with lock:
+        targets = [
+            ms for ms, squad in clients.items()
+            if squad is not None and any(c in squad.characters for c in members)
+        ]
+    for ms in targets:
+        ms.send_msg(msg)
+
+def make_handler(party, players, enemies):
+    members = list(players)
+    return NetworkCombatHandler(
+        party, players, enemies,
+        notify=lambda msg: fight_notify(members, msg),
+        pause_seconds = PAUSE
+    )
+
+controller.handler_factory = make_handler
+
+def run_fight(handler, squad):
+    try:
+        print("fight started")
+        result = handler.combat()
+        while result is CombatResult.CONTINUE:
+            result = handler.combat()
+        print("fight ended:", result.name)
+        handler.notify({"type":"combat_end", "result":result.name})
+        with lock:
+            if result is CombatResult.VICTORY:
+                saves.save(mz, party)
+            else:
+                for c in squad.characters:
+                    c.health = c.max_health
+                    c.leaveCombat()
+                squad.pos = Pos(START.x, START.y)
+    finally:
+        with lock:
+            fighting.discard(squad)
+        broadcast()
 
 # def snapshot_for(ms):
 #     with lock:
@@ -55,22 +99,47 @@ def serve_client(conn):
             msg = ms.recv_msg()
             if msg is None:
                 break
+            if not isinstance(msg, dict):
+                ms.send_msg({"type": "error", "message": "messages must be objects"})
+                continue
 
+            reply = None
+            changed = False
+            fight = None
             with lock:
                 msg_type = msg.get("type")
+                squad = clients.get(ms)
                 if msg_type == "join":
-                    squad, error = handle_join(party, msg, START)
-                    if error is None:
-                        clients[ms] = squad
-                    else:
-                        ms.send_msg({"type":"error", "message":error})
-                elif msg_type == "move":
-                    squad = clients[ms]
                     if squad is not None:
-                        handler, success, squad = apply_message(controller, squad, msg)
-                        
-
-            broadcast()
+                        reply = {"type": "error", "message": "you have already joined"}
+                    else:
+                        new_squad, error = handle_join(party, msg, START)
+                        if error is not None:
+                            ms.send_msg({"type":"error", "message":error})
+                        else:
+                            clients[ms] = new_squad
+                            changed = True
+                            
+                elif msg_type == "move":
+                    if squad is None:
+                        reply = {"type": "error", "message": "join first"}
+                    elif squad in fighting:
+                        reply = {"type": "error", "message": "you are in a fight"}
+                    else:
+                        handler, success, _ = apply_message(controller, squad, msg)
+                        changed = success
+                        if handler is not None:
+                            fighting.add(squad)
+                            fight = (handler, squad)
+                else:
+                    reply = {"type":"error", "message":"unkown message type"}
+                            
+            if reply is not None:
+                ms.send_msg(reply)
+            if fight is not None:
+                threading.Thread(target=run_fight, args=fight, daemon=True).start()
+            if changed:
+                broadcast()
     finally:
         with lock:
             clients.pop(ms, None)

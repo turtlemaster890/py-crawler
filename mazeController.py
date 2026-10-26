@@ -30,12 +30,14 @@ class mazeController:
         height: int,
         party: Party,
         startPos: Pos | None = None,
+        combatHandler = CombatHandler
     ) -> None:
         self.maze = maze
         self.width: int = width
         self.height: int = height
         self.party: Party = party
         self.active_squad = party.squads[0]
+        self.handler_factory = combatHandler
 
         startPos = startPos or self.active_squad.pos
 
@@ -83,7 +85,7 @@ class mazeController:
             saves.save(self.maze, self.party)
             if newRoom.enemies:
                 return (
-                    CombatHandler(self.party, list(squad.characters), newRoom.enemies),
+                    self.handler_factory(self.party, list(squad.characters), newRoom.enemies),
                     True,
                 )
             return None, True

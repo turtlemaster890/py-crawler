@@ -4,11 +4,12 @@ from player import Player
 from party import Party
 import json
 import inputController
-from combatHandler import CombatHandler
+from combatHandler import CombatHandler, CombatResult
 from mazeController import mazeController
 import saves
 import utils
 import colorama
+import sys
 
 input_to_direction = {
     "u": direction.UP,
@@ -48,7 +49,7 @@ def main():
             party = Party(Pos(14, 6), [player1, player2, player3, player4])
             party.funds = 900
             mz = gen_main_path(party.squads[0].pos, 50, 28, 13)
-        mController = mazeController(mz, 28, 13, party)
+        mController = mazeController(mz, 28, 13, party, combat_handler)
         current_room = mz[party.squads[0].pos.y][party.squads[0].pos.x]
         if current_room:
             # current_room.enter_room(party)
@@ -60,9 +61,13 @@ def main():
 
         while True:
             while combat_handler:
-                if not combat_handler.combat():
+                result = combat_handler.combat()
+                if result == CombatResult.VICTORY:
                     combat_handler = None
                     saves.save(mz, party)
+                elif result == CombatResult.DEFEAT:
+                    print("you lost")
+                    sys.exit()
             combat_handler = mController.tick()
     finally:
         print("\033[?25h", end="")

@@ -12,8 +12,21 @@ import utils
 import colorama
 import queue
 import threading
+import sys
 
 KEYS = {Key.up:"UP", Key.down:"DOWN", Key.left:"LEFT", Key.right:"RIGHT"}
+
+def turn_order_lines(rows, w, h):
+    out = []
+    name_space = w-13
+    out.append("┌" + "─" * (w - 2) + "┐")
+    out.append("│" + "TURN ORDER".center(w - 2) + "│")
+    out.append("├" + "─" * (w - 2) + "┤")
+    for row in rows:
+        name = f'{row["name"]} ({row["health"]}♥)'[:name_space].ljust(name_space)
+        out.append(f"│ {name} │ {row['av']:<3} AV │")
+    out.append("└" + "─" * (w - 2) + "┘")
+    return out
 
 def build_view(snap):
     width, height = snap["width"], snap["height"]
@@ -62,11 +75,22 @@ def receiver(ms, inbox):
 
 def handle(msg):
     if isinstance(msg, dict):
+        global turn_rows
         kind = msg.get("type")
         if kind == "snapshot":
             render(msg)
         elif kind == "error":
-            terminalDisplay.contextDisplay.print_boxify(msg.get("message", "error"))
+            say(msg.get("message", "error"))
+        elif kind == "log":
+            say(msg.get("text", ""))
+        elif kind == "combat_state":
+            turn_rows = (msg.get("turn_order", []))
+            terminalDisplay.combatDisplay.print()
+        elif kind == "combat_end":
+            turn_rows = []
+            terminalDisplay.combatDisplay.print()
+            say(msg.get("result", ""))
+        
 
 def drain(inbox):
     while True:
@@ -78,11 +102,27 @@ def drain(inbox):
             return False
         handle(msg)
 
+last_log = ""
+turn_rows = []
+
+
+def say(text):
+    global last_log
+    last_log = text
+    terminalDisplay.contextDisplay.print()
+
 inputController.start()
 
 colorama.init(autoreset=True)
 utils.clear()
 print("\033[?25l", end="")
+
+terminalDisplay.contextDisplay.messageProvider = (
+    lambda w, h: utils.boxify(w, h, last_log) if last_log else []
+)
+terminalDisplay.combatDisplay.messageProvider = (
+    lambda w, h: turn_order_lines(turn_rows, w, h) if turn_rows else []
+)
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.connect(("localhost", 5000))
@@ -91,7 +131,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     threading.Thread(target=receiver, args=(ms, inbox), daemon=True).start()
     server_gone = False
     try:
-        ms.send_msg({"type":"join","characters":[0]})
+        ms.send_msg({"type":"join","characters":[1]})
         while True:
             if not drain(inbox):
                 server_gone = True

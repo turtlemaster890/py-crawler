@@ -1,15 +1,18 @@
 import json
+import threading
 
 class MessageSocket:
     def __init__(self, sock):
         self.sock = sock
         self.buffer = b""
+        self.send_lock = threading.Lock()
 
 
     def send_msg(self, obj):
         try:
             line = json.dumps(obj) + "\n"
-            self.sock.sendall(line.encode())
+            with self.send_lock:
+                self.sock.sendall(line.encode())
         except OSError:
             pass
 

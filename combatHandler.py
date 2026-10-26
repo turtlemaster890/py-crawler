@@ -7,12 +7,17 @@ import inputController
 from typing import TYPE_CHECKING, Callable
 from turnEntry import TurnEntry
 import utils
+from enum import Enum
 
 if TYPE_CHECKING:
     from player import Player
     from enemy import enemy
     from party import Party
 
+class CombatResult(Enum):
+    CONTINUE = 1
+    VICTORY = 2
+    DEFEAT = 3
 
 class CombatHandler:
     def __init__(
@@ -86,17 +91,16 @@ class CombatHandler:
         if utils.DEBUG:
             self.enemies = []
         if len(self.players) == 0:
-            print("YOU LOSE!!!")
-            sys.exit()
+            return CombatResult.DEFEAT
         if len(self.enemies) == 0:
             for player in self.players:
                 player.leaveCombat()
             terminalDisplay.combatDisplay.messageProvider = None
-            return False
-        terminalDisplay.updateDisplays()
+            return CombatResult.VICTORY
+        self.refresh()
         self.turn_order[0].character.turnStart(self)
         self.tick_initiative()
-        return True
+        return CombatResult.CONTINUE
 
     def tick_initiative(self):
         current_av, current_character = (
@@ -234,3 +238,19 @@ class CombatHandler:
         )
         out.append("└" + "─" * (w - 2) + "┘")
         return out
+
+    def announce(self, text: str, typed: bool = False):
+        if typed==True:
+            terminalDisplay.contextDisplay.type_print(
+                text
+            )
+        else:
+            terminalDisplay.contextDisplay.print_boxify(
+                text
+            )
+
+    def pause(self):
+        utils.wait_for_enter()
+
+    def refresh(self):
+        terminalDisplay.updateDisplays()

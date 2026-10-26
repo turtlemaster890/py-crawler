@@ -127,7 +127,7 @@ class Player:
             self.die(handler)
 
     def die(self, handler: CombatHandler):
-        print(f"Player {self.name} dies!")
+        handler.announce(f"Player {self.name} dies!")
         for relic in self.inventory.items:
             if isinstance(relic, Relic):
                 relic.die()
