@@ -3,8 +3,6 @@ from typing import TYPE_CHECKING, Any, Self
 
 from actions import CombatActionEntry, PartyAction, PlayerAction
 from conditions import Condition, Poisoned, Slimed
-from enemy import Enemy
-from player import Player
 import terminalDisplay
 import utils
 

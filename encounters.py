@@ -31,7 +31,7 @@ BOSS_ENCOUNTERS: list[tuple[int, int, Callable[[], list[enemy.Enemy]]]] = [
 
 def encounterFactory(floor: int = 1) -> list[enemy.Enemy]:
     options = [(w, f) for min_floor, w, f in ENCOUNTERS if floor >= min_floor]
-    options.append((max(1, 10 - floor), lambda: []))
+    options.append((max(1, 20 - (2 * floor)), lambda: []))
     return random.choices(options, [o[0] for o in options])[0][1]()
 
 

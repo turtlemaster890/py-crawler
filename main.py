@@ -1,3 +1,5 @@
+import sys
+
 from maze import Pos, gen_main_path, maze
 from direction import direction
 import menuHelper
@@ -70,6 +72,9 @@ def main():
         colorama.init(autoreset=True)
         utils.clear()
         print("\033[?25l", end="")
+        w = 120
+        h = 50
+        sys.stdout.write(f"\x1b[8;{h};{w}t")
 
         saves.select_save_file()
 
