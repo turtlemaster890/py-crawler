@@ -67,7 +67,8 @@ def make_handler(party: Party, players: list[Player], enemies: list[enemy]):
 
 controller.handler_factory = make_handler
 
-handlers: dict[NetworkCombatHandler, list[Squad]]
+handlers: dict[NetworkCombatHandler, list[Squad]] = {}
+
 
 def run_fight(handler: NetworkCombatHandler, squad: Squad):
     try:
@@ -175,7 +176,7 @@ def serve_client(conn: socket.socket):
 
 
 HOST = "localhost"
-PORT = 5000
+PORT = 63827
 
 if __name__ == "__main__":
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:

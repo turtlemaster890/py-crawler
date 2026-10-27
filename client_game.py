@@ -99,7 +99,9 @@ def handle(msg: Any):
             terminalDisplay.combatDisplay.print()
             say(msg.get("result", ""))
         elif kind == "choose_option":
-            option = menuHelper.menu("Choose option", msg.get("options", []), False)
+            if len(msg["options"]) < 1:
+                return
+            option = menuHelper.menu("Choose option", msg["options"], False)
             ms.send_msg({"type": "option_chosen", "option": option})
 
 
@@ -138,7 +140,7 @@ terminalDisplay.combatDisplay.messageProvider = lambda w, h: (
 )
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    s.connect(("localhost", 5000))
+    s.connect(("localhost", 63827))
     ms = MessageSocket(s)
     inbox = queue.Queue()
     threading.Thread(target=receiver, args=(ms, inbox), daemon=True).start()

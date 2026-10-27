@@ -1,4 +1,4 @@
-from typing import Any, Protocol, TYPE_CHECKING
+from typing import Any, Callable, Protocol, TYPE_CHECKING
 
 from combatHandler import CombatHandler
 import time
@@ -58,9 +58,16 @@ class NetworkCombatHandler(CombatHandler):
         if self.current_player in squad.characters:
             self.selected_option = option
 
-    def choose_action(self, player: Player, options: list[str]) -> int:
+    def choose_action(
+        self,
+        player: Player,
+        options: list[tuple[str, Callable, str] | tuple[str, Callable]],
+    ) -> int:
         self.current_player = player
-        self.notify({"type": "choose_option", "options": options}, [player])
+        self.notify(
+            {"type": "choose_option", "options": [option[0] for option in options]},
+            [player],
+        )
         while self.selected_option is None:
             time.sleep(0.01)
         r = self.selected_option
@@ -68,5 +75,8 @@ class NetworkCombatHandler(CombatHandler):
         self.current_player = None
         return r
 
-    def choose_targets(self, options: list[TurnEntry], count: int, minimum: int) -> list[int]:
+    def choose_targets(
+        self, options: list[TurnEntry], count: int, minimum: int
+    ) -> list[int]:
+        self.current_player 
         return list(range(min(count, len(options))))

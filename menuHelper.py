@@ -13,7 +13,7 @@ def menu(menu_name: str, options: list[str], back: bool = True) -> int | None:
     )
 
     while True:
-        selected %= len(options) + 1 if back else 0
+        selected %= len(options) + (1 if back else 0)
         terminalDisplay.updateDisplays()
         while True:
             key: Key | inputController.KeyCode | None = inputController.getKey()
