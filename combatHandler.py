@@ -1,10 +1,8 @@
-import sys
-
 from pynput.keyboard import Key
 
 import terminalDisplay
 import inputController
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 from turnEntry import TurnEntry
 import utils
 from enum import Enum
@@ -14,10 +12,12 @@ if TYPE_CHECKING:
     from enemy import enemy
     from party import Party
 
+
 class CombatResult(Enum):
     CONTINUE = 1
     VICTORY = 2
     DEFEAT = 3
+
 
 class CombatHandler:
     def __init__(
@@ -64,7 +64,9 @@ class CombatHandler:
         selected_option = 0
         lastProvider = terminalDisplay.contextDisplay.messageProvider
         terminalDisplay.contextDisplay.messageProvider = (
-            lambda w, h: player.pretty_print_turn_options(options, selected_option, w, h)
+            lambda w, h: player.pretty_print_turn_options(
+                options, selected_option, w, h
+            )
         )
         lastDescProvider = terminalDisplay.descriptionDisplay.messageProvider
         terminalDisplay.descriptionDisplay.messageProvider = lambda w, h: (
@@ -87,7 +89,7 @@ class CombatHandler:
                     )
                     return selected_option
 
-    def combat(self) -> bool:
+    def combat(self) -> CombatResult:
         if utils.DEBUG:
             self.enemies = []
         if len(self.players) == 0:
@@ -175,8 +177,7 @@ class CombatHandler:
                             )
                             return [options.index(e) for e in selected]
 
-    def select_character(
-        self, f, count: int = 1, minimum: int = -1):
+    def select_character(self, f, count: int = 1, minimum: int = -1):
         if minimum == -1:
             minimum = count
         options = [e for e in self.turn_order if f(e.character)]
@@ -240,14 +241,10 @@ class CombatHandler:
         return out
 
     def announce(self, text: str, typed: bool = False):
-        if typed==True:
-            terminalDisplay.contextDisplay.type_print(
-                text
-            )
+        if typed == True:
+            terminalDisplay.contextDisplay.type_print(text)
         else:
-            terminalDisplay.contextDisplay.print_boxify(
-                text
-            )
+            terminalDisplay.contextDisplay.print_boxify(text)
 
     def pause(self):
         utils.wait_for_enter()

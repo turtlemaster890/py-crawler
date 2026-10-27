@@ -49,7 +49,7 @@ def make_handler(party, players, enemies):
     members = list(players)
     return NetworkCombatHandler(
         party, players, enemies,
-        notify=lambda msg: fight_notify(members, msg),
+        notify=lambda msg, members=members: fight_notify(members, msg),
         pause_seconds = PAUSE
     )
 

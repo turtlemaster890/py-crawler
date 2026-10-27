@@ -1,3 +1,5 @@
+from typing import Callable
+
 import menuHelper
 from direction import direction
 from maze import maze, pretty_print_list
@@ -30,7 +32,7 @@ class mazeController:
         height: int,
         party: Party,
         startPos: Pos | None = None,
-        combatHandler = CombatHandler
+        combatHandler: Callable[..., CombatHandler] = CombatHandler
     ) -> None:
         self.maze = maze
         self.width: int = width
