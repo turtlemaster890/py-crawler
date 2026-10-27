@@ -1,7 +1,9 @@
 import socket
+from typing import Any
+import menuHelper
 from netutil import MessageSocket
 from direction import direction
-from maze import connections_to_char, pretty_print_list
+from maze import pretty_print_list
 from Pos import Pos
 from room import Room
 import terminalDisplay
@@ -12,13 +14,13 @@ import utils
 import colorama
 import queue
 import threading
-import sys
 
-KEYS = {Key.up:"UP", Key.down:"DOWN", Key.left:"LEFT", Key.right:"RIGHT"}
+KEYS = {Key.up: "UP", Key.down: "DOWN", Key.left: "LEFT", Key.right: "RIGHT"}
 
-def turn_order_lines(rows, w, h):
+
+def turn_order_lines(rows: list[dict], w: int, h: int):
     out = []
-    name_space = w-13
+    name_space = w - 13
     out.append("┌" + "─" * (w - 2) + "┐")
     out.append("│" + "TURN ORDER".center(w - 2) + "│")
     out.append("├" + "─" * (w - 2) + "┤")
@@ -28,10 +30,13 @@ def turn_order_lines(rows, w, h):
     out.append("└" + "─" * (w - 2) + "┘")
     return out
 
-def build_view(snap):
+
+def build_view(snap: dict):
     width, height = snap["width"], snap["height"]
 
-    grid = [[None for _ in range(width)] for _ in range(height)]
+    grid: list[list[Room | None]] = [
+        [None for _ in range(width)] for _ in range(height)
+    ]
     discovered = set()
 
     for entry in snap["rooms"]:
@@ -50,20 +55,22 @@ def build_view(snap):
 
     return grid, discovered, my_pos
 
-def render(snap):
+
+def render(snap: dict):
     grid, discovered, my_pos = build_view(snap)
     here = grid[my_pos.y][my_pos.x]
     description = here.description if here is not None else ""
-    terminalDisplay.mazeDisplay.messageProvider = (
-        lambda w, h: pretty_print_list(w, h, grid, discovered, my_pos)
+    terminalDisplay.mazeDisplay.messageProvider = lambda w, h: pretty_print_list(
+        w, h, grid, discovered, my_pos
     )
-    terminalDisplay.descriptionDisplay.messageProvider = (
-        lambda w, h: utils.boxify(w, h, description)
+    terminalDisplay.descriptionDisplay.messageProvider = lambda w, h: utils.boxify(
+        w, h, description
     )
-    
+
     terminalDisplay.updateDisplays()
 
-def receiver(ms, inbox):
+
+def receiver(ms: MessageSocket, inbox: queue.Queue):
     try:
         while True:
             msg = ms.recv_msg()
@@ -73,7 +80,8 @@ def receiver(ms, inbox):
     finally:
         inbox.put(None)
 
-def handle(msg):
+
+def handle(msg: Any):
     if isinstance(msg, dict):
         global turn_rows
         kind = msg.get("type")
@@ -84,15 +92,18 @@ def handle(msg):
         elif kind == "log":
             say(msg.get("text", ""))
         elif kind == "combat_state":
-            turn_rows = (msg.get("turn_order", []))
+            turn_rows = msg.get("turn_order", [])
             terminalDisplay.combatDisplay.print()
         elif kind == "combat_end":
             turn_rows = []
             terminalDisplay.combatDisplay.print()
             say(msg.get("result", ""))
-        
+        elif kind == "choose_option":
+            option = menuHelper.menu("Choose option", msg.get("options", []), False)
+            ms.send_msg({"type": "option_chosen", "option": option})
 
-def drain(inbox):
+
+def drain(inbox: queue.Queue):
     while True:
         try:
             msg = inbox.get_nowait()
@@ -102,14 +113,16 @@ def drain(inbox):
             return False
         handle(msg)
 
+
 last_log = ""
 turn_rows = []
 
 
-def say(text):
+def say(text: str):
     global last_log
     last_log = text
     terminalDisplay.contextDisplay.print()
+
 
 inputController.start()
 
@@ -117,11 +130,11 @@ colorama.init(autoreset=True)
 utils.clear()
 print("\033[?25l", end="")
 
-terminalDisplay.contextDisplay.messageProvider = (
-    lambda w, h: utils.boxify(w, h, last_log) if last_log else []
+terminalDisplay.contextDisplay.messageProvider = lambda w, h: (
+    utils.boxify(w, h, last_log) if last_log else []
 )
-terminalDisplay.combatDisplay.messageProvider = (
-    lambda w, h: turn_order_lines(turn_rows, w, h) if turn_rows else []
+terminalDisplay.combatDisplay.messageProvider = lambda w, h: (
+    turn_order_lines(turn_rows, w, h) if turn_rows else []
 )
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -131,7 +144,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     threading.Thread(target=receiver, args=(ms, inbox), daemon=True).start()
     server_gone = False
     try:
-        ms.send_msg({"type":"join","characters":[1]})
+        ms.send_msg({"type": "join", "characters": [1]})
         while True:
             if not drain(inbox):
                 server_gone = True

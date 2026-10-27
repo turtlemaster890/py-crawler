@@ -147,7 +147,7 @@ class CombatHandler:
         out.append("└" + "─" * (w - 2) + "┘")
         return out
 
-    def choose_targets(self, options, count, minimum) -> list[int]:
+    def choose_targets(self, options: list[TurnEntry], count: int, minimum: int) -> list[int]:
         hovered = 0
         selected: list[TurnEntry] = []
         terminalDisplay.combatDisplay.messageProvider = (

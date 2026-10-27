@@ -1,31 +1,37 @@
-from typing import Any, Callable, Protocol, TYPE_CHECKING
+from typing import Any, Protocol, TYPE_CHECKING
 
 from combatHandler import CombatHandler
 import time
 
+from enemy import enemy
+from party import Party
+from squad import Squad
+from turnEntry import TurnEntry
+
 if TYPE_CHECKING:
     from player import Player
 
+
 class NotifyProtocol(Protocol):
-    def __call__(self, msg: dict[str, Any], members: list[Any] = ...) -> None:
-        ...
+    def __call__(self, msg: dict[str, Any], members: list[Any] = ...) -> None: ...
+
 
 class NetworkCombatHandler(CombatHandler):
     def __init__(
         self,
-        party,
-        players,
-        enemies,
+        party: Party,
+        players: list[Player],
+        enemies: list[enemy],
         notify: NotifyProtocol,
-        pause_seconds,
+        pause_seconds: float,
     ):
         self.notify = notify
         self.pause_seconds = pause_seconds
-        self.current_player = None
-        self.selected_option = None
+        self.current_player: Player | None = None
+        self.selected_option: int | None = None
         super().__init__(party, players, enemies)
 
-    def announce(self, text, typed=False):
+    def announce(self, text: str, typed: bool = False):
         self.notify({"type": "log", "text": text, "typed": typed})
 
     def pause(self):
@@ -48,13 +54,13 @@ class NetworkCombatHandler(CombatHandler):
             ],
         }
 
-    def offer_action(self, player, option):
-        if self.current_player is player:
+    def offer_action(self, squad: Squad, option: int):
+        if self.current_player in squad.characters:
             self.selected_option = option
 
-    def choose_action(self, player, options):
+    def choose_action(self, player: Player, options: list[str]) -> int:
         self.current_player = player
-        self.notify({"type": "choose_option", "options": options}, player)
+        self.notify({"type": "choose_option", "options": options}, [player])
         while self.selected_option is None:
             time.sleep(0.01)
         r = self.selected_option
@@ -62,5 +68,5 @@ class NetworkCombatHandler(CombatHandler):
         self.current_player = None
         return r
 
-    def choose_targets(self, options, count, minimum):
+    def choose_targets(self, options: list[TurnEntry], count: int, minimum: int) -> list[int]:
         return list(range(min(count, len(options))))
