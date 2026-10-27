@@ -154,7 +154,7 @@ class Party:
         out.append("└" + "─" * (w - 2) + "┘")
         return out
 
-    def create_squad(self, pos, characters):
+    def create_squad(self, pos: Pos, characters: list[Player]):
         if not characters:
             raise ValueError("squad character list is empty")
         if len(characters) != len(set(characters)):

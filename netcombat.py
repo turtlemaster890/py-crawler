@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class NotifyProtocol(Protocol):
-    def __call__(self, msg: dict[str, Any], members: list[Any] = ...) -> None: ...
+    def __call__(self, msg: dict[str, Any], members: list[Player] = []) -> None: ...
 
 
 class NetworkCombatHandler(CombatHandler):
@@ -29,6 +29,7 @@ class NetworkCombatHandler(CombatHandler):
         self.pause_seconds = pause_seconds
         self.current_player: Player | None = None
         self.selected_option: int | None = None
+        self.selected_options: list[int] | None = None
         super().__init__(party, players, enemies)
 
     def announce(self, text: str, typed: bool = False):
@@ -58,6 +59,10 @@ class NetworkCombatHandler(CombatHandler):
         if self.current_player in squad.characters:
             self.selected_option = option
 
+    def offer_selection(self, squad: Squad, options: list[int]):
+        if self.current_player in squad.characters:
+            self.selected_options = options
+
     def choose_action(
         self,
         player: Player,
@@ -76,7 +81,32 @@ class NetworkCombatHandler(CombatHandler):
         return r
 
     def choose_targets(
-        self, options: list[TurnEntry], count: int, minimum: int
+        self, player: Player, options: list[TurnEntry], count: int, minimum: int
     ) -> list[int]:
-        self.current_player 
-        return list(range(min(count, len(options))))
+        self.current_player = player
+        self.notify(self.state_message(), [player])
+        time.sleep(0.1)
+        msg = {
+            "type": "choose_characters",
+            "options": [
+                {
+                    "name": option.character.name,
+                    "health": option.character.health,
+                    "av": round(option.av),
+                }
+                for option in self.turn_order
+                if option in options
+            ],
+            "count": count,
+            "minimum": minimum,
+        }
+        self.notify(
+            msg,
+            [player],
+        )
+        while self.selected_options is None:
+            time.sleep(0.01)
+        r = self.selected_options
+        self.selected_options = None
+        self.current_player = None
+        return r

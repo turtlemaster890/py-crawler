@@ -2,7 +2,7 @@ from pynput.keyboard import Key
 
 import terminalDisplay
 import inputController
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 from turnEntry import TurnEntry
 import utils
 from enum import Enum
@@ -38,7 +38,7 @@ class CombatHandler:
             self.turn_order[i].av -= self.turn_order[0].av
         self.turn_order[0].av = 0
         terminalDisplay.combatDisplay.messageProvider = self.print_turn_order_list
-        for enemy in self.enemies:
+        for enemy in self.enemies[:]:
             enemy.combatStart(self)
 
     def addEnemy(self, enemy: enemy):
@@ -47,20 +47,27 @@ class CombatHandler:
         self.enemies.append(enemy)
 
     def removeEnemy(self, enemy: enemy):
-        for i, entry in enumerate(self.turn_order):
+        for i, entry in enumerate(self.turn_order[:]):
             if entry.character is enemy:
                 del self.turn_order[i]
                 self.enemies.remove(enemy)
                 return
 
     def removePlayer(self, player: Player):
-        for i, entry in enumerate(self.turn_order):
+        for i, entry in enumerate(self.turn_order[:]):
             if entry.character is player:
                 del self.turn_order[i]
                 self.players.remove(player)
                 return
 
-    def choose_action(self, player, options) -> int:
+    def choose_action(
+        self,
+        player: Player,
+        options: list[
+            tuple[str, Callable[[CombatHandler], None], str]
+            | tuple[str, Callable[[CombatHandler], None]]
+        ],
+    ) -> int:
         selected_option = 0
         lastProvider = terminalDisplay.contextDisplay.messageProvider
         terminalDisplay.contextDisplay.messageProvider = (
@@ -70,7 +77,7 @@ class CombatHandler:
         )
         lastDescProvider = terminalDisplay.descriptionDisplay.messageProvider
         terminalDisplay.descriptionDisplay.messageProvider = lambda w, h: (
-            utils.boxify(w, h, options[selected_option][2])
+            utils.boxify(w, h, options[selected_option][2])  # type: ignore
             if len(options[selected_option]) > 2
             else []
         )
@@ -100,7 +107,7 @@ class CombatHandler:
             terminalDisplay.combatDisplay.messageProvider = None
             return CombatResult.VICTORY
         self.refresh()
-        self.turn_order[0].character.turnStart(self)
+        self.turn_order[:][0].character.turnStart(self)
         self.tick_initiative()
         return CombatResult.CONTINUE
 
@@ -147,7 +154,9 @@ class CombatHandler:
         out.append("└" + "─" * (w - 2) + "┘")
         return out
 
-    def choose_targets(self, options: list[TurnEntry], count: int, minimum: int) -> list[int]:
+    def choose_targets(
+        self, player: Player, options: list[TurnEntry], count: int, minimum: int
+    ) -> list[int]:
         hovered = 0
         selected: list[TurnEntry] = []
         terminalDisplay.combatDisplay.messageProvider = (
@@ -177,11 +186,11 @@ class CombatHandler:
                             )
                             return [options.index(e) for e in selected]
 
-    def select_character(self, f, count: int = 1, minimum: int = -1):
+    def select_character(self, player: Player, f, count: int = 1, minimum: int = -1):
         if minimum == -1:
             minimum = count
         options = [e for e in self.turn_order if f(e.character)]
-        chosen = self.choose_targets(options, count, minimum)
+        chosen = self.choose_targets(player, options, count, minimum)
         return [options[i].character for i in chosen]
 
     def print_turn_order_list_select(
@@ -251,3 +260,88 @@ class CombatHandler:
 
     def refresh(self):
         terminalDisplay.updateDisplays()
+
+
+def choose_targets(
+    entries: list[TurnEntry], options: list[TurnEntry], count: int, minimum: int
+) -> list[int]:
+    hovered = 0
+    selected: list[TurnEntry] = []
+    lastProvider = terminalDisplay.combatDisplay.messageProvider
+    terminalDisplay.combatDisplay.messageProvider = (
+        lambda w, h: print_turn_order_list_select(
+            w, h, entries, selected, hovered, options, count, minimum
+        )
+    )
+    while True:
+        hovered %= len(options) + 1
+        terminalDisplay.updateDisplays()
+        while True:
+            key = inputController.getKey()
+            if key in utils.key_to_delta:
+                hovered += utils.key_to_delta[key]
+                break
+            if key == Key.enter:
+                if hovered < len(options):
+                    if options[hovered] in selected:
+                        selected.remove(options[hovered])
+                    elif len(selected) < count:
+                        selected.append(options[hovered])
+                    break
+                else:
+                    if len(selected) >= minimum:
+                        terminalDisplay.combatDisplay.messageProvider = lastProvider
+                        return [options.index(e) for e in selected]
+
+
+def print_turn_order_list_select(
+    w: int,
+    h: int,
+    entries: list[TurnEntry],
+    selected: list[TurnEntry],
+    hovered: int,
+    options: list[TurnEntry],
+    count: int,
+    minimum: int,
+) -> list[str]:
+    out = []
+    nameSpace = w - 14
+
+    out.append("┌" + "─" * (w - 2) + "┐")
+    out.append(
+        "│"
+        + f"TURN ORDER (Select {f"{minimum}-{count}" if minimum < count else minimum})".center(
+            w - 2
+        )
+        + "│"
+    )
+    out.append("├" + "─" * (w - 2) + "┤")
+    realOptions = -1
+    for i, entry in enumerate(entries):
+        if entry in options:
+            realOptions += 1
+        sel_str = (
+            ">["
+            if (realOptions == hovered and entry in options and entry in selected)
+            else (
+                " ["
+                if (entry in options and entry in selected)
+                else (
+                    "> "
+                    if (realOptions == hovered and entry in options)
+                    else ("  " if entry in options else " ")
+                )
+            )
+        )
+        sel_extra = "]" if entry in options and entry in selected else " "
+        name = (
+            (entry.character.name + f" ({entry.character.health}♥)")[
+                : nameSpace - len(sel_extra)
+            ]
+            + sel_extra
+        ).ljust(nameSpace - (len(sel_str) - 2))
+        av_str = f"{entry.av:<3.0f}"
+        out.append(f"│{sel_str}{name} │ {av_str} AV │")
+    out.append(f"│{"> " if hovered == len(options) else "  "}{"Confirm".ljust(w - 4)}│")
+    out.append("└" + "─" * (w - 2) + "┘")
+    return out

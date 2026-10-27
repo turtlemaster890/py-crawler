@@ -3,9 +3,7 @@ import json
 import random
 from conditions import Condition
 from combatHandler import CombatHandler
-import terminalDisplay
 from utils import getRelativePath
-import utils
 
 if TYPE_CHECKING:
     from combatHandler import CombatHandler
@@ -95,7 +93,9 @@ class enemy:
             ]
         )
         target.takeDamage(handler, self.stats["actions"]["attack"]["damage"], self)
-        handler.announce(f"{self.name} attacks {target.name} for {self.stats["actions"]["attack"]["damage"]} damage.")
+        handler.announce(
+            f"{self.name} attacks {target.name} for {self.stats["actions"]["attack"]["damage"]} damage."
+        )
 
     def takeDamage(self, handler: CombatHandler, damage: int, attacker=None) -> None:
         for player in self.aggro:
@@ -113,6 +113,9 @@ class enemy:
         handler.refresh()
         handler.announce(f"{self.name} has been defeated!")
         handler.pause()
+
+    def __repr__(self):
+        return f"enemy(name={self.name}, health={self.health})"
 
 
 class Goblin(enemy):
@@ -154,12 +157,15 @@ class LargeSlime(enemy):
         handler.refresh()
         handler.announce(f"{self.name} splits into two!")
 
+
 class Necromancer(enemy):
     def __init__(self, name: str = "Necromancer") -> None:
         super().__init__(name, "necromancer")
 
     def raise_undead(self, handler: CombatHandler) -> None:
-        handler.announce(f"{self.name} brings their hand up. Skeletons emerge from the ground.", True)
+        handler.announce(
+            f"{self.name} brings their hand up. Skeletons emerge from the ground.", True
+        )
         handler.addEnemy(Skeleton())
         handler.addEnemy(Skeleton())
 
@@ -182,6 +188,7 @@ class NormalGuy(enemy):
 
     def handshake(self, handler: CombatHandler) -> None:
         handler.announce(f"{self.name} shakes your hand.")
+
 
 class Werewolf(enemy):
     def __init__(self, name: str = "Werewolf") -> None:
@@ -223,6 +230,7 @@ class BabyJelly(enemy):
         else:
             handler.announce(f"{self.name} sits there.")
 
+
 class StoneTitan(enemy):
     def __init__(self, name: str = "Stone Titan") -> None:
         super().__init__(name, "stone_titan")
@@ -261,7 +269,9 @@ class StoneTitan(enemy):
     def core_burst(self, handler: CombatHandler) -> None:
         self.coreCharge = 0
         self.bursts += 1
-        handler.announce(f"{self.name} bursts into a glowing light. It seems... stronger now?")
+        handler.announce(
+            f"{self.name} bursts into a glowing light. It seems... stronger now?"
+        )
 
 
 class Mimic(enemy):

@@ -1,11 +1,8 @@
 import json
 import inventory
 from item import Item, Weapon, Armor, Relic
-import terminalDisplay
-import inputController
 from conditions import Condition
-from pynput.keyboard import Key
-from utils import key_to_delta, getRelativePath
+from utils import getRelativePath
 from typing import TYPE_CHECKING, Callable, TypedDict
 
 import utils
@@ -111,7 +108,7 @@ class Player:
     def attack(self, handler: CombatHandler):
         if not self.inventory.weapon:
             return
-        to_attack = handler.select_character(lambda c: not isinstance(c, Player))
+        to_attack = handler.select_character(self, lambda c: not isinstance(c, Player))
         damage = self.inventory.weapon.damage
         for item in self.inventory.items:
             if isinstance(item, Relic):
@@ -138,7 +135,10 @@ class Player:
 
     def pretty_print_turn_options(
         self,
-        options: list[tuple[str, Callable] | tuple[str, Callable, str]],
+        options: list[
+            tuple[str, Callable[[CombatHandler], None]]
+            | tuple[str, Callable[[CombatHandler], None], str]
+        ],
         selected: int,
         w: int,
         h: int,
@@ -189,7 +189,7 @@ class Player:
     def fireball(self, handler: CombatHandler):
         if not self.inventory.weapon:
             return
-        to_attack = handler.select_character(lambda c: not isinstance(c, Player))
+        to_attack = handler.select_character(self, lambda c: not isinstance(c, Player))
         damage = self.inventory.weapon.damage * 2
         for item in self.inventory.items:
             if isinstance(item, Relic):
@@ -197,7 +197,9 @@ class Player:
         to_attack[0].takeDamage(handler, damage, self)
 
     def scorching_ray(self, handler: CombatHandler):
-        to_attack = handler.select_character(lambda c: not isinstance(c, Player), 3, 1)
+        to_attack = handler.select_character(
+            self, lambda c: not isinstance(c, Player), 3, 1
+        )
         damage = 5
         for item in self.inventory.items:
             if isinstance(item, Relic):

@@ -1,15 +1,19 @@
 import socket
 from typing import Any
+import combatHandler
+from enemy import enemy
 import menuHelper
 from netutil import MessageSocket
 from direction import direction
 from maze import pretty_print_list
 from Pos import Pos
+from player import Player
 from room import Room
 import terminalDisplay
 import inputController
 from pynput.keyboard import Key
 import time
+from turnEntry import TurnEntry
 import utils
 import colorama
 import queue
@@ -103,6 +107,38 @@ def handle(msg: Any):
                 return
             option = menuHelper.menu("Choose option", msg["options"], False)
             ms.send_msg({"type": "option_chosen", "option": option})
+        elif kind == "choose_characters":
+            if len(msg["options"]) < 1:
+                return
+            entries: list[TurnEntry] = []
+            for row in turn_rows:
+                char = Player(row["name"]) if row["is_player"] else enemy(row["name"])
+                char.health = row["health"]
+                entries.append(TurnEntry(row["av"], char))
+            # entries: list[TurnEntry] = [
+            #     TurnEntry(
+            #         row["av"],
+            #         enemy(row["name"]) if row["is_player"] else Player(row["name"]),
+            #     )
+            #     for row in turn_rows
+            # ]
+            passedOptions = msg["options"]
+            available_options: list[tuple[str, int, int]] = [
+                (row["name"], row["health"], row["av"]) for row in turn_rows
+            ]
+            availablePassedOptions = [
+                (op["name"], op["health"], op["av"]) for op in passedOptions
+            ]
+            options: list[TurnEntry] = [
+                option
+                for option in entries
+                if (option.character.name, option.character.health, option.av)
+                in availablePassedOptions
+            ]
+            selected = combatHandler.choose_targets(
+                entries, options, msg["count"], msg["minimum"]
+            )
+            ms.send_msg({"type": "characters_chosen", "selected": selected})
 
 
 def drain(inbox: queue.Queue):

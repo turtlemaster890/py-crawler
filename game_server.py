@@ -39,8 +39,8 @@ party.squads.clear()
 
 lock = threading.Lock()
 fighting = set()
-clients = {}
-PAUSE = 0.3
+clients: dict[MessageSocket, Squad | None] = {}
+PAUSE = 1
 
 
 def fight_notify(members: list[Player], msg: dict[str, Any]):
@@ -159,6 +159,15 @@ def serve_client(conn: socket.socket):
                         for handler, squads in handlers.items():
                             if squad in squads:
                                 handler.offer_action(squad, msg.get("option", 0))
+                elif msg_type == "characters_chosen":
+                    if squad is None:
+                        reply = {"type": "error", "message": "join first"}
+                    elif squad not in fighting:
+                        reply = {"type": "error", "message": "you are not in a fight"}
+                    else:
+                        for handler, squads in handlers.items():
+                            if squad in squads:
+                                handler.offer_selection(squad, msg.get("selected", []))
                 else:
                     reply = {"type": "error", "message": "unkown message type"}
 
@@ -170,7 +179,9 @@ def serve_client(conn: socket.socket):
                 broadcast()
     finally:
         with lock:
-            clients.pop(ms, None)
+            squad = clients.pop(ms, None)
+            if squad in party.squads:
+                party.squads.remove(squad)
         print("a client has disconnected")
         conn.close()
 

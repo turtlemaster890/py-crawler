@@ -1,7 +1,10 @@
+from Pos import Pos
 from direction import direction
+from party import Party
 from room import Room, str_to_room_type
 
 type_names = {cls: name for name, cls in str_to_room_type.items()}
+
 
 def apply_message(controller, squad, msg):
     failure = (None, False, squad)
@@ -23,7 +26,8 @@ def apply_message(controller, squad, msg):
 
     return failure
 
-def handle_join(party, msg, start_pos):
+
+def handle_join(party: Party, msg: dict, start_pos: Pos):
     if not isinstance(msg, dict):
         return None, "join message must be an object"
 
@@ -43,6 +47,7 @@ def handle_join(party, msg, start_pos):
         return None, str(e)
     return squad, None
 
+
 def make_snapshot(controller, you=None):
     party = controller.party
 
@@ -55,14 +60,16 @@ def make_snapshot(controller, you=None):
         room = controller.maze[pos.y][pos.x]
         if not isinstance(room, Room):
             continue
-        rooms.append({
-            "pos": pos.to_json(),
-            "connections": [c.name for c in room.connections],
-            "room_type": type_names.get(type(room), "room"),
-            "colour": room.colour,
-            "selected_colour": room.selectedColour,
-            "description": room.description
-        })
+        rooms.append(
+            {
+                "pos": pos.to_json(),
+                "connections": [c.name for c in room.connections],
+                "room_type": type_names.get(type(room), "room"),
+                "colour": room.colour,
+                "selected_colour": room.selectedColour,
+                "description": room.description,
+            }
+        )
 
     return {
         "type": "snapshot",
