@@ -1,5 +1,6 @@
 from typing import Callable
 
+from actions import PartyAction
 import menuHelper
 from direction import direction
 from maze import maze, pretty_print_list
@@ -32,7 +33,7 @@ class mazeController:
         height: int,
         party: Party,
         startPos: Pos | None = None,
-        combatHandler: Callable[..., CombatHandler] = CombatHandler
+        combatHandler: Callable[..., CombatHandler] = CombatHandler,
     ) -> None:
         self.maze = maze
         self.width: int = width
@@ -48,7 +49,12 @@ class mazeController:
         for connection in startRoom.connections:
             self.party.discovered_positions.add(startPos + connection)
         terminalDisplay.mazeDisplay.messageProvider = lambda x, y: pretty_print_list(
-            x, y, self.maze, self.party.discovered_positions, self.active_squad.pos
+            x,
+            y,
+            self.maze,
+            self.party.discovered_positions,
+            self.active_squad.pos,
+            self.party.floor,
         )
         terminalDisplay.descriptionDisplay.messageProvider = (
             lambda w, h: self.print_description(w, h)
@@ -65,7 +71,10 @@ class mazeController:
             + "Use [Enter] to open actions.",
         )
 
-    def move(self, moveDirection: direction, squad: Squad) -> tuple[CombatHandler | None, bool,]:
+    def move(self, moveDirection: direction, squad: Squad) -> tuple[
+        CombatHandler | None,
+        bool,
+    ]:
         newPos: Pos = squad.pos + moveDirection
         if (
             newPos.x < 0
@@ -79,15 +88,20 @@ class mazeController:
         newRoom = self.maze[newPos.y][newPos.x]
         if isinstance(newRoom, Room) and currentRoom.has_connection(moveDirection):
             self.party.discovered_positions.add(newPos)
-            for connection in newRoom.connections:
+            for connection in newRoom.list_connections():
                 self.party.discovered_positions.add(newPos + connection)
             squad.pos = newPos
             # newRoom.enter_room(self.party)
             terminalDisplay.contextDisplay.print_boxify("Autosaving...")
             saves.save(self.maze, self.party)
             if newRoom.enemies:
+                if newRoom.entry_message:
+                    terminalDisplay.contextDisplay.type_print(newRoom.entry_message)
+                    utils.wait_for_enter()
                 return (
-                    self.handler_factory(self.party, list(squad.characters), newRoom.enemies),
+                    self.handler_factory(
+                        self.party, list(squad.characters), newRoom.enemies
+                    ),
                     True,
                 )
             return None, True
@@ -102,7 +116,9 @@ class mazeController:
             key: Key | inputController.KeyCode | None = inputController.getKey()
             # print(key)
             if key in key_to_direction:
-                combat_handler, success, squad = self.handle_move(key_to_direction[key], self.active_squad)
+                combat_handler, success, squad = self.handle_move(
+                    key_to_direction[key], self.active_squad
+                )
                 if not success:
                     continue
                 if combat_handler is not None:
@@ -112,6 +128,11 @@ class mazeController:
                 r = self.room_options()
                 saves.save(self.maze, self.party)
                 return r
+            if key == Key.esc:
+                c = menuHelper.menu("Pause", ["Resume", "Exit"], False)
+                if c == 1:
+                    utils.clear()
+                    raise SystemExit("Game Closed.")
         return
 
     def handle_move(self, direction, squad):
@@ -119,19 +140,23 @@ class mazeController:
         return (combat_handler, success, squad)
 
     def room_options(self):
-        options = [("View Inventory", self.party.inventory_menu)]
-        current_room: Room | None = self.maze[self.active_squad.pos.y][self.active_squad.pos.x]
+        options: list[tuple[str, PartyAction]] = [
+            ("View Inventory", self.party.inventory_menu),
+            ("Player Actions", self.party.players_menu),
+        ]
+        current_room: Room | None = self.maze[self.active_squad.pos.y][
+            self.active_squad.pos.x
+        ]
         assert isinstance(current_room, Room)
-        options.extend(
-            [
-                (action[0], lambda: action[1](self.party))
-                for action in current_room.room_actions
-            ]
-        )
+        options.extend(current_room.get_room_actions())
         while True:
             option = menuHelper.menu("Actions", [option[0] for option in options])
-            if option is not None:
-                return options[option][1]()
+            if option != -1:
+                o = options[option][1](self.party, current_room)
+                if isinstance(o, CombatHandler):
+                    return o
+                if o:
+                    return
             else:
                 return
 
@@ -177,7 +202,7 @@ def show_room_options(
             f"│{("> " if i == selected else "  ")}{option[:nameSpace].ljust(nameSpace)} │"
         )
     out.append(
-        f"│{("> " if selected == len(options) else "  ")}{"Cancel".ljust(w - 5)} │"
+        f"│{("> " if selected == len(options) else "  ")}{"Back".ljust(w - 5)} │"
     )
     out.append("└" + "─" * (w - 2) + "┘")
     return out

@@ -26,13 +26,14 @@ Strange Man (?) turns into a werewolf
 #### Aggro System
 Enemies will target whoever has dealt the most damage to them.
 
-### Coming Soon:
-
 #### Conditions
 Effects that can be applied to units in combat
+
+#### Multiple Floors
+Once the boss room is beat, the party can move to a lower floor, with harder enemies.
 
 ## Usage
 Use arrow keys and enter to navigate the maze and menus.
 
 ## Installation
-Download standalone exe from releases, or clone locally and run `main.py`
+Download standalone exe from releases, or clone locally and run `main.py` <--- ENSURE YOU HAVE PYTHON >=3.14, AS IT WILL NOT WORK WITH A LOWER VERSION

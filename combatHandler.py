@@ -1,5 +1,6 @@
 from pynput.keyboard import Key
 
+from actions import CombatActionEntry
 import terminalDisplay
 import inputController
 from typing import TYPE_CHECKING, Callable
@@ -9,8 +10,9 @@ from enum import Enum
 
 if TYPE_CHECKING:
     from player import Player
-    from enemy import enemy
+    from enemy import Enemy
     from party import Party
+    from item import Item
 
 
 class CombatResult(Enum):
@@ -24,11 +26,16 @@ class CombatHandler:
         self,
         party: Party,
         players: list[Player] | None = None,
-        enemies: list[enemy] | None = None,
+        enemies: list[Enemy] | None = None,
     ):
+        self.victory = False
         self.party = party
         self.players = players or []
         self.enemies = enemies or []
+        for enemy in self.enemies:
+            enemy.combatStart(self)
+        for player in self.players:
+            player.startCombat(self)
         self.turn_order: list[TurnEntry] = []
         for character in self.players + self.enemies:
             av: float = 10000 / character.speed
@@ -38,15 +45,14 @@ class CombatHandler:
             self.turn_order[i].av -= self.turn_order[0].av
         self.turn_order[0].av = 0
         terminalDisplay.combatDisplay.messageProvider = self.print_turn_order_list
-        for enemy in self.enemies[:]:
-            enemy.combatStart(self)
 
-    def addEnemy(self, enemy: enemy):
+    def addEnemy(self, enemy: Enemy):
+        enemy.scale(self.party.floor)
         enemy.combatStart(self)
         self.turn_order.append(TurnEntry(10000 / enemy.speed, enemy))
         self.enemies.append(enemy)
 
-    def removeEnemy(self, enemy: enemy):
+    def removeEnemy(self, enemy: Enemy):
         for i, entry in enumerate(self.turn_order[:]):
             if entry.character is enemy:
                 del self.turn_order[i]
@@ -63,10 +69,7 @@ class CombatHandler:
     def choose_action(
         self,
         player: Player,
-        options: list[
-            tuple[str, Callable[[CombatHandler], None], str]
-            | tuple[str, Callable[[CombatHandler], None]]
-        ],
+        options: list[CombatActionEntry],
     ) -> int:
         selected_option = 0
         lastProvider = terminalDisplay.contextDisplay.messageProvider
@@ -77,8 +80,8 @@ class CombatHandler:
         )
         lastDescProvider = terminalDisplay.descriptionDisplay.messageProvider
         terminalDisplay.descriptionDisplay.messageProvider = lambda w, h: (
-            utils.boxify(w, h, options[selected_option][2])  # type: ignore
-            if len(options[selected_option]) > 2
+            utils.boxify(w, h, options[selected_option].description)  # type: ignore
+            if options[selected_option].description
             else []
         )
         while True:
@@ -97,7 +100,7 @@ class CombatHandler:
                     return selected_option
 
     def combat(self) -> CombatResult:
-        if utils.DEBUG:
+        if utils.DEBUG_END_COMBAT:
             self.enemies = []
         if len(self.players) == 0:
             return CombatResult.DEFEAT
@@ -186,7 +189,13 @@ class CombatHandler:
                             )
                             return [options.index(e) for e in selected]
 
-    def select_character(self, player: Player, f, count: int = 1, minimum: int = -1):
+    def select_character(
+        self,
+        player: Player,
+        f: Callable[[Player | Enemy], bool],
+        count: int = 1,
+        minimum: int = -1,
+    ) -> list[Player | Enemy]:
         if minimum == -1:
             minimum = count
         options = [e for e in self.turn_order if f(e.character)]
@@ -207,6 +216,7 @@ class CombatHandler:
         out = []
         # "│ " (2) + " │ " (3) + " ### AV │" (8) = 13 characters
         nameSpace = w - 14
+        maxOptions: int = h - 5
 
         out.append("┌" + "─" * (w - 2) + "┐")
         out.append(
@@ -218,18 +228,30 @@ class CombatHandler:
         )
         out.append("├" + "─" * (w - 2) + "┤")
         realOptions = -1
+        start_point = 0
+        realHovered = len(self.turn_order)
+        if hovered < len(options):
+            realHovered = self.turn_order.index(options[hovered])
+        if realHovered >= maxOptions:
+            start_point = (
+                realHovered - maxOptions + (realHovered < len(self.turn_order))
+            )
         for i, entry in enumerate(self.turn_order):
+            if i < start_point:
+                continue
+            if i >= start_point + maxOptions:
+                continue
             if entry in options:
                 realOptions += 1
             sel_str = (
                 ">["
-                if (realOptions == hovered and entry in options and entry in selected)
+                if (i == realHovered and entry in options and entry in selected)
                 else (
                     " ["
                     if (entry in options and entry in selected)
                     else (
                         "> "
-                        if realOptions == hovered and entry in options
+                        if i == realHovered and entry in options
                         else ("  " if entry in options else " ")
                     )
                 )

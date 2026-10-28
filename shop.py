@@ -1,5 +1,5 @@
+import random
 from typing import TYPE_CHECKING
-from item import Item
 import item
 import utils
 
@@ -12,9 +12,27 @@ from pynput.keyboard import Key
 from colorama import Fore, Style
 
 
+def make_shop():
+    items: list[tuple[tuple[item.Item, int], int]] = [
+        ((item.ManaBooster(), 250), 2),
+        ((item.QuickBoots(), 200), 3),
+        ((item.ThornedAmulet(), 375), 1),
+        ((item.Staff(), 500), 1),
+        ((item.HealthPotion(), 125), 2),
+        ((item.Key(), 50), 4),
+        ((item.AntidoteBottle(), 25), 5),
+        ((item.AntidoticCharm(), 350), 1),
+    ]
+
+    return random.choices([e[0] for e in items], [e[1] for e in items], k=3)
+
+
 class Shop:
-    def __init__(self, items: list[tuple[Item, int]]):
-        self.items: list[tuple[Item, int]] = items
+    def __init__(self, items: list[tuple[item.Item, int]] = []):
+        if items:
+            self.items: list[tuple[item.Item, int]] = items
+        else:
+            self.items = make_shop()
 
     def to_json(self):
         return [(i.to_json(), c) for i, c in self.items]
@@ -63,7 +81,7 @@ class Shop:
         out.append("└" + "─" * (w - 2) + "┘")
         return out
 
-    def displayShop(self, party: Party):
+    def displayShop(self, party: Party, room):
         # if len(self.items) == 0:
         #     return
         # utils.addPrintFunction("shop", lambda: self.pretty_print(party.funds, selectedItem), 2)
@@ -95,6 +113,9 @@ class Shop:
                     if selectedItem >= len(self.items):
                         # utils.removePrintFunction("shop")
                         terminalDisplay.contextDisplay.messageProvider = lastProvider
+                        terminalDisplay.descriptionDisplay.messageProvider = (
+                            lastDescProvider
+                        )
                         return
                     price = self.items[selectedItem][1]
                     if party.funds >= price:

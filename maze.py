@@ -1,9 +1,9 @@
 from direction import direction
-from encounters import encounterFactory
+from encounters import bossEncounterFactory, encounterFactory
 import random
 import utils
 from Pos import Pos
-from room import Room, StartRoom, EndRoom, ShopRoom, ChestRoom
+from room import Room, StartRoom, EndRoom, ShopRoom, ChestRoom, LockedRoom
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -14,7 +14,18 @@ from colorama import Style
 
 # colorama_init()
 
-room_weights: dict[type[Room], int] = {Room: 10, ChestRoom: 2, ShopRoom: 1}
+room_weights: dict[type[Room], int] = {
+    Room: 15,
+    ChestRoom: 2,
+    ShopRoom: 1,
+}
+
+branch_room_weights: dict[type[Room], int] = {
+    Room: 10,
+    ChestRoom: 4,
+    ShopRoom: 2,
+    LockedRoom: 1,
+}
 
 add_up = {
     "·": "╵",
@@ -82,7 +93,7 @@ def pretty_print(maze: maze, discovered_positions: set[Pos], current_position: P
     for y, row in enumerate(maze):
         for x, r in enumerate(row):
             if not isinstance(r, Room) or (
-                not Pos(x, y) in discovered_positions and not utils.DEBUG
+                not Pos(x, y) in discovered_positions and not utils.DEBUG_VIEW
             ):
                 print(" ", end=Style.RESET_ALL)
             else:
@@ -99,12 +110,17 @@ def pretty_print(maze: maze, discovered_positions: set[Pos], current_position: P
 
 
 def pretty_print_list(
-    w: int, h: int, maze: maze, discovered_positions: set[Pos], current_position: Pos
+    w: int,
+    h: int,
+    maze: maze,
+    discovered_positions: set[Pos],
+    current_position: Pos,
+    floor: int = 1,
 ) -> list[str]:
     content_width = w - 2
     content_height = h - 2
 
-    out = ["┌" + "─" * content_width + "┐"]
+    out = ["┌" + f" Floor {floor} ".center(content_width, "─") + "┐"]
     for y in range(content_height):
         if y < len(maze):
             row = maze[y]
@@ -113,7 +129,7 @@ def pretty_print_list(
                 if x < len(row):
                     r = row[x]
                     if not isinstance(r, Room) or (
-                        not Pos(x, y) in discovered_positions and not utils.DEBUG
+                        not Pos(x, y) in discovered_positions and not utils.DEBUG_VIEW
                     ):
                         line_chars.append(" ")
                     else:
@@ -122,7 +138,7 @@ def pretty_print_list(
                             if current_position == Pos(x, y)
                             else (Style.DIM + r.colour)
                         )
-                        char = connections_to_char(r.connections)
+                        char = connections_to_char(r.list_connections())
                         line_chars.append(f"{colour}{char}{Style.RESET_ALL}")
                 else:
                     line_chars.append(" ")
@@ -137,7 +153,7 @@ def pretty_print_list(
 
 
 # step 1: generate path to boss room
-def gen_main_path(startPos: Pos, maxSteps: int, x: int, y: int):
+def gen_main_path(startPos: Pos, maxSteps: int, x: int, y: int, floor: int = 1):
     maze: list[list[Room | None]] = []
     for _ in range(y):
         maze.append([None] * x)
@@ -179,17 +195,27 @@ def gen_main_path(startPos: Pos, maxSteps: int, x: int, y: int):
     maze[currentPos.y][currentPos.x] = EndRoom(currentRoom.connections)
     if currentPos in branch_positions:
         branch_positions.remove(currentPos)
-    to_return = gen_branches(maze, branch_positions, x, y, 12)
-    open_room_spots = [
-        (x, y)
-        for y in range(len(maze))
-        for x in range(len(maze[y]))
-        if type(maze[y][x]) == Room
-    ]
-    shopRoomSpot = random.choice(open_room_spots)
-    shopRoomSpotRoom = maze[shopRoomSpot[1]][shopRoomSpot[0]]
-    assert isinstance(shopRoomSpotRoom, Room)
-    maze[shopRoomSpot[1]][shopRoomSpot[0]] = ShopRoom(shopRoomSpotRoom.connections)
+    maze = gen_branches(maze, branch_positions, x, y, 12)
+    # open_room_spots = [
+    #     (x, y)
+    #     for y in range(len(maze))
+    #     for x in range(len(maze[y]))
+    #     if type(maze[y][x]) == Room
+    # ]
+    # shopRoomSpot = random.choice(open_room_spots)
+    # shopRoomSpotRoom = maze[shopRoomSpot[1]][shopRoomSpot[0]]
+    # assert isinstance(shopRoomSpotRoom, Room)
+    # maze[shopRoomSpot[1]][shopRoomSpot[0]] = ShopRoom(shopRoomSpotRoom.connections)
+    if floor > 1:
+        for row in maze:
+            for rm in row:
+                if type(rm) is Room:
+                    rm.enemies = encounterFactory(floor)
+                if type(rm) is EndRoom:
+                    rm.enemies = bossEncounterFactory(floor)
+                if isinstance(rm, Room):
+                    for e in rm.enemies:
+                        e.scale(floor)
     return maze
 
 
@@ -227,7 +253,9 @@ def gen_branch(
                     maze[newPos.y][newPos.x] = maze[newPos.y][
                         newPos.x
                     ] = random.choices(
-                        list(room_weights.keys()), list(room_weights.values()), k=1
+                        list(branch_room_weights.keys()),
+                        list(branch_room_weights.values()),
+                        k=1,
                     )[
                         0
                     ](

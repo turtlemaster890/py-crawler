@@ -62,3 +62,8 @@ displays = [mazeDisplay, combatDisplay, contextDisplay, descriptionDisplay]
 def updateDisplays():
     for d in displays:
         d.print()
+
+
+def say(msg: str) -> None:
+    contextDisplay.print_boxify(msg)
+    utils.wait_for_enter()

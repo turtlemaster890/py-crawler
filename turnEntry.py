@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from player import Player
-    from enemy import enemy
+    from enemy import Enemy
 
 
 @dataclass
 class TurnEntry:
     av: float
-    character: Player | enemy
+    character: Player | Enemy

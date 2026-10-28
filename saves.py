@@ -20,6 +20,7 @@ save_file: Path = SAVE_LOCATION.joinpath(f"save_{save_index}.json")
 def select_save_file() -> None:
     global save_file
     save_files: list[Path] = [p for p in SAVE_LOCATION.glob("*.json")]
+    save_files.sort(key=lambda x: int(x.name.split("_")[1].removesuffix(".json")))
     options: list[str] = [
         f"Save {p.name.split('_')[1].removesuffix(".json")}" for p in save_files
     ]
@@ -59,6 +60,7 @@ def select_save_file() -> None:
                         del options[selected]
                         break
                 terminalDisplay.mazeDisplay.messageProvider = lastProvider
+                utils.clear()
                 return
 
 
@@ -66,13 +68,21 @@ def show_saves(
     w: int, h: int, save_files: list[str], selected: int = -1, hselected: int = -1
 ) -> list[str]:
     nameSpace: int = w - 7
+    maxOptions = h - 5
     # longestName = max([len(item[0].name) for item in self.items])
     # additionalChars = max(0, longestName - 8)
     out = []
     out.append("┌" + "─" * (w - 2) + "┐")
     out.append("│" + "Saves".center(w - 2) + "│")
     out.append("├" + "─" * (w - 2) + "┤")
+    start_point = 0
+    if selected != -1 and selected >= maxOptions:
+        start_point = selected - maxOptions + (selected < len(save_files))
     for i, save_file in enumerate(save_files):
+        if i < start_point:
+            continue
+        if i >= start_point + maxOptions:
+            continue
         out.append(
             f"│{(">[" if i == selected and hselected == 0 else ("> " if i == selected else "  "))}{save_file[:nameSpace].ljust(nameSpace)}{"[×]" if selected == i and hselected == 1 else ("]× " if selected == i else " × ")}│"
         )
