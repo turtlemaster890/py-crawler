@@ -17,7 +17,7 @@ import saves
 from maze import Pos, gen_main_path
 from player import Player
 from party import Party
-from enemy import enemy
+from enemy import Enemy
 from mazeController import mazeController
 from netgame import *
 from netutil import MessageSocket
@@ -64,7 +64,7 @@ def fight_notify(members: list[Player], msg: Packet):
         ms.send(msg)
 
 
-def make_handler(party: Party, players: list[Player], enemies: list[enemy]):
+def make_handler(party: Party, players: list[Player], enemies: list[Enemy]):
     members = list(players)
     return NetworkCombatHandler(
         party,

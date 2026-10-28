@@ -1,6 +1,6 @@
 import socket
 import combatHandler
-from enemy import enemy
+from enemy import Enemy
 import menuHelper
 from netutil import MessageSocket
 from direction import direction
@@ -136,7 +136,7 @@ def handle(msg: Packet):
                 return
             entries: list[TurnEntry] = []
             for row in turn_rows:
-                char = Player(row.name) if row.is_player else enemy(row.name)
+                char = Player(row.name) if row.is_player else Enemy(row.name)
                 char.health = row.health
                 entries.append(TurnEntry(row.av, char))
             # entries: list[TurnEntry] = [

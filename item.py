@@ -79,7 +79,7 @@ class SlimeBall(Item):
         from enemy import Enemy
 
         target: Player | Enemy = combatHandler.select_character(
-            lambda c: isinstance(c, Enemy)
+            player, lambda c: isinstance(c, Enemy)
         )[0]
         assert isinstance(target, Enemy)
         target.applyCondition(Slimed(3, target, combatHandler), combatHandler)
@@ -103,7 +103,7 @@ class Key(Item):
                     f"The {self.name} slides perfectly into the lock. You hear a 'click'."
                 )
                 for connection in room.list_connections():
-                    party.discovered_positions.add(party.pos + connection)
+                    party.discovered_positions.add(party.squads[0].pos + connection)
                 party.inventory.remove(self)
             else:
                 terminalDisplay.contextDisplay.print_boxify(
@@ -161,7 +161,7 @@ class Staff(Weapon):
         from player import Player
 
         to_attack: Player | Enemy = handler.select_character(
-            lambda c: not isinstance(c, Player)
+            player, lambda c: not isinstance(c, Player)
         )[0]
         damage: int = self.damage * 2
         for item in player.inventory.items:

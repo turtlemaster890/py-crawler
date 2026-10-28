@@ -1,10 +1,19 @@
-from typing import Callable, Protocol, TYPE_CHECKING
+from typing import Protocol, TYPE_CHECKING
 
+from actions import CombatActionEntry
 from combatHandler import CombatHandler
 import time
 
-from enemy import enemy
-from packets import ChoiceRow, ChooseCharacters, ChooseOption, CombatState, Log, Packet, TurnRow
+from enemy import Enemy
+from packets import (
+    ChoiceRow,
+    ChooseCharacters,
+    ChooseOption,
+    CombatState,
+    Log,
+    Packet,
+    TurnRow,
+)
 from party import Party
 from squad import Squad
 from turnEntry import TurnEntry
@@ -22,7 +31,7 @@ class NetworkCombatHandler(CombatHandler):
         self,
         party: Party,
         players: list[Player],
-        enemies: list[enemy],
+        enemies: list[Enemy],
         notify: NotifyProtocol,
         pause_seconds: float,
     ):
@@ -66,11 +75,11 @@ class NetworkCombatHandler(CombatHandler):
     def choose_action(
         self,
         player: Player,
-        options: list[tuple[str, Callable, str] | tuple[str, Callable]],
+        options: list[CombatActionEntry],
     ) -> int:
         self.current_player = player
         self.notify(
-            ChooseOption([option[0] for option in options]),
+            ChooseOption([option.name for option in options]),
             [player],
         )
         while self.selected_option is None:

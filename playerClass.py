@@ -10,8 +10,8 @@ if TYPE_CHECKING:
     from combatHandler import CombatHandler
 
 
-def pick_enemy(handler: CombatHandler) -> Player | Enemy:
-    return handler.select_character(lambda c: c in handler.enemies)[0]
+def pick_enemy(player: Player, handler: CombatHandler) -> Player | Enemy:
+    return handler.select_character(player, lambda c: c in handler.enemies)[0]
 
 
 def weapon_damage(player: Player) -> int:
@@ -41,7 +41,7 @@ class Tank(PlayerClass):
 class Warrior(PlayerClass):
     @staticmethod
     def shield_bash(player: Player, handler: CombatHandler) -> bool:
-        target = pick_enemy(handler)
+        target = pick_enemy(player, handler)
         dmg = player.relicDamage(max(1, weapon_damage(player) // 2), target)
         target.takeDamage(handler, dmg, player)
         if target.health > 0:
@@ -78,7 +78,7 @@ class Mage(PlayerClass):
     @staticmethod
     def arcane_barrier(player: Player, handler: CombatHandler):
         ally = handler.select_character(
-            lambda c: c in handler.players and c is not player
+            player, lambda c: c in handler.players and c is not player
         )[0]
         ally.applyCondition(conditions.Shield(100, ally, handler, absorb=12), handler)
         say(
@@ -97,7 +97,7 @@ class Mage(PlayerClass):
 class Rogue(PlayerClass):
     @staticmethod
     def backstab(player: Player, handler: CombatHandler) -> bool:
-        target = pick_enemy(handler)
+        target = pick_enemy(player, handler)
         dmg = weapon_damage(player) * (3 if target.conditions else 2)
         target.takeDamage(handler, player.relicDamage(dmg, target), player)
         if target.health > 0:
@@ -107,7 +107,7 @@ class Rogue(PlayerClass):
 
     @staticmethod
     def venom_strike(player: Player, handler: CombatHandler) -> bool:
-        target = pick_enemy(handler)
+        target = pick_enemy(player, handler)
         target.takeDamage(
             handler, player.relicDamage(weapon_damage(player), target), player
         )
