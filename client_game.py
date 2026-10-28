@@ -15,7 +15,10 @@ from packets import (
     Error,
     Join,
     Log,
+    Menu,
+    MenuChoice,
     Move,
+    OpenActions,
     OptionChosen,
     Packet,
     Snapshot,
@@ -156,6 +159,8 @@ def handle(msg: Packet):
             options: list[TurnEntry] = [entries[o.index] for o in opts]
             selected = combatHandler.choose_targets(entries, options, c, m)
             ms.send(CharactersChosen(selected))
+        case Menu(title=t, options=o, back=b):
+            ms.send(MenuChoice(menuHelper.menu(t, o, b)))
 
 
 def drain(inbox: queue.Queue):
@@ -209,6 +214,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 break
             if key in KEYS:
                 ms.send(Move(KEYS[key]))
+            if key == Key.enter:
+                ms.send(OpenActions())
             time.sleep(0.001)
     finally:
         print("\033[?25h", end="")

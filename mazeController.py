@@ -1,6 +1,6 @@
 from typing import Callable
 
-from actions import PartyAction
+from actions import PartyAction, StartFight
 import menuHelper
 from direction import direction
 from maze import maze, pretty_print_list
@@ -139,26 +139,36 @@ class mazeController:
         combat_handler, success = self.move(direction, squad)
         return (combat_handler, success, squad)
 
-    def room_options(self):
+    def room_options(self, squad: Squad | None = None) -> CombatHandler | None:
+        squad = squad or self.active_squad
         options: list[tuple[str, PartyAction]] = [
             ("View Inventory", self.party.inventory_menu),
             ("Player Actions", self.party.players_menu),
         ]
-        current_room: Room | None = self.maze[self.active_squad.pos.y][
-            self.active_squad.pos.x
-        ]
+        current_room: Room | None = self.maze[squad.pos.y][squad.pos.x]
         assert isinstance(current_room, Room)
         options.extend(current_room.get_room_actions())
         while True:
             option = menuHelper.menu("Actions", [option[0] for option in options])
-            if option != -1:
-                o = options[option][1](self.party, current_room)
-                if isinstance(o, CombatHandler):
-                    return o
-                if o:
-                    return
-            else:
-                return
+            if option == -1:
+                return None
+            o = options[option][1](self.party, current_room)
+            if isinstance(o, StartFight):
+                return self._start_fight(o, squad)
+            if isinstance(o, CombatHandler):
+                return o
+            if o:
+                return None
+
+    def _start_fight(self, sf: StartFight, squad: Squad):
+        saved = [(e, e.speed) for e in sf.first]
+        for e in sf.first:
+            e.speed = 10000
+        try:
+            return self.handler_factory(self.party, list(squad.characters), sf.enemies)
+        finally:
+            for e, s in saved:
+                e.speed = s
 
     # def room_options(self) -> None:
     #     options: list[tuple[str, Callable[[], None]]] = [("View Inventory", self.party.inventory_menu)]

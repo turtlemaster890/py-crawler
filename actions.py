@@ -12,6 +12,12 @@ type PartyAction = Callable[[Party, Room], CombatHandler | Any]
 type PlayerAction = Callable[[Party, Player], Any]
 
 
+class StartFight:
+    def __init__(self, enemies, first=()):
+        self.enemies = enemies
+        self.first = list(first)
+
+
 @dataclass
 class CombatActionEntry:
     name: str

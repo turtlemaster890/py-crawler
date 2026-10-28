@@ -1,6 +1,6 @@
 from typing import Self
 
-from actions import PartyAction
+from actions import PartyAction, StartFight
 from direction import direction
 from colorama import Fore
 import menuHelper
@@ -11,7 +11,6 @@ import terminalDisplay
 from party import Party
 import random
 import utils
-from combatHandler import CombatHandler
 
 
 class Room:
@@ -159,7 +158,7 @@ class ChestRoom(Room):
         self.chest_opened = False
         self.room_actions = [("Open Chest", self.open_chest)]
 
-    def open_chest(self, party: Party, room):
+    def open_chest(self, party: Party, room: Room):
         self.chest_opened = True
         self.room_actions = []
         self.description = "An opened chest stands in the middle of this room."
@@ -180,10 +179,7 @@ class ChestRoom(Room):
             utils.wait_for_enter()
             mimic = Mimic()
             mimic.scale(party.floor)
-            mimic.speed = 10000
-            handler = CombatHandler(party, party.members, [mimic])
-            mimic.speed = 85
-            return handler
+            return StartFight([mimic], first=[mimic])
 
     def to_json(self):
         j = super().to_json()

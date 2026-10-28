@@ -87,6 +87,16 @@ class CharactersChosen(Packet):
     selected: list[int] = field(default_factory=list)
 
 
+@packet
+class OpenActions(Packet):
+    pass
+
+
+@packet
+class MenuChoice(Packet):
+    option: int = -1
+
+
 # Server -> Client
 @packet
 class Error(Packet):
@@ -135,3 +145,10 @@ class ChooseCharacters(Packet):
 
     def __post_init__(self):
         self.options = _coerce(self.options, ChoiceRow)
+
+
+@packet
+class Menu(Packet):
+    title: str
+    options: list[str]
+    back: bool = True

@@ -1,6 +1,7 @@
 import random
 from typing import TYPE_CHECKING
 import item
+import menuHelper
 import utils
 
 if TYPE_CHECKING:
@@ -82,47 +83,59 @@ class Shop:
         return out
 
     def displayShop(self, party: Party, room):
+        while True:
+            labels = [f"{it.name} (¢{price})" for it, price in self.items]
+            choice = menuHelper.menu(f"Shop - ¢{party.funds}", labels)
+            if choice == -1:
+                return
+            it, price = self.items[choice]
+            if party.funds < price:
+                terminalDisplay.say("Not enough funds,")
+                continue
+            party.funds -= price
+            party.inventory.add(it)
+            del self.items[choice]
         # if len(self.items) == 0:
         #     return
         # utils.addPrintFunction("shop", lambda: self.pretty_print(party.funds, selectedItem), 2)
-        lastProvider = terminalDisplay.contextDisplay.messageProvider
-        terminalDisplay.contextDisplay.messageProvider = (
-            lambda w, h: self.pretty_print_list(w, h, party.funds, selectedItem)
-        )
-        lastDescProvider = terminalDisplay.descriptionDisplay.messageProvider
-        terminalDisplay.descriptionDisplay.messageProvider = (
-            lambda w, h: self.print_description(w, h, selectedItem)
-        )
-        selectedItem = 0
-        while True:
-            # if len(self.items) == 0:
-            #     # utils.removePrintFunction("shop")
-            #     terminalDisplay.contextDisplay.messageProvider = None
-            #     return
-            selectedItem %= len(self.items) + 1
-            # clear()
-            # self.pretty_print(party.funds, selectedItem)
-            # utils.printSequences()
-            terminalDisplay.updateDisplays()
-            while True:
-                key = inputController.getKey()
-                if key and key in key_to_delta.keys():
-                    selectedItem += key_to_delta[key]  # type: ignore
-                    break
-                if key == Key.enter:
-                    if selectedItem >= len(self.items):
-                        # utils.removePrintFunction("shop")
-                        terminalDisplay.contextDisplay.messageProvider = lastProvider
-                        terminalDisplay.descriptionDisplay.messageProvider = (
-                            lastDescProvider
-                        )
-                        return
-                    price = self.items[selectedItem][1]
-                    if party.funds >= price:
-                        party.inventory.add(self.items[selectedItem][0])
-                        party.funds -= price
-                        del self.items[selectedItem]
-                        break
+        # lastProvider = terminalDisplay.contextDisplay.messageProvider
+        # terminalDisplay.contextDisplay.messageProvider = (
+        #     lambda w, h: self.pretty_print_list(w, h, party.funds, selectedItem)
+        # )
+        # lastDescProvider = terminalDisplay.descriptionDisplay.messageProvider
+        # terminalDisplay.descriptionDisplay.messageProvider = (
+        #     lambda w, h: self.print_description(w, h, selectedItem)
+        # )
+        # selectedItem = 0
+        # while True:
+        #     # if len(self.items) == 0:
+        #     #     # utils.removePrintFunction("shop")
+        #     #     terminalDisplay.contextDisplay.messageProvider = None
+        #     #     return
+        #     selectedItem %= len(self.items) + 1
+        #     # clear()
+        #     # self.pretty_print(party.funds, selectedItem)
+        #     # utils.printSequences()
+        #     terminalDisplay.updateDisplays()
+        #     while True:
+        #         key = inputController.getKey()
+        #         if key and key in key_to_delta.keys():
+        #             selectedItem += key_to_delta[key]  # type: ignore
+        #             break
+        #         if key == Key.enter:
+        #             if selectedItem >= len(self.items):
+        #                 # utils.removePrintFunction("shop")
+        #                 terminalDisplay.contextDisplay.messageProvider = lastProvider
+        #                 terminalDisplay.descriptionDisplay.messageProvider = (
+        #                     lastDescProvider
+        #                 )
+        #                 return
+        #             price = self.items[selectedItem][1]
+        #             if party.funds >= price:
+        #                 party.inventory.add(self.items[selectedItem][0])
+        #                 party.funds -= price
+        #                 del self.items[selectedItem]
+        #                 break
 
     def print_description(self, w, h, selected: int):
         if selected < len(self.items) and self.items[selected][0].description != "":

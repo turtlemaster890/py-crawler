@@ -6,11 +6,7 @@ from player import Player
 from inventory import Inventory, group_items, stack_label
 from item import Armor, Item, Weapon
 from inventory import Inventory
-import terminalDisplay
-import inputController
-import utils
 from squad import Squad
-from pynput.keyboard import Key
 
 if TYPE_CHECKING:
     from room import Room
@@ -50,57 +46,37 @@ class Party:
         ]
         return sum(self.moveItemToMember(member, i) for i in same)
 
-    def move_to_member_menu(self, item: Item, count: int = 1):
-        selected = 0
-        options = self.members
-        lastProvider = terminalDisplay.contextDisplay.messageProvider
-        terminalDisplay.contextDisplay.messageProvider = (
-            lambda w, h: self.show_move_item_options(
-                w, h, [m.name for m in options], selected
-            )
-        )
-        while True:
-            selected %= len(options) + 1
-            terminalDisplay.updateDisplays()
-            while True:
-                key = inputController.getKey()
-                if key and key in utils.key_to_delta:
-                    selected += utils.key_to_delta[key]
-                    break
-                if key == Key.enter:
-                    if selected < len(options):
-                        if count > 1:
-                            self.moveStackToMember(options[selected], item)
-                        else:
-                            self.moveItemToMember(options[selected], item)
-                        terminalDisplay.contextDisplay.messageProvider = lastProvider
-                        terminalDisplay.updateDisplays()
-                        return True
-                    terminalDisplay.contextDisplay.messageProvider = lastProvider
-                    terminalDisplay.updateDisplays()
+    def move_to_member_menu(self, item: Item, count: int = 1) -> bool:
+        choice = menuHelper.menu("Move to", [m.name for m in self.members])
+        if choice == -1:
+            return False
+        if count > 1:
+            self.moveStackToMember(self.members[choice], item)
+        else:
+            self.moveItemToMember(self.members[choice], item)
+        return True
 
-    def show_move_item_options(
-        self, w: int, h: int, options: list[str], selected: int = -1
-    ) -> list[str]:
-        nameSpace = w - 5
-        # longestName = max([len(item[0].name) for item in self.items])
-        # additionalChars = max(0, longestName - 8)
-        out = []
-        out.append("┌" + "─" * (w - 2) + "┐")
-        out.append("│" + "Move to".center(w - 2) + "│")
-        out.append("├" + "─" * (w - 2) + "┤")
-        for i, option in enumerate(options):
-            out.append(
-                f"│{("> " if i == selected else "  ")}{option[:nameSpace].ljust(nameSpace)} │"
-            )
-        out.append(
-            f"│{("> " if selected == len(options) else "  ")}{"Back".ljust(w - 5)} │"
-        )
-        out.append("└" + "─" * (w - 2) + "┘")
-        return out
+    # def show_move_item_options(
+    #     self, w: int, h: int, options: list[str], selected: int = -1
+    # ) -> list[str]:
+    #     nameSpace = w - 5
+    #     # longestName = max([len(item[0].name) for item in self.items])
+    #     # additionalChars = max(0, longestName - 8)
+    #     out = []
+    #     out.append("┌" + "─" * (w - 2) + "┐")
+    #     out.append("│" + "Move to".center(w - 2) + "│")
+    #     out.append("├" + "─" * (w - 2) + "┤")
+    #     for i, option in enumerate(options):
+    #         out.append(
+    #             f"│{("> " if i == selected else "  ")}{option[:nameSpace].ljust(nameSpace)} │"
+    #         )
+    #     out.append(
+    #         f"│{("> " if selected == len(options) else "  ")}{"Back".ljust(w - 5)} │"
+    #     )
+    #     out.append("└" + "─" * (w - 2) + "┘")
+    #     return out
 
     def item_menu(self, item: Item, room: Room, count: int = 1):
-        selected = 0
         options: list[tuple[str, Callable[[], Any]]] = [
             ("Move to player", lambda: self.move_to_member_menu(item))
         ]
@@ -112,50 +88,32 @@ class Party:
                 )
             )
         options.extend([(a[0], lambda: a[1](self, room)) for a in item.party_actions])
-        lastProvider = terminalDisplay.contextDisplay.messageProvider
-        terminalDisplay.contextDisplay.messageProvider = (
-            lambda w, h: self.show_item_options(
-                w, h, item, [option[0] for option in options], selected
-            )
-        )
         while True:
-            selected %= len(options) + 1
-            terminalDisplay.updateDisplays()
-            while True:
-                key = inputController.getKey()
-                if key and key in utils.key_to_delta:
-                    selected += utils.key_to_delta[key]
-                    break
-                if key == Key.enter:
-                    if selected < len(options):
-                        if options[selected][1]():
-                            terminalDisplay.contextDisplay.messageProvider = (
-                                lastProvider
-                            )
-                            return
-                    else:
-                        terminalDisplay.contextDisplay.messageProvider = lastProvider
-                        return
+            choice = menuHelper.menu(item.name, [o[0] for o in options])
+            if choice == -1:
+                return
+            if options[choice][1]():
+                return
 
-    def show_item_options(
-        self, w: int, h: int, item: Item, options: list[str], selected: int = -1
-    ) -> list[str]:
-        nameSpace = w - 5
-        # longestName = max([len(item[0].name) for item in self.items])
-        # additionalChars = max(0, longestName - 8)
-        out = []
-        out.append("┌" + "─" * (w - 2) + "┐")
-        out.append("│" + item.name.center(w - 2) + "│")
-        out.append("├" + "─" * (w - 2) + "┤")
-        for i, option in enumerate(options):
-            out.append(
-                f"│{("> " if i == selected else "  ")}{option[:nameSpace].ljust(nameSpace)} │"
-            )
-        out.append(
-            f"│{("> " if selected == len(options) else "  ")}{"Back".ljust(w - 5)} │"
-        )
-        out.append("└" + "─" * (w - 2) + "┘")
-        return out
+    # def show_item_options(
+    #     self, w: int, h: int, item: Item, options: list[str], selected: int = -1
+    # ) -> list[str]:
+    #     nameSpace = w - 5
+    #     # longestName = max([len(item[0].name) for item in self.items])
+    #     # additionalChars = max(0, longestName - 8)
+    #     out = []
+    #     out.append("┌" + "─" * (w - 2) + "┐")
+    #     out.append("│" + item.name.center(w - 2) + "│")
+    #     out.append("├" + "─" * (w - 2) + "┤")
+    #     for i, option in enumerate(options):
+    #         out.append(
+    #             f"│{("> " if i == selected else "  ")}{option[:nameSpace].ljust(nameSpace)} │"
+    #         )
+    #     out.append(
+    #         f"│{("> " if selected == len(options) else "  ")}{"Back".ljust(w - 5)} │"
+    #     )
+    #     out.append("└" + "─" * (w - 2) + "┘")
+    #     return out
 
     def inventory_menu(self, party: Party, room):
         # selected = 0

@@ -1,15 +1,21 @@
+import queue
 import socket
 import tempfile
 from pathlib import Path
 import time
 
 from direction import direction
+import menuHelper
 from packets import (
     CharactersChosen,
     CombatEnd,
     Error,
     Join,
+    Log,
+    Menu,
+    MenuChoice,
     Move,
+    OpenActions,
     OptionChosen,
     Packet,
     PacketError,
@@ -29,13 +35,41 @@ from combatHandler import CombatResult
 from netcombat import NetworkCombatHandler
 import utils
 
+
+class ClientGone(Exception):
+    pass
+
+
 _ctx = threading.local()
+
+busy: set[Squad] = set()
+pending: dict[Squad, queue.Queue] = {}
 
 
 def _log(text, typed=False):
     h = getattr(_ctx, "handler", None)
     if h is not None:
         h.announce(text, typed)
+        return
+    ms = getattr(_ctx, "ms", None)
+    if ms is not None:
+        ms.send(Log(text, typed))
+
+
+def remote_menu(title, options, back=True):
+    ms, squad = _ctx.ms, _ctx.squad
+    q = queue.Queue()
+    pending[squad] = q
+    ms.send(Menu(title, list(options), back))
+    while True:
+        o = q.get()
+        if o is None:
+            raise ClientGone
+        if (o == -1 and back) or 0 <= o < len(options):
+            return o
+
+
+menuHelper.menu = remote_menu
 
 
 terminalDisplay.contextDisplay.print_boxify = lambda message: _log(message)
@@ -122,6 +156,30 @@ def run_fight(handler: NetworkCombatHandler, squad: Squad):
         broadcast()
 
 
+def run_actions(ms: MessageSocket, squad: Squad):
+    _ctx.ms, _ctx.squad = ms, squad
+    handler = None
+    try:
+        handler = controller.room_options(squad)
+        with lock:
+            if handler is not None:
+                fighting.add(squad)
+            if party.squads:
+                saves.save(mz, party)
+    except ClientGone:
+        handler = None
+    finally:
+        _ctx.ms = None
+        pending.pop(squad, None)
+        with lock:
+            busy.discard(squad)
+    if handler is not None:
+        if isinstance(handler, NetworkCombatHandler):
+            run_fight(handler, squad)
+    else:
+        broadcast()
+
+
 # def snapshot_for(ms):
 #     with lock:
 
@@ -154,6 +212,7 @@ def serve_client(conn: socket.socket):
             reply = None
             changed = False
             fight = None
+            actions = None
             with lock:
                 squad = clients.get(ms)
                 match pkt:
@@ -171,7 +230,7 @@ def serve_client(conn: socket.socket):
                     case Move(dir=d):
                         if squad is None:
                             reply = Error("Join first")
-                        elif squad in fighting:
+                        elif squad in fighting or squad in busy:
                             reply = Error("You are in a fight")
                         elif d not in direction.__members__:
                             reply = Error(f"Bad direction {d!r}")
@@ -202,6 +261,21 @@ def serve_client(conn: socket.socket):
                             for handler, squads in handlers.items():
                                 if squad in squads:
                                     handler.offer_selection(squad, sel)
+                    case OpenActions():
+                        if squad is None:
+                            reply = Error("Join first")
+                        elif squad in fighting or squad in busy:
+                            reply = Error("You are busy")
+                        else:
+                            busy.add(squad)
+                            actions = (ms, squad)
+                    case MenuChoice(option=o):
+                        if squad is None:
+                            reply = Error("Join first")
+                        else:
+                            q = pending.get(squad)
+                            if q is not None and type(o) is int:
+                                q.put(o)
                     case _:
                         reply = Error("Unexpected Packet")
 
@@ -209,6 +283,8 @@ def serve_client(conn: socket.socket):
                 ms.send(reply)
             if fight is not None:
                 threading.Thread(target=run_fight, args=fight, daemon=True).start()
+            if actions is not None:
+                threading.Thread(target=run_actions, args=actions, daemon=True).start()
             if changed:
                 broadcast()
     finally:
@@ -216,6 +292,10 @@ def serve_client(conn: socket.socket):
             squad = clients.pop(ms, None)
             if squad in party.squads:
                 party.squads.remove(squad)
+            if squad is not None:
+                q = pending.pop(squad, None)
+                if q is not None:
+                    q.put(None)
         print("a client has disconnected")
         conn.close()
 
