@@ -74,7 +74,11 @@ menuHelper.menu = remote_menu
 
 terminalDisplay.contextDisplay.print_boxify = lambda message: _log(message)
 terminalDisplay.contextDisplay.type_print = lambda message, *a, **k: _log(message, True)
-utils.wait_for_enter = lambda: time.sleep(PAUSE)
+utils.wait_for_enter = lambda: (
+    time.sleep(PAUSE)
+    if getattr(_ctx, "handler", None) or getattr(_ctx, "ms", None)
+    else None
+)
 
 saves.SAVE_LOCATION = Path(tempfile.mkdtemp())
 saves.save_file = saves.SAVE_LOCATION / "server_save.json"
