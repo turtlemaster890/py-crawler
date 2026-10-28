@@ -521,6 +521,7 @@ enemy_type_to_class = {
     "stone_titan": StoneTitan,
     "mimic": Mimic,
     "pyromaniac": Pyromaniac,
+    "zombie_king": ZombieKing,
 }
 
 
