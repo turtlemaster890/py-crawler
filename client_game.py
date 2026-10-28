@@ -199,9 +199,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     threading.Thread(target=receiver, args=(ms, inbox), daemon=True).start()
     server_gone = False
     try:
-        print(Join([1]))
-        # time.sleep(100)
-        ms.send(Join([1]))
+        ms.send(Join([0, 1]))
         while True:
             if not drain(inbox):
                 server_gone = True
