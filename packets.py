@@ -117,6 +117,8 @@ class Snapshot(Packet):
     squads: list[dict]
     rooms: list[dict]
     floor: int = 1
+    funds: int = 0
+    members: list[dict] = field(default_factory=list)
 
 
 @packet
@@ -152,3 +154,8 @@ class Menu(Packet):
     title: str
     options: list[str]
     back: bool = True
+
+
+@packet
+class Roster(Packet):
+    characters: list[dict]

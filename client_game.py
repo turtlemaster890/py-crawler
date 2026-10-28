@@ -21,6 +21,7 @@ from packets import (
     OpenActions,
     OptionChosen,
     Packet,
+    Roster,
     Snapshot,
     TurnRow,
 )
@@ -37,6 +38,30 @@ import queue
 import threading
 
 KEYS = {Key.up: "UP", Key.down: "DOWN", Key.left: "LEFT", Key.right: "RIGHT"}
+
+status = {"funds": 0, "members": []}
+
+joining = False
+
+in_game = False
+
+
+def status_lines(w: int, h: int) -> list[str]:
+    inner = w - 2
+    rows = [f"Funds: ¢{status["funds"]}"]
+    for m in status["members"]:
+        rows.append(m["name"])
+        rows.append(
+            f"  HP {m["health"]}/{m["max_health"]}  SP {m["stamina"]}/{m["max_stamina"]}"
+        )
+    out = ["┌" + " Squad ".center(inner, "─") + "┐"]
+    out += [f"│{r[:inner].ljust(inner)}│" for r in rows[: h - 2]]
+    out.append("└" + "─" * inner + "┘")
+    return out
+
+
+statusDisplay = terminalDisplay.DisplayArea(62, 0, 30, 12, status_lines)
+terminalDisplay.displays.append(statusDisplay)
 
 
 def turn_order_lines(rows: list[TurnRow], w: int, h: int):
@@ -76,15 +101,21 @@ def build_view(snap: Snapshot):
     if snap.you is not None:
         my_pos = Pos.from_json(snap.squads[snap.you]["pos"])
 
-    return grid, discovered, my_pos
+    others = {
+        Pos.from_json(s["pos"]) for i, s in enumerate(snap.squads) if i != snap.you
+    }
+
+    return grid, discovered, my_pos, others
 
 
 def render(snap: Snapshot):
-    grid, discovered, my_pos = build_view(snap)
+    grid, discovered, my_pos, others = build_view(snap)
     here = grid[my_pos.y][my_pos.x]
     description = here.description if here is not None else ""
+    status["funds"] = snap.funds
+    status["members"] = snap.members
     terminalDisplay.mazeDisplay.messageProvider = lambda w, h: pretty_print_list(
-        w, h, grid, discovered, my_pos, floor=snap.floor
+        w, h, grid, discovered, my_pos, snap.floor, others
     )
     terminalDisplay.descriptionDisplay.messageProvider = lambda w, h: utils.boxify(
         w, h, description
@@ -109,12 +140,15 @@ turn_rows: list[TurnRow]
 
 def handle(msg: Packet):
     # if isinstance(msg, dict):
-    global turn_rows
+    global turn_rows, joining, in_game
     # kind = msg.get("type")
     match msg:
         case Snapshot():
+            in_game = True
             render(msg)
         case Error(message=m):
+            if not in_game:
+                joining = False
             say(m)
         case Log(text=t, typed=typ):
             if typ:
@@ -161,6 +195,32 @@ def handle(msg: Packet):
             ms.send(CharactersChosen(selected))
         case Menu(title=t, options=o, back=b):
             ms.send(MenuChoice(menuHelper.menu(t, o, b)))
+        case Roster(characters=chars):
+            if joining or in_game:
+                return
+            avail = [c for c in chars if c["available"]]
+            if not avail:
+                say("No characters free, waiting...")
+                return
+            picked: list[int] = []
+            while True:
+                labels = [
+                    ("[x] " if c["index"] in picked else "[ ] ")
+                    + f"{c["name"]} ({c["class_type"]})"
+                    for c in avail
+                ] + ["Confirm"]
+                o = menuHelper.menu("Pick characters", labels, False)
+                if o == len(avail):
+                    if picked:
+                        break
+                    continue
+                i = avail[o]["index"]
+                if i in picked:
+                    picked.remove(i)
+                else:
+                    picked.append(i)
+            joining = True
+            ms.send(Join(picked))
 
 
 def drain(inbox: queue.Queue):
@@ -204,7 +264,6 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     threading.Thread(target=receiver, args=(ms, inbox), daemon=True).start()
     server_gone = False
     try:
-        ms.send(Join([0, 1]))
         while True:
             if not drain(inbox):
                 server_gone = True
@@ -212,9 +271,9 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             key = inputController.getKey()
             if key == Key.esc:
                 break
-            if key in KEYS:
+            if in_game and key in KEYS:
                 ms.send(Move(KEYS[key]))
-            if key == Key.enter:
+            if in_game and key == Key.enter:
                 ms.send(OpenActions())
             time.sleep(0.001)
     finally:

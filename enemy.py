@@ -132,7 +132,7 @@ class Enemy:
         text = f"Health: {self.health}/{self.max_health}"
         if self.conditions:
             text += f" Conditions: {', '.join(c.name for c in self.conditions)}"
-        terminalDisplay.contextDisplay.print_boxify(text)
+        terminalDisplay.say(text)
         handler.pause()
 
     def takeAction(self, action: str, handler: CombatHandler) -> None:

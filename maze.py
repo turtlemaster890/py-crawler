@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from party import Party
 
 # from colorama import init as colorama_init
-from colorama import Style
+from colorama import Fore, Style
 
 # colorama_init()
 
@@ -116,6 +116,7 @@ def pretty_print_list(
     discovered_positions: set[Pos],
     current_position: Pos,
     floor: int = 1,
+    others: set[Pos] | None = None,
 ) -> list[str]:
     content_width = w - 2
     content_height = h - 2
@@ -133,11 +134,12 @@ def pretty_print_list(
                     ):
                         line_chars.append(" ")
                     else:
-                        colour = (
-                            r.selectedColour
-                            if current_position == Pos(x, y)
-                            else (Style.DIM + r.colour)
-                        )
+                        if current_position == Pos(x, y):
+                            colour = r.selectedColour
+                        elif others and Pos(x, y) in others:
+                            colour = Fore.LIGHTCYAN_EX
+                        else:
+                            colour = Style.DIM + r.colour
                         char = connections_to_char(r.list_connections())
                         line_chars.append(f"{colour}{char}{Style.RESET_ALL}")
                 else:

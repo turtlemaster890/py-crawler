@@ -19,6 +19,7 @@ from packets import (
     OptionChosen,
     Packet,
     PacketError,
+    Roster,
 )
 import saves
 from maze import Pos, gen_main_path
@@ -69,6 +70,21 @@ def remote_menu(title, options, back=True):
             return o
 
 
+def roster_packet() -> Roster:
+    taken = {c for sq in party.squads for c in sq.characters}
+    return Roster(
+        [
+            {
+                "index": i,
+                "name": m.name,
+                "class_type": m.class_type,
+                "available": m not in taken and not in_fight([m]),
+            }
+            for i, m in enumerate(party.members)
+        ]
+    )
+
+
 menuHelper.menu = remote_menu
 
 
@@ -116,56 +132,84 @@ def fight_notify(members: list[Player], msg: Packet):
 
 
 def make_handler(party: Party, players: list[Player], enemies: list[Enemy]):
+    existing = room_fights.get(id(enemies))
+    if existing is not None:
+        fight_members[existing].extend(players)
+        existing.add_players(players)
+        return existing
     members = list(players)
-    return NetworkCombatHandler(
+    handler = NetworkCombatHandler(
         party,
         players,
         enemies,
         notify=lambda msg, members=members: fight_notify(members, msg),
         pause_seconds=PAUSE,
     )
+    fight_members[handler] = members
+    room_fights[id(enemies)] = handler
+    return handler
 
 
 controller.handler_factory = make_handler
 
 handlers: dict[NetworkCombatHandler, list[Squad]] = {}
+fight_members: dict[NetworkCombatHandler, list[Player]] = {}
+room_fights: dict[int, NetworkCombatHandler] = {}
 
 
-def run_fight(handler: NetworkCombatHandler, squad: Squad):
-    _ctx = handler
+def register(handler: NetworkCombatHandler, squad: Squad) -> bool:
+    fighting.add(squad)
+    squads = handlers.setdefault(handler, [])
+    squads.append(squad)
+    return len(squads) == 1
+
+
+def in_fight(chars: list[Player]) -> bool:
+    return any(c in h.players or c in h.leaving for h in handlers for c in chars)
+
+
+def run_fight(handler: NetworkCombatHandler):
     try:
         print("fight started")
-        handlers.setdefault(handler, []).append(squad)
         result = handler.combat()
+        broadcast()
         while result is CombatResult.CONTINUE:
             result = handler.combat()
+            broadcast()
         print("fight ended:", result.name)
         handler.notify(CombatEnd(result.name))
         with lock:
             if result is CombatResult.VICTORY:
-                saves.save(mz, party)
+                if party.squads:
+                    saves.save(mz, party)
             else:
-                for c in squad.characters:
-                    c.health = c.max_health
-                    c.leaveCombat()
-                squad.pos = Pos(START.x, START.y)
+                for squad in handlers.get(handler, []):
+                    for c in squad.characters:
+                        c.health = c.max_health
+                        c.leaveCombat()
+                    squad.pos = Pos(START.x, START.y)
     finally:
         with lock:
-            fighting.discard(squad)
-        del handlers[handler]
+            for s in handlers.pop(handler, []):
+                fighting.discard(s)
+            fight_members.pop(handler, None)
+            for k, h in list(room_fights.items()):
+                if h is handler:
+                    del room_fights[k]
         broadcast()
 
 
 def run_actions(ms: MessageSocket, squad: Squad):
     _ctx.ms, _ctx.squad = ms, squad
     handler = None
+    new = False
     try:
         handler = controller.room_options(squad)
         with lock:
-            if handler is not None:
-                fighting.add(squad)
             if party.squads:
                 saves.save(mz, party)
+            if handler is not None and isinstance(handler, NetworkCombatHandler):
+                new = register(handler, squad)
     except ClientGone:
         handler = None
     finally:
@@ -173,11 +217,13 @@ def run_actions(ms: MessageSocket, squad: Squad):
         pending.pop(squad, None)
         with lock:
             busy.discard(squad)
-    if handler is not None:
-        if isinstance(handler, NetworkCombatHandler):
-            run_fight(handler, squad)
-    else:
+    if handler is None:
         broadcast()
+    elif new:
+        if isinstance(handler, NetworkCombatHandler):
+            run_fight(handler)
+    else:
+        handler.refresh()
 
 
 # def snapshot_for(ms):
@@ -186,12 +232,13 @@ def run_actions(ms: MessageSocket, squad: Squad):
 
 def broadcast():
     with lock:
+        roster = roster_packet()
         for ms, squad in clients.items():
             if squad is None:
+                ms.send(roster)
                 continue
             squad_index = party.squads.index(squad)
-            snapshot = make_snapshot(controller, squad_index)
-            ms.send(snapshot)
+            ms.send(make_snapshot(controller, squad_index))
 
 
 def serve_client(conn: socket.socket):
@@ -199,6 +246,7 @@ def serve_client(conn: socket.socket):
     ms = MessageSocket(conn)
     with lock:
         clients[ms] = None
+        ms.send(roster_packet())
     try:
         while True:
             try:
@@ -212,6 +260,7 @@ def serve_client(conn: socket.socket):
             reply = None
             changed = False
             fight = None
+            joined = None
             actions = None
             with lock:
                 squad = clients.get(ms)
@@ -223,6 +272,17 @@ def serve_client(conn: socket.socket):
                             new_squad, error = handle_join(party, chars, START)
                             if error is not None:
                                 ms.send(Error(error))
+                                ms.send(roster_packet())
+                            elif in_fight(
+                                [
+                                    party.members[i]
+                                    for i in chars
+                                    if 0 <= i < len(party.members)
+                                ]
+                            ):
+                                reply = Error(
+                                    "That character is still leaving a fight, try again"
+                                )
                             else:
                                 clients[ms] = new_squad
                                 changed = True
@@ -239,9 +299,13 @@ def serve_client(conn: socket.socket):
                                 direction[d], squad
                             )
                             changed = success
-                            if handler is not None:
-                                fighting.add(squad)
-                                fight = (handler, squad)
+                            if handler is not None and isinstance(
+                                handler, NetworkCombatHandler
+                            ):
+                                if register(handler, squad):
+                                    fight = handler
+                                else:
+                                    joined = handler
 
                     case OptionChosen(option=o):
                         if squad is None:
@@ -282,7 +346,9 @@ def serve_client(conn: socket.socket):
             if reply is not None:
                 ms.send(reply)
             if fight is not None:
-                threading.Thread(target=run_fight, args=fight, daemon=True).start()
+                threading.Thread(target=run_fight, args=(fight,), daemon=True).start()
+            if joined is not None:
+                joined.refresh()
             if actions is not None:
                 threading.Thread(target=run_actions, args=actions, daemon=True).start()
             if changed:
@@ -290,14 +356,24 @@ def serve_client(conn: socket.socket):
     finally:
         with lock:
             squad = clients.pop(ms, None)
-            if squad in party.squads:
-                party.squads.remove(squad)
             if squad is not None:
+                for h, sqs in list(handlers.items()):
+                    if squad in sqs:
+                        sqs.remove(squad)
+                        h.remove_players_later(list(squad.characters))
+                        for c in squad.characters:
+                            if c in fight_members.get(h, []):
+                                fight_members[h].remove(c)
+                fighting.discard(squad)
+                busy.discard(squad)
                 q = pending.pop(squad, None)
                 if q is not None:
                     q.put(None)
+                if squad in party.squads:
+                    party.squads.remove(squad)
         print("a client has disconnected")
         conn.close()
+        broadcast()
 
 
 HOST = "localhost"

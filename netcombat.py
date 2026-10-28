@@ -1,10 +1,10 @@
 from typing import Protocol, TYPE_CHECKING
 
 from actions import CombatActionEntry
-from combatHandler import CombatHandler
+from combatHandler import CombatHandler, CombatResult
 import time
 
-from enemy import Enemy
+from enemy import AggroEntry, Enemy
 from packets import (
     ChoiceRow,
     ChooseCharacters,
@@ -26,6 +26,10 @@ class NotifyProtocol(Protocol):
     def __call__(self, msg: Packet, members: list[Player] = []) -> None: ...
 
 
+class PlayerLeft(Exception):
+    pass
+
+
 class NetworkCombatHandler(CombatHandler):
     def __init__(
         self,
@@ -40,6 +44,8 @@ class NetworkCombatHandler(CombatHandler):
         self.current_player: Player | None = None
         self.selected_option: int | None = None
         self.selected_options: list[int] | None = None
+        self._joining: list[Player] = []
+        self.leaving: list[Player] = []
         super().__init__(party, players, enemies)
 
     def announce(self, text: str, typed: bool = False):
@@ -64,6 +70,38 @@ class NetworkCombatHandler(CombatHandler):
             ]
         )
 
+    def add_players(self, players: list[Player]):
+        self._joining.extend(players)
+
+    def remove_players_later(self, players: list[Player]):
+        self.leaving.extend(players)
+
+    def _apply_pending(self):
+        while self._joining:
+            p = self._joining.pop(0)
+            if p in self.players:
+                continue
+            self.players.append(p)
+            p.startCombat(self)
+            self.turn_order.append(TurnEntry(10000 / p.speed, p))
+            for e in self.enemies:
+                e.aggro.append(AggroEntry(0, p))
+        for p in list(self.leaving):
+            if p in self.players:
+                self.removePlayer(p)
+            p.leaveCombat()
+            if p.health <= 0:
+                p.health = p.max_health
+            self.leaving.remove(p)
+
+    def combat(self) -> CombatResult:
+        self._apply_pending()
+        try:
+            return super().combat()
+        except PlayerLeft:
+            self._apply_pending()
+            return CombatResult.CONTINUE
+
     def offer_action(self, squad: Squad, option: int):
         if self.current_player in squad.characters:
             self.selected_option = option
@@ -82,7 +120,11 @@ class NetworkCombatHandler(CombatHandler):
             ChooseOption([option.name for option in options]),
             [player],
         )
+        self.selected_option = None
         while self.selected_option is None:
+            if player in self.leaving:
+                self.current_player = None
+                raise PlayerLeft
             time.sleep(0.01)
         r = self.selected_option
         self.selected_option = None
@@ -96,7 +138,6 @@ class NetworkCombatHandler(CombatHandler):
             return []
         self.current_player = player
         self.notify(self.state_message(), [player])
-        time.sleep(0.1)
         self.notify(
             ChooseCharacters(
                 [
@@ -109,7 +150,11 @@ class NetworkCombatHandler(CombatHandler):
             ),
             [player],
         )
+        self.selected_options = None
         while self.selected_options is None:
+            if player in self.leaving:
+                self.current_player = None
+                raise PlayerLeft
             time.sleep(0.01)
         r = self.selected_options
         self.selected_options = None

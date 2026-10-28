@@ -42,6 +42,23 @@ def make_snapshot(controller: mazeController, you: int | None = None) -> Snapsho
             }
         )
 
+    mine = party.squads[you].characters if you is not None else []
     return Snapshot(
-        you, controller.width, controller.height, squads, rooms, party.floor
+        you,
+        controller.width,
+        controller.height,
+        squads,
+        rooms,
+        party.floor,
+        party.funds,
+        [
+            {
+                "name": c.name,
+                "health": c.health,
+                "max_health": c.max_health,
+                "stamina": c.stamina,
+                "max_stamina": c.max_stamina,
+            }
+            for c in mine
+        ],
     )
