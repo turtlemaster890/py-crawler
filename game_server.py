@@ -1,8 +1,18 @@
 import socket
 import tempfile
 from pathlib import Path
-from typing import Any
 
+from direction import direction
+from packets import (
+    CharactersChosen,
+    CombatEnd,
+    Error,
+    Join,
+    Move,
+    OptionChosen,
+    Packet,
+    PacketError,
+)
 import saves
 from maze import Pos, gen_main_path
 from player import Player
@@ -43,7 +53,7 @@ clients: dict[MessageSocket, Squad | None] = {}
 PAUSE = 1
 
 
-def fight_notify(members: list[Player], msg: dict[str, Any]):
+def fight_notify(members: list[Player], msg: Packet):
     with lock:
         targets = [
             ms
@@ -51,7 +61,7 @@ def fight_notify(members: list[Player], msg: dict[str, Any]):
             if squad is not None and any(c in squad.characters for c in members)
         ]
     for ms in targets:
-        ms.send_msg(msg)
+        ms.send(msg)
 
 
 def make_handler(party: Party, players: list[Player], enemies: list[enemy]):
@@ -78,7 +88,7 @@ def run_fight(handler: NetworkCombatHandler, squad: Squad):
         while result is CombatResult.CONTINUE:
             result = handler.combat()
         print("fight ended:", result.name)
-        handler.notify({"type": "combat_end", "result": result.name})
+        handler.notify(CombatEnd(result.name))
         with lock:
             if result is CombatResult.VICTORY:
                 saves.save(mz, party)
@@ -105,7 +115,7 @@ def broadcast():
                 continue
             squad_index = party.squads.index(squad)
             snapshot = make_snapshot(controller, squad_index)
-            ms.send_msg(snapshot)
+            ms.send(snapshot)
 
 
 def serve_client(conn: socket.socket):
@@ -115,64 +125,70 @@ def serve_client(conn: socket.socket):
         clients[ms] = None
     try:
         while True:
-            msg = ms.recv_msg()
-            if msg is None:
-                break
-            if not isinstance(msg, dict):
-                ms.send_msg({"type": "error", "message": "messages must be objects"})
+            try:
+                pkt = ms.recv()
+            except PacketError as e:
+                ms.send(Error(str(e)))
                 continue
+            if pkt is None:
+                break
 
             reply = None
             changed = False
             fight = None
             with lock:
-                msg_type = msg.get("type")
                 squad = clients.get(ms)
-                if msg_type == "join":
-                    if squad is not None:
-                        reply = {"type": "error", "message": "you have already joined"}
-                    else:
-                        new_squad, error = handle_join(party, msg, START)
-                        if error is not None:
-                            ms.send_msg({"type": "error", "message": error})
+                match pkt:
+                    case Join(characters=chars):
+                        if squad is not None:
+                            reply = Error("You have already joined")
                         else:
-                            clients[ms] = new_squad
-                            changed = True
+                            new_squad, error = handle_join(party, chars, START)
+                            if error is not None:
+                                ms.send(Error(error))
+                            else:
+                                clients[ms] = new_squad
+                                changed = True
 
-                elif msg_type == "move":
-                    if squad is None:
-                        reply = {"type": "error", "message": "join first"}
-                    elif squad in fighting:
-                        reply = {"type": "error", "message": "you are in a fight"}
-                    else:
-                        handler, success, _ = apply_message(controller, squad, msg)
-                        changed = success
-                        if handler is not None:
-                            fighting.add(squad)
-                            fight = (handler, squad)
-                elif msg_type == "option_chosen":
-                    if squad is None:
-                        reply = {"type": "error", "message": "join first"}
-                    elif squad not in fighting:
-                        reply = {"type": "error", "message": "you are not in a fight"}
-                    else:
-                        for handler, squads in handlers.items():
-                            if squad in squads:
-                                handler.offer_action(squad, msg.get("option", 0))
-                elif msg_type == "characters_chosen":
-                    if squad is None:
-                        reply = {"type": "error", "message": "join first"}
-                    elif squad not in fighting:
-                        reply = {"type": "error", "message": "you are not in a fight"}
-                    else:
-                        for handler, squads in handlers.items():
-                            if squad in squads:
-                                handler.offer_selection(squad, msg.get("selected", []))
-                else:
-                    reply = {"type": "error", "message": "unkown message type"}
+                    case Move(dir=d):
+                        if squad is None:
+                            reply = Error("Join first")
+                        elif squad in fighting:
+                            reply = Error("You are in a fight")
+                        elif d not in direction.__members__:
+                            reply = Error(f"Bad direction {d!r}")
+                        else:
+                            handler, success, _ = controller.handle_move(
+                                direction[d], squad
+                            )
+                            changed = success
+                            if handler is not None:
+                                fighting.add(squad)
+                                fight = (handler, squad)
+
+                    case OptionChosen(option=o):
+                        if squad is None:
+                            reply = Error("Join first")
+                        elif squad not in fighting:
+                            reply = Error("You are not in a fight")
+                        else:
+                            for handler, squads in handlers.items():
+                                if squad in squads:
+                                    handler.offer_action(squad, o)
+                    case CharactersChosen(selected=sel):
+                        if squad is None:
+                            reply = Error("Join first")
+                        elif squad not in fighting:
+                            reply = Error("You are not in a fight")
+                        else:
+                            for handler, squads in handlers.items():
+                                if squad in squads:
+                                    handler.offer_selection(squad, sel)
+                    case _:
+                        reply = Error("Unexpected Packet")
 
             if reply is not None:
-                ms.send_msg(reply)
+                ms.send(reply)
             if fight is not None:
                 threading.Thread(target=run_fight, args=fight, daemon=True).start()
             if changed:

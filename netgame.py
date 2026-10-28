@@ -1,46 +1,17 @@
 from Pos import Pos
-from direction import direction
+from mazeController import mazeController
+from packets import Snapshot
 from party import Party
 from room import Room, str_to_room_type
 
 type_names = {cls: name for name, cls in str_to_room_type.items()}
 
 
-def apply_message(controller, squad, msg):
-    failure = (None, False, squad)
-
-    if not isinstance(msg, dict):
-        return failure
-
-    msg_type = msg.get("type")
-
-    if msg_type == "move":
-        name = msg.get("dir")
-        if not isinstance(name, str):
-            return failure
-        try:
-            move_dir = direction[name]
-        except KeyError:
-            return failure
-        return controller.handle_move(move_dir, squad)
-
-    return failure
-
-
-def handle_join(party: Party, msg: dict, start_pos: Pos):
-    if not isinstance(msg, dict):
-        return None, "join message must be an object"
-
-    indexes = msg.get("characters")
-    if not isinstance(indexes, list):
-        return None, "characters must be a list"
-
-    for i in indexes:
-        if type(i) is not int:
-            return None, "character numbers must be whole numbers"
+def handle_join(party: Party, chars: list[int], start_pos: Pos):
+    for i in chars:
         if i < 0 or i >= len(party.members):
             return None, f"there is no character number {i}"
-    players = [party.members[i] for i in indexes]
+    players = [party.members[i] for i in chars]
     try:
         squad = party.create_squad(start_pos, players)
     except ValueError as e:
@@ -48,7 +19,7 @@ def handle_join(party: Party, msg: dict, start_pos: Pos):
     return squad, None
 
 
-def make_snapshot(controller, you=None):
+def make_snapshot(controller: mazeController, you: int | None = None) -> Snapshot:
     party = controller.party
 
     squads = []
@@ -71,11 +42,10 @@ def make_snapshot(controller, you=None):
             }
         )
 
-    return {
-        "type": "snapshot",
-        "you": you,
-        "width": controller.width,
-        "height": controller.height,
-        "squads": squads,
-        "rooms": rooms,
-    }
+    return Snapshot(
+        you,
+        controller.width,
+        controller.height,
+        squads,
+        rooms,
+    )

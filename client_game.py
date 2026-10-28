@@ -1,5 +1,4 @@
 import socket
-from typing import Any
 import combatHandler
 from enemy import enemy
 import menuHelper
@@ -7,6 +6,21 @@ from netutil import MessageSocket
 from direction import direction
 from maze import pretty_print_list
 from Pos import Pos
+from packets import (
+    CharactersChosen,
+    ChooseCharacters,
+    ChooseOption,
+    CombatEnd,
+    CombatState,
+    Error,
+    Join,
+    Log,
+    Move,
+    OptionChosen,
+    Packet,
+    Snapshot,
+    TurnRow,
+)
 from player import Player
 from room import Room
 import terminalDisplay
@@ -22,28 +36,28 @@ import threading
 KEYS = {Key.up: "UP", Key.down: "DOWN", Key.left: "LEFT", Key.right: "RIGHT"}
 
 
-def turn_order_lines(rows: list[dict], w: int, h: int):
+def turn_order_lines(rows: list[TurnRow], w: int, h: int):
     out = []
     name_space = w - 13
     out.append("┌" + "─" * (w - 2) + "┐")
     out.append("│" + "TURN ORDER".center(w - 2) + "│")
     out.append("├" + "─" * (w - 2) + "┤")
     for row in rows:
-        name = f'{row["name"]} ({row["health"]}♥)'[:name_space].ljust(name_space)
-        out.append(f"│ {name} │ {row['av']:<3} AV │")
+        name = f"{row.name} ({row.health}♥)"[:name_space].ljust(name_space)
+        out.append(f"│ {name} │ {row.av:<3} AV │")
     out.append("└" + "─" * (w - 2) + "┘")
     return out
 
 
-def build_view(snap: dict):
-    width, height = snap["width"], snap["height"]
+def build_view(snap: Snapshot):
+    width, height = snap.width, snap.height
 
     grid: list[list[Room | None]] = [
         [None for _ in range(width)] for _ in range(height)
     ]
     discovered = set()
 
-    for entry in snap["rooms"]:
+    for entry in snap.rooms:
         pos = Pos.from_json(entry["pos"])
         dirs = {direction[name] for name in entry["connections"]}
 
@@ -55,12 +69,14 @@ def build_view(snap: dict):
         grid[pos.y][pos.x] = room
         discovered.add(pos)
 
-    my_pos = Pos.from_json(snap["squads"][snap["you"]]["pos"])
+    my_pos = Pos()
+    if snap.you is not None:
+        my_pos = Pos.from_json(snap.squads[snap.you]["pos"])
 
     return grid, discovered, my_pos
 
 
-def render(snap: dict):
+def render(snap: Snapshot):
     grid, discovered, my_pos = build_view(snap)
     here = grid[my_pos.y][my_pos.x]
     description = here.description if here is not None else ""
@@ -77,7 +93,7 @@ def render(snap: dict):
 def receiver(ms: MessageSocket, inbox: queue.Queue):
     try:
         while True:
-            msg = ms.recv_msg()
+            msg = ms.recv()
             inbox.put(msg)
             if msg is None:
                 return
@@ -85,36 +101,44 @@ def receiver(ms: MessageSocket, inbox: queue.Queue):
         inbox.put(None)
 
 
-def handle(msg: Any):
-    if isinstance(msg, dict):
-        global turn_rows
-        kind = msg.get("type")
-        if kind == "snapshot":
+turn_rows: list[TurnRow]
+
+
+def handle(msg: Packet):
+    # if isinstance(msg, dict):
+    global turn_rows
+    # kind = msg.get("type")
+    match msg:
+        case Snapshot():
             render(msg)
-        elif kind == "error":
-            say(msg.get("message", "error"))
-        elif kind == "log":
-            say(msg.get("text", ""))
-        elif kind == "combat_state":
-            turn_rows = msg.get("turn_order", [])
+        case Error(message=m):
+            say(m)
+        case Log(text=t, typed=typ):
+            if typ:
+                terminalDisplay.contextDisplay.type_print(t)
+            else:
+                terminalDisplay.contextDisplay.print_boxify(t)
+        case CombatState(turn_order=rows):
+            turn_rows = rows
             terminalDisplay.combatDisplay.print()
-        elif kind == "combat_end":
+        case CombatEnd(result=r):
             turn_rows = []
             terminalDisplay.combatDisplay.print()
-            say(msg.get("result", ""))
-        elif kind == "choose_option":
-            if len(msg["options"]) < 1:
+            say(r)
+        case ChooseOption(options=opts):
+            if len(opts) < 1:
                 return
-            option = menuHelper.menu("Choose option", msg["options"], False)
-            ms.send_msg({"type": "option_chosen", "option": option})
-        elif kind == "choose_characters":
-            if len(msg["options"]) < 1:
+            option = menuHelper.menu("Choose option", opts, False)
+            assert option is not None
+            ms.send(OptionChosen(option))
+        case ChooseCharacters(options=opts, count=c, minimum=m):
+            if len(opts) < 1:
                 return
             entries: list[TurnEntry] = []
             for row in turn_rows:
-                char = Player(row["name"]) if row["is_player"] else enemy(row["name"])
-                char.health = row["health"]
-                entries.append(TurnEntry(row["av"], char))
+                char = Player(row.name) if row.is_player else enemy(row.name)
+                char.health = row.health
+                entries.append(TurnEntry(row.av, char))
             # entries: list[TurnEntry] = [
             #     TurnEntry(
             #         row["av"],
@@ -122,23 +146,16 @@ def handle(msg: Any):
             #     )
             #     for row in turn_rows
             # ]
-            passedOptions = msg["options"]
-            available_options: list[tuple[str, int, int]] = [
-                (row["name"], row["health"], row["av"]) for row in turn_rows
-            ]
-            availablePassedOptions = [
-                (op["name"], op["health"], op["av"]) for op in passedOptions
-            ]
-            options: list[TurnEntry] = [
-                option
-                for option in entries
-                if (option.character.name, option.character.health, option.av)
-                in availablePassedOptions
-            ]
-            selected = combatHandler.choose_targets(
-                entries, options, msg["count"], msg["minimum"]
-            )
-            ms.send_msg({"type": "characters_chosen", "selected": selected})
+            # passedOptions = opts
+            # available_options: list[tuple[str, int, int]] = [
+            #     (row["name"], row["health"], row["av"]) for row in turn_rows
+            # ]
+            # availablePassedOptions = [
+            #     (op["name"], op["health"], op["av"]) for op in passedOptions
+            # ]
+            options: list[TurnEntry] = [entries[o.index] for o in opts]
+            selected = combatHandler.choose_targets(entries, options, c, m)
+            ms.send(CharactersChosen(selected))
 
 
 def drain(inbox: queue.Queue):
@@ -182,7 +199,9 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     threading.Thread(target=receiver, args=(ms, inbox), daemon=True).start()
     server_gone = False
     try:
-        ms.send_msg({"type": "join", "characters": [1]})
+        print(Join([1]))
+        # time.sleep(100)
+        ms.send(Join([1]))
         while True:
             if not drain(inbox):
                 server_gone = True
@@ -191,7 +210,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             if key == Key.esc:
                 break
             if key in KEYS:
-                ms.send_msg({"type": "move", "dir": KEYS[key]})
+                ms.send(Move(KEYS[key]))
             time.sleep(0.001)
     finally:
         print("\033[?25h", end="")

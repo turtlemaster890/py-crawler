@@ -1,9 +1,10 @@
-from typing import Any, Callable, Protocol, TYPE_CHECKING
+from typing import Callable, Protocol, TYPE_CHECKING
 
 from combatHandler import CombatHandler
 import time
 
 from enemy import enemy
+from packets import ChoiceRow, ChooseCharacters, ChooseOption, CombatState, Log, Packet, TurnRow
 from party import Party
 from squad import Squad
 from turnEntry import TurnEntry
@@ -13,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class NotifyProtocol(Protocol):
-    def __call__(self, msg: dict[str, Any], members: list[Player] = []) -> None: ...
+    def __call__(self, msg: Packet, members: list[Player] = []) -> None: ...
 
 
 class NetworkCombatHandler(CombatHandler):
@@ -33,7 +34,7 @@ class NetworkCombatHandler(CombatHandler):
         super().__init__(party, players, enemies)
 
     def announce(self, text: str, typed: bool = False):
-        self.notify({"type": "log", "text": text, "typed": typed})
+        self.notify(Log(text, typed))
 
     def pause(self):
         time.sleep(self.pause_seconds)
@@ -41,19 +42,18 @@ class NetworkCombatHandler(CombatHandler):
     def refresh(self):
         self.notify(self.state_message())
 
-    def state_message(self):
-        return {
-            "type": "combat_state",
-            "turn_order": [
-                {
-                    "name": entry.character.name,
-                    "health": entry.character.health,
-                    "av": round(entry.av),
-                    "is_player": entry.character in self.players,
-                }
-                for entry in self.turn_order
-            ],
-        }
+    def state_message(self) -> Packet:
+        return CombatState(
+            [
+                TurnRow(
+                    e.character.name,
+                    e.character.health,
+                    round(e.av),
+                    e.character in self.players,
+                )
+                for e in self.turn_order
+            ]
+        )
 
     def offer_action(self, squad: Squad, option: int):
         if self.current_player in squad.characters:
@@ -70,7 +70,7 @@ class NetworkCombatHandler(CombatHandler):
     ) -> int:
         self.current_player = player
         self.notify(
-            {"type": "choose_option", "options": [option[0] for option in options]},
+            ChooseOption([option[0] for option in options]),
             [player],
         )
         while self.selected_option is None:
@@ -86,22 +86,16 @@ class NetworkCombatHandler(CombatHandler):
         self.current_player = player
         self.notify(self.state_message(), [player])
         time.sleep(0.1)
-        msg = {
-            "type": "choose_characters",
-            "options": [
-                {
-                    "name": option.character.name,
-                    "health": option.character.health,
-                    "av": round(option.av),
-                }
-                for option in self.turn_order
-                if option in options
-            ],
-            "count": count,
-            "minimum": minimum,
-        }
         self.notify(
-            msg,
+            ChooseCharacters(
+                [
+                    ChoiceRow(e.character.name, e.character.health, round(e.av), i)
+                    for i, e in enumerate(self.turn_order)
+                    if e in options
+                ],
+                count,
+                minimum,
+            ),
             [player],
         )
         while self.selected_options is None:
