@@ -1,5 +1,6 @@
 from typing import Self
 
+from Pos import Pos
 from actions import PartyAction, StartFight
 from direction import direction
 from colorama import Fore
@@ -19,6 +20,7 @@ class Room:
 
     def __init__(
         self,
+        pos: Pos,
         connections: set[direction] | None = None,
         enemies: list[Enemy] | None = None,
     ) -> None:
@@ -26,6 +28,7 @@ class Room:
             connections = set()
         if enemies is None:
             enemies = []
+        self.pos = pos
         self.connections: set[direction] = connections
         self.enemies: list[Enemy] = enemies
         self.colour: str = Fore.LIGHTBLACK_EX
@@ -42,8 +45,8 @@ class Room:
         }
 
     @classmethod
-    def from_json(cls, j) -> Self:
-        new_room: Self = cls({direction[d] for d in j["connections"]})
+    def from_json(cls, j, pos: Pos) -> Self:
+        new_room: Self = cls(pos, {direction[d] for d in j["connections"]})
         new_room.enemies = [enemy.from_json(e) for e in j["enemies"]]
         new_room.colour = j["colour"]
         new_room.selectedColour = j["selected_colour"]
@@ -72,8 +75,10 @@ class Room:
 class StartRoom(Room):
     description = "An empty room."
 
-    def __init__(self, connections: set[direction] | None = None, enemies=None) -> None:
-        super().__init__(connections)
+    def __init__(
+        self, pos: Pos, connections: set[direction] | None = None, enemies=None
+    ) -> None:
+        super().__init__(pos, connections)
         self.enemies = []
         self.colour: str = Fore.GREEN
         self.selectedColour: str = Fore.LIGHTGREEN_EX
@@ -89,10 +94,11 @@ class EndRoom(Room):
 
     def __init__(
         self,
+        pos: Pos,
         connections: set[direction] | None = None,
         enemies: list[Enemy] | None = None,
     ) -> None:
-        super().__init__(connections, enemies=enemies)
+        super().__init__(pos, connections, enemies=enemies)
         self.colour: str = Fore.RED
         self.selectedColour: str = Fore.LIGHTRED_EX
 
@@ -110,7 +116,13 @@ class EndRoom(Room):
             actions.append(("Descend Stairs", self.descend))
         return actions
 
-    def descend(self, party: Party, room) -> bool:
+    def descend(self, party: Party, room: Room) -> bool:
+        if not all(squad.pos == room.pos for squad in party.squads):
+            terminalDisplay.contextDisplay.print_boxify(
+                "All squads must be in the final room to descend."
+            )
+            utils.wait_for_enter()
+            return False
         choice = menuHelper.menu(
             f"Descend to floor {party.floor + 1}?", ["Descend", "Stay"], False
         )
@@ -127,8 +139,10 @@ class EndRoom(Room):
 class ShopRoom(Room):
     description = "A creature has set up a stall in this room."
 
-    def __init__(self, connections: set[direction] | None = None, enemies=None) -> None:
-        super().__init__(connections)
+    def __init__(
+        self, pos: Pos, connections: set[direction] | None = None, enemies=None
+    ) -> None:
+        super().__init__(pos, connections)
         self.has_action = True
         self.enemies = []
         self.shop = Shop()
@@ -143,8 +157,8 @@ class ShopRoom(Room):
         return j
 
     @classmethod
-    def from_json(cls, j) -> Self:
-        new_room: Self = super(ShopRoom, cls).from_json(j)
+    def from_json(cls, j, pos: Pos) -> Self:
+        new_room: Self = super(ShopRoom, cls).from_json(j, pos)
         new_room.shop = Shop.from_json(j["shop"])
         new_room.room_actions = [("Open Shop", new_room.shop.displayShop)]
         return new_room
@@ -153,8 +167,10 @@ class ShopRoom(Room):
 class ChestRoom(Room):
     description = "A lone chest stands in the middle of this room."
 
-    def __init__(self, connections: set[direction] | None = None, enemies=None) -> None:
-        super().__init__(connections)
+    def __init__(
+        self, pos: Pos, connections: set[direction] | None = None, enemies=None
+    ) -> None:
+        super().__init__(pos, connections)
         self.chest_opened = False
         self.room_actions = [("Open Chest", self.open_chest)]
 
@@ -188,8 +204,8 @@ class ChestRoom(Room):
         return j
 
     @classmethod
-    def from_json(cls, j) -> Self:
-        new_room = super().from_json(j)
+    def from_json(cls, j, pos: Pos) -> Self:
+        new_room = super().from_json(j, pos)
         new_room.chest_opened = j["chest_opened"]
         if new_room.chest_opened:
             new_room.room_actions = []
@@ -201,9 +217,12 @@ class LockedRoom(Room):
     description = "A padlocked gate stands at the exits to this room."
 
     def __init__(
-        self, connections: set[direction] | None = None, enemies: list[Enemy] = []
+        self,
+        pos: Pos,
+        connections: set[direction] | None = None,
+        enemies: list[Enemy] = [],
     ) -> None:
-        super().__init__(connections, [])
+        super().__init__(pos, connections, [])
         self.locked_connections: set[direction] = set()
         self.locked = True
 
@@ -229,8 +248,8 @@ class LockedRoom(Room):
         return j
 
     @classmethod
-    def from_json(cls, j) -> Self:
-        new_room = super().from_json(j)
+    def from_json(cls, j, pos: Pos) -> Self:
+        new_room = super().from_json(j, pos)
         new_room.locked = j["locked"]
         new_room.locked_connections = {direction[d] for d in j["locked_connections"]}
         return new_room
@@ -246,6 +265,6 @@ str_to_room_type = {
 }
 
 
-def from_json(j: dict[str, object]):
+def from_json(j: dict[str, object], pos: Pos):
     _class = str_to_room_type.get(j["room_type"], Room)  # type: ignore
-    return _class.from_json(j)
+    return _class.from_json(j, pos)

@@ -1,10 +1,13 @@
+import json
 import queue
+import random
 import socket
-import tempfile
 from pathlib import Path
 import time
+from names_generator import generate_name
 
 from direction import direction
+import maze
 import menuHelper
 from packets import (
     CharactersChosen,
@@ -96,22 +99,30 @@ utils.wait_for_enter = lambda: (
     else None
 )
 
-saves.SAVE_LOCATION = Path(tempfile.mkdtemp())
-saves.save_file = saves.SAVE_LOCATION / "server_save.json"
-
 START = Pos(14, 6)
-
-party = Party(
-    START,
-    [
-        Player(name="Player1", class_type="warrior"),
-        Player(name="Player2", class_type="mage"),
-        Player(name="Player3", class_type="rogue"),
-        Player(name="Player4", class_type="warrior"),
-    ],
-)
-mz = gen_main_path(START, 50, 28, 13)
-controller = mazeController(mz, 28, 13, party)
+# saves.SAVE_LOCATION = Path(tempfile.mkdtemp())
+saves.SAVE_LOCATION = Path.home() / "py-crawler" / "server-saves"
+# saves.save_file = saves.SAVE_LOCATION / "server_save.json"
+saves.save_file = saves.SAVE_LOCATION / "save_0.json"
+mz: maze.maze
+party: Party
+try:
+    with open(saves.save_file, "r") as f:
+        save = json.load(f)
+        mz, party = saves.load(save)
+except FileNotFoundError, json.JSONDecodeError, KeyError:
+    party = Party(
+        START,
+        [
+            Player(
+                name=generate_name(style="capital"),
+                class_type=random.choice(["warrior", "mage", "rogue", "tank"]),
+            )
+            for _ in range(50)
+        ],
+    )
+    mz: maze.maze = gen_main_path(START, 50, 28, 13)
+controller: mazeController = mazeController(mz, 28, 13, party)
 party.squads.clear()
 
 lock = threading.Lock()
@@ -169,6 +180,7 @@ def in_fight(chars: list[Player]) -> bool:
 
 
 def run_fight(handler: NetworkCombatHandler):
+    _ctx.handler = handler
     try:
         print("fight started")
         result = handler.combat()
@@ -199,7 +211,26 @@ def run_fight(handler: NetworkCombatHandler):
         broadcast()
 
 
+def descend(party: Party) -> maze.maze:
+    party.descent_requested = False
+    party.floor += 1
+    for squad in party.squads:
+        squad.pos = START
+        for m in squad.characters:
+            m.health = min(m.max_health, m.health + m.max_health // 2)
+            m.stamina = m.max_stamina
+    party.discovered_positions = {START}
+    return gen_main_path(START, 50, 28, 13, party.floor)
+
+
+def next_floor(party: Party) -> tuple[maze.maze, mazeController]:
+    new_maze = descend(party)
+    saves.save(new_maze, party)
+    return new_maze, mazeController(mz, 28, 13, party)
+
+
 def run_actions(ms: MessageSocket, squad: Squad):
+    global controller, mz
     _ctx.ms, _ctx.squad = ms, squad
     handler = None
     new = False
@@ -224,6 +255,8 @@ def run_actions(ms: MessageSocket, squad: Squad):
             run_fight(handler)
     else:
         handler.refresh()
+    if party.descent_requested:
+        mz, controller = next_floor(party)
 
 
 # def snapshot_for(ms):

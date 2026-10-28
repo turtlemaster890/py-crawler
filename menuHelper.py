@@ -7,10 +7,15 @@ import terminalDisplay
 import utils
 
 
-def menu(menu_name: str, options: list[str], back: bool = True) -> int:
+def menu(
+    menu_name: str,
+    options: list[str],
+    back: bool = True,
+    display: terminalDisplay.DisplayArea = terminalDisplay.contextDisplay,
+) -> int:
     selected = 0
-    lastProvider = terminalDisplay.contextDisplay.messageProvider
-    terminalDisplay.contextDisplay.messageProvider = lambda w, h: show_menu(
+    lastProvider = display.messageProvider
+    display.messageProvider = lambda w, h: show_menu(
         w, h, menu_name, options, selected, back
     )
 
@@ -24,10 +29,10 @@ def menu(menu_name: str, options: list[str], back: bool = True) -> int:
                 break
             if key == Key.enter:
                 if selected < len(options):
-                    terminalDisplay.contextDisplay.messageProvider = lastProvider
+                    display.messageProvider = lastProvider
                     terminalDisplay.updateDisplays()
                     return selected
-                terminalDisplay.contextDisplay.messageProvider = lastProvider
+                display.messageProvider = lastProvider
                 terminalDisplay.updateDisplays()
                 return -1
 

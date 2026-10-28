@@ -85,7 +85,7 @@ class Player:
         text = f"Health: {self.health}/{self.max_health} Stamina: {self.stamina}/{self.max_stamina}"
         if self.conditions:
             text += f" Conditions: {", ".join([cond.name for cond in self.conditions])}"
-        terminalDisplay.say(text)
+        terminalDisplay.contextDisplay.print_boxify(text)
         handler.pause()
 
     def getTurnOptions(self, handler: CombatHandler) -> list[CombatActionEntry]:

@@ -1,5 +1,6 @@
 from typing import Callable
 
+from Pos import Pos
 import room
 import utils
 import json
@@ -109,11 +110,11 @@ def save_maze(maze: maze):
 
 def load_maze(maze_rep: list[list[dict | None]]) -> maze:
     mz = []
-    for row_rep in maze_rep:
+    for y, row_rep in enumerate(maze_rep):
         row = []
-        for room_rep in row_rep:
+        for x, room_rep in enumerate(row_rep):
             if isinstance(room_rep, dict):
-                rm = room.from_json(room_rep)
+                rm = room.from_json(room_rep, Pos(x, y))
             else:
                 rm = None
             row.append(rm)

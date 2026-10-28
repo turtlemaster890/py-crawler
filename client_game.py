@@ -60,7 +60,7 @@ def status_lines(w: int, h: int) -> list[str]:
     return out
 
 
-statusDisplay = terminalDisplay.DisplayArea(62, 0, 30, 12, status_lines)
+statusDisplay = terminalDisplay.DisplayArea(62, 0, 30, 50, status_lines)
 terminalDisplay.displays.append(statusDisplay)
 
 
@@ -89,7 +89,7 @@ def build_view(snap: Snapshot):
         pos = Pos.from_json(entry["pos"])
         dirs = {direction[name] for name in entry["connections"]}
 
-        room = Room(dirs)
+        room = Room(pos, dirs)
         room.colour = entry["colour"]
         room.selectedColour = entry["selected_colour"]
         room.description = entry["description"]
@@ -149,7 +149,7 @@ def handle(msg: Packet):
         case Error(message=m):
             if not in_game:
                 joining = False
-            say(m)
+            terminalDisplay.contextDisplay.print_boxify(m)
         case Log(text=t, typed=typ):
             if typ:
                 terminalDisplay.contextDisplay.type_print(t)
@@ -161,7 +161,7 @@ def handle(msg: Packet):
         case CombatEnd(result=r):
             turn_rows = []
             terminalDisplay.combatDisplay.print()
-            say(r)
+            terminalDisplay.contextDisplay.print_boxify(r)
         case ChooseOption(options=opts):
             if len(opts) < 1:
                 return
@@ -200,7 +200,9 @@ def handle(msg: Packet):
                 return
             avail = [c for c in chars if c["available"]]
             if not avail:
-                say("No characters free, waiting...")
+                terminalDisplay.contextDisplay.print_boxify(
+                    "No characters free, waiting..."
+                )
                 return
             picked: list[int] = []
             while True:
@@ -209,7 +211,9 @@ def handle(msg: Packet):
                     + f"{c["name"]} ({c["class_type"]})"
                     for c in avail
                 ] + ["Confirm"]
-                o = menuHelper.menu("Pick characters", labels, False)
+                o = menuHelper.menu(
+                    "Pick characters", labels, False, terminalDisplay.mazeDisplay
+                )
                 if o == len(avail):
                     if picked:
                         break

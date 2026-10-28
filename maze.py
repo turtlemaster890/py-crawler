@@ -160,7 +160,7 @@ def gen_main_path(startPos: Pos, maxSteps: int, x: int, y: int, floor: int = 1):
     for _ in range(y):
         maze.append([None] * x)
     currentPos = startPos
-    maze[currentPos.y][currentPos.x] = StartRoom()
+    maze[currentPos.y][currentPos.x] = StartRoom(currentPos)
     branch_positions: list[Pos] = []
     # i = 0
     done = False
@@ -183,7 +183,11 @@ def gen_main_path(startPos: Pos, maxSteps: int, x: int, y: int, floor: int = 1):
                 # make connections between rooms
                 maze[newPos.y][newPos.x] = random.choices(
                     list(room_weights.keys()), list(room_weights.values()), k=1
-                )[0](connections={moveDirection.opposite()}, enemies=encounterFactory())
+                )[0](
+                    newPos,
+                    connections={moveDirection.opposite()},
+                    enemies=encounterFactory(),
+                )
                 assert isinstance(currentRoom, Room)
                 currentRoom.make_connection(moveDirection)
                 currentPos = newPos
@@ -195,7 +199,7 @@ def gen_main_path(startPos: Pos, maxSteps: int, x: int, y: int, floor: int = 1):
     currentRoom = maze[currentPos.y][currentPos.x]
     assert isinstance(currentRoom, Room)
     maze[currentPos.y][currentPos.x] = EndRoom(
-        currentRoom.connections, bossEncounterFactory(floor)
+        currentPos, currentRoom.connections, bossEncounterFactory(floor)
     )
     if currentPos in branch_positions:
         branch_positions.remove(currentPos)
@@ -261,6 +265,7 @@ def gen_branch(
                     )[
                         0
                     ](
+                        newPos,
                         connections={moveDirection.opposite()},
                         enemies=encounterFactory(),
                     )
