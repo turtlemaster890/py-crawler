@@ -92,6 +92,8 @@ class NetworkCombatHandler(CombatHandler):
     def choose_targets(
         self, player: Player, options: list[TurnEntry], count: int, minimum: int
     ) -> list[int]:
+        if not options:
+            return []
         self.current_player = player
         self.notify(self.state_message(), [player])
         time.sleep(0.1)

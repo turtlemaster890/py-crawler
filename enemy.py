@@ -150,7 +150,7 @@ class Enemy:
             [
                 entry.player
                 for entry in self.aggro
-                if entry == min(self.aggro, key=lambda x: x.value)
+                if entry == max(self.aggro, key=lambda x: x.value)
             ]
         )
         target.takeDamage(handler, self.stats["actions"]["attack"]["damage"], self)
@@ -381,7 +381,7 @@ class StoneTitan(Enemy):
     def turnStart(self, handler: CombatHandler) -> None:
         if self.tickConditions():
             return
-        if not self.enraged and self.health >= self.max_health / 2:
+        if not self.enraged and self.health <= self.max_health / 2:
             self.enrage(handler)
         if self.coreCharge >= 5:
             self.takeAction("core_burst", handler)

@@ -106,6 +106,7 @@ class Snapshot(Packet):
     height: int
     squads: list[dict]
     rooms: list[dict]
+    floor: int = 1
 
 
 @packet

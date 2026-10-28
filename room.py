@@ -88,8 +88,12 @@ class StartRoom(Room):
 class EndRoom(Room):
     entry_message = "The floor trembles. A Stone Titan drags itself upright, its core glowing faintly."
 
-    def __init__(self, connections: set[direction] | None = None, enemies=None) -> None:
-        super().__init__(connections, enemies=None)
+    def __init__(
+        self,
+        connections: set[direction] | None = None,
+        enemies: list[Enemy] | None = None,
+    ) -> None:
+        super().__init__(connections, enemies=enemies)
         self.colour: str = Fore.RED
         self.selectedColour: str = Fore.LIGHTRED_EX
 

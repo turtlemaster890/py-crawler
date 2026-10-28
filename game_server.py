@@ -1,6 +1,7 @@
 import socket
 import tempfile
 from pathlib import Path
+import time
 
 from direction import direction
 from packets import (
@@ -26,6 +27,22 @@ from squad import Squad
 import terminalDisplay
 from combatHandler import CombatResult
 from netcombat import NetworkCombatHandler
+import utils
+
+_ctx = threading.local()
+
+
+def _log(text, typed=False):
+    h = getattr(_ctx, "handler", None)
+    if h is not None:
+        h.announce(text, typed)
+
+
+terminalDisplay.contextDisplay.print_boxify = lambda message: _log(message)
+terminalDisplay.contextDisplay.type_print = lambda message, *a, **k: _log(message, True)
+utils.wait_for_enter = lambda: (
+    time.sleep(PAUSE) if getattr(_ctx, "handler", None) else None
+)
 
 saves.SAVE_LOCATION = Path(tempfile.mkdtemp())
 saves.save_file = saves.SAVE_LOCATION / "server_save.json"
@@ -81,6 +98,7 @@ handlers: dict[NetworkCombatHandler, list[Squad]] = {}
 
 
 def run_fight(handler: NetworkCombatHandler, squad: Squad):
+    _ctx = handler
     try:
         print("fight started")
         handlers.setdefault(handler, []).append(squad)

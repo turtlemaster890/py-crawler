@@ -212,64 +212,7 @@ class CombatHandler:
         count: int,
         minimum: int,
     ) -> list[str]:
-
-        out = []
-        # "│ " (2) + " │ " (3) + " ### AV │" (8) = 13 characters
-        nameSpace = w - 14
-        maxOptions: int = h - 5
-
-        out.append("┌" + "─" * (w - 2) + "┐")
-        out.append(
-            "│"
-            + f"TURN ORDER (Select {f"{minimum}-{count}" if minimum < count else minimum})".center(
-                w - 2
-            )
-            + "│"
-        )
-        out.append("├" + "─" * (w - 2) + "┤")
-        realOptions = -1
-        start_point = 0
-        realHovered = len(self.turn_order)
-        if hovered < len(options):
-            realHovered = self.turn_order.index(options[hovered])
-        if realHovered >= maxOptions:
-            start_point = (
-                realHovered - maxOptions + (realHovered < len(self.turn_order))
-            )
-        for i, entry in enumerate(self.turn_order):
-            if i < start_point:
-                continue
-            if i >= start_point + maxOptions:
-                continue
-            if entry in options:
-                realOptions += 1
-            sel_str = (
-                ">["
-                if (i == realHovered and entry in options and entry in selected)
-                else (
-                    " ["
-                    if (entry in options and entry in selected)
-                    else (
-                        "> "
-                        if i == realHovered and entry in options
-                        else ("  " if entry in options else " ")
-                    )
-                )
-            )
-            sel_extra = "]" if entry in options and entry in selected else " "
-            name = (
-                (entry.character.name + f" ({entry.character.health}♥)")[
-                    : nameSpace - len(sel_extra)
-                ]
-                + sel_extra
-            ).ljust(nameSpace - (len(sel_str) - 2))
-            av_str = f"{entry.av:<3.0f}"
-            out.append(f"│{sel_str}{name} │ {av_str} AV │")
-        out.append(
-            f"│{"> " if hovered == len(options) else "  "}{"Confirm".ljust(w - 4)}│"
-        )
-        out.append("└" + "─" * (w - 2) + "┘")
-        return out
+        return print_turn_order_list_select(w, h, self.turn_order, selected, hovered, options, count, minimum)
 
     def announce(self, text: str, typed: bool = False):
         if typed == True:
@@ -328,6 +271,7 @@ def print_turn_order_list_select(
 ) -> list[str]:
     out = []
     nameSpace = w - 14
+    maxOptions = h - 5
 
     out.append("┌" + "─" * (w - 2) + "┐")
     out.append(
@@ -338,24 +282,32 @@ def print_turn_order_list_select(
         + "│"
     )
     out.append("├" + "─" * (w - 2) + "┤")
+    realHovered = len(entries)
+    if hovered < len(options):
+        realHovered = entries.index(options[hovered])
+    start = 0
+    if realHovered >= maxOptions:
+        start = realHovered - maxOptions + (realHovered < len(entries))
     realOptions = -1
     for i, entry in enumerate(entries):
-        if entry in options:
-            realOptions += 1
+        if i < start or i  >= start + maxOptions:
+            continue
+        opt = entry in options
+        sel = entry in selected
         sel_str = (
             ">["
-            if (realOptions == hovered and entry in options and entry in selected)
+            if (i == realHovered and opt and sel)
             else (
                 " ["
-                if (entry in options and entry in selected)
+                if (opt and sel)
                 else (
                     "> "
-                    if (realOptions == hovered and entry in options)
-                    else ("  " if entry in options else " ")
+                    if (i == realHovered and opt)
+                    else ("  " if opt else " ")
                 )
             )
         )
-        sel_extra = "]" if entry in options and entry in selected else " "
+        sel_extra = "]" if opt and sel else " "
         name = (
             (entry.character.name + f" ({entry.character.health}♥)")[
                 : nameSpace - len(sel_extra)

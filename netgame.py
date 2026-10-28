@@ -34,7 +34,7 @@ def make_snapshot(controller: mazeController, you: int | None = None) -> Snapsho
         rooms.append(
             {
                 "pos": pos.to_json(),
-                "connections": [c.name for c in room.connections],
+                "connections": [c.name for c in room.list_connections()],
                 "room_type": type_names.get(type(room), "room"),
                 "colour": room.colour,
                 "selected_colour": room.selectedColour,
@@ -43,9 +43,5 @@ def make_snapshot(controller: mazeController, you: int | None = None) -> Snapsho
         )
 
     return Snapshot(
-        you,
-        controller.width,
-        controller.height,
-        squads,
-        rooms,
+        you, controller.width, controller.height, squads, rooms, party.floor
     )

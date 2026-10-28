@@ -192,7 +192,9 @@ def gen_main_path(startPos: Pos, maxSteps: int, x: int, y: int, floor: int = 1):
 
     currentRoom = maze[currentPos.y][currentPos.x]
     assert isinstance(currentRoom, Room)
-    maze[currentPos.y][currentPos.x] = EndRoom(currentRoom.connections)
+    maze[currentPos.y][currentPos.x] = EndRoom(
+        currentRoom.connections, bossEncounterFactory(floor)
+    )
     if currentPos in branch_positions:
         branch_positions.remove(currentPos)
     maze = gen_branches(maze, branch_positions, x, y, 12)
@@ -211,8 +213,6 @@ def gen_main_path(startPos: Pos, maxSteps: int, x: int, y: int, floor: int = 1):
             for rm in row:
                 if type(rm) is Room:
                     rm.enemies = encounterFactory(floor)
-                if type(rm) is EndRoom:
-                    rm.enemies = bossEncounterFactory(floor)
                 if isinstance(rm, Room):
                     for e in rm.enemies:
                         e.scale(floor)

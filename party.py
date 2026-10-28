@@ -238,6 +238,8 @@ class Party:
     # TODO: save all squads
 
     def to_json(self):
+        if not self.squads:
+            return {}
         return {
             "pos": self.squads[0].pos.to_json(),
             "discovered": [p.to_json() for p in self.discovered_positions],

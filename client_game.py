@@ -81,7 +81,7 @@ def render(snap: Snapshot):
     here = grid[my_pos.y][my_pos.x]
     description = here.description if here is not None else ""
     terminalDisplay.mazeDisplay.messageProvider = lambda w, h: pretty_print_list(
-        w, h, grid, discovered, my_pos
+        w, h, grid, discovered, my_pos, floor=snap.floor
     )
     terminalDisplay.descriptionDisplay.messageProvider = lambda w, h: utils.boxify(
         w, h, description

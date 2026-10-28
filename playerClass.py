@@ -2,7 +2,7 @@ from actions import CombatActionEntry, PlayerAction
 from typing import TYPE_CHECKING
 
 import conditions
-from terminalDisplay import say
+import terminalDisplay
 
 if TYPE_CHECKING:
     from player import Player
@@ -30,7 +30,7 @@ class Tank(PlayerClass):
             for ag in enemy.aggro:
                 if ag.player is player:
                     ag.value += 35
-        say(
+        terminalDisplay.say(
             f"{player.name} yells out an obscenity. All the enemies seem very angered at them."
         )
         return True
@@ -46,13 +46,13 @@ class Warrior(PlayerClass):
         target.takeDamage(handler, dmg, player)
         if target.health > 0:
             conditions.inflict({"type": "stunned", "duration": 1}, target, handler)
-            say(f"{player.name} bashes {target.name}, stunning them!")
+            terminalDisplay.say(f"{player.name} bashes {target.name}, stunning them!")
         return True
 
     @staticmethod
     def guard(player: Player, handler: CombatHandler) -> bool:
         player.applyCondition(conditions.Shield(3, player, handler, absorb=15), handler)
-        say(f"{player.name} raises their shield.")
+        terminalDisplay.say(f"{player.name} raises their shield.")
         return True
 
     combat_actions = [
@@ -70,7 +70,7 @@ class Mage(PlayerClass):
             e.takeDamage(handler, player.relicDamage(4, e, "magic"), player)
             if e.health > 0:
                 conditions.inflict({"type": "chilled", "duration": 2}, e, handler)
-        say(
+        terminalDisplay.say(
             f"{player.name} unleashes a blast of air. The surroundings suddenly feel very cold."
         )
         return True
@@ -81,7 +81,7 @@ class Mage(PlayerClass):
             player, lambda c: c in handler.players and c is not player
         )[0]
         ally.applyCondition(conditions.Shield(100, ally, handler, absorb=12), handler)
-        say(
+        terminalDisplay.say(
             f"{player.name} casts a spell on {ally.name}. They suddenly feel protected."
         )
         return True
@@ -102,7 +102,9 @@ class Rogue(PlayerClass):
         target.takeDamage(handler, player.relicDamage(dmg, target), player)
         if target.health > 0:
             conditions.inflict({"type": "bleeding", "duration": 3}, target, handler)
-        say(f"{player.name} sneaks behind {target.name} and stabs them in the back.")
+        terminalDisplay.say(
+            f"{player.name} sneaks behind {target.name} and stabs them in the back."
+        )
         return True
 
     @staticmethod
@@ -113,7 +115,7 @@ class Rogue(PlayerClass):
         )
         if target.health > 0:
             conditions.inflict({"type": "poisoned", "duration": 4}, target, handler)
-            say(f"{target.name} is poisoned!")
+            terminalDisplay.say(f"{target.name} is poisoned!")
         return True
 
     combat_actions = [
