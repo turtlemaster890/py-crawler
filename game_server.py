@@ -74,14 +74,10 @@ menuHelper.menu = remote_menu
 
 terminalDisplay.contextDisplay.print_boxify = lambda message: _log(message)
 terminalDisplay.contextDisplay.type_print = lambda message, *a, **k: _log(message, True)
-utils.wait_for_enter = lambda: (
-    time.sleep(PAUSE) if getattr(_ctx, "handler", None) else None
-)
+utils.wait_for_enter = lambda: time.sleep(PAUSE)
 
 saves.SAVE_LOCATION = Path(tempfile.mkdtemp())
 saves.save_file = saves.SAVE_LOCATION / "server_save.json"
-
-terminalDisplay.contextDisplay.print_boxify = lambda message: None
 
 START = Pos(14, 6)
 

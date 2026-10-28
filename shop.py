@@ -6,10 +6,7 @@ import utils
 
 if TYPE_CHECKING:
     from party import Party
-import inputController
 import terminalDisplay
-from utils import key_to_delta
-from pynput.keyboard import Key
 from colorama import Fore, Style
 
 
@@ -90,7 +87,7 @@ class Shop:
                 return
             it, price = self.items[choice]
             if party.funds < price:
-                terminalDisplay.say("Not enough funds,")
+                terminalDisplay.say("Not enough funds.")
                 continue
             party.funds -= price
             party.inventory.add(it)
