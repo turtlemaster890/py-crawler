@@ -5,22 +5,22 @@ Python CLI Dungeon Crawler
 
 ### My features:
 
-Maze generation
-Rooms, room types
-Actions
-Content
-Shop, menus, saves
-Inventory
-Movement
-Display method
-Online
+#### Maze generation
+#### Rooms, room types
+#### Actions
+#### Content
+#### Shop, menus, saves
+#### Inventory
+#### Movement
+#### Display method
+#### Online
 
 ### Liam's features:
 
-Combat Handler
-Relic basics
-Items
-Online
+#### Combat Handler
+#### Relic basics
+#### Items
+#### Online
 
 ## Description
 A turn-based roguelike dungeoncrawler with a randomly generated map, displayed through the terminal.
