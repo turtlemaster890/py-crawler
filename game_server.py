@@ -2,13 +2,25 @@ import json
 import queue
 import random
 import socket
-from pathlib import Path
+import threading
 import time
+from pathlib import Path
+
 from names_generator import generate_name
 
-from direction import direction
 import maze
 import menuHelper
+import saves
+import terminalDisplay
+import utils
+from combatHandler import CombatResult
+from direction import direction
+from enemy import Enemy
+from maze import Pos, gen_main_path
+from mazeController import mazeController
+from netcombat import NetworkCombatHandler
+from netgame import *
+from netutil import MessageSocket
 from packets import (
     CharactersChosen,
     CombatEnd,
@@ -24,20 +36,9 @@ from packets import (
     PacketError,
     Roster,
 )
-import saves
-from maze import Pos, gen_main_path
-from player import Player
 from party import Party
-from enemy import Enemy
-from mazeController import mazeController
-from netgame import *
-from netutil import MessageSocket
-import threading
+from player import Player
 from squad import Squad
-import terminalDisplay
-from combatHandler import CombatResult
-from netcombat import NetworkCombatHandler
-import utils
 
 
 class ClientGone(Exception):
@@ -153,7 +154,9 @@ def make_handler(party: Party, players: list[Player], enemies: list[Enemy]):
         party,
         players,
         enemies,
-        notify=lambda msg, members=members: fight_notify(members, msg),
+        notify=lambda msg, members=members: (
+            fight_notify(members, msg) if members else None
+        ),
         pause_seconds=PAUSE,
     )
     fight_members[handler] = members

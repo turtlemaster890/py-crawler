@@ -1,9 +1,8 @@
-from typing import Protocol, TYPE_CHECKING
+import time
+from typing import TYPE_CHECKING, Protocol
 
 from actions import CombatActionEntry
 from combatHandler import CombatHandler, CombatResult
-import time
-
 from enemy import AggroEntry, Enemy
 from packets import (
     ChoiceRow,
@@ -23,7 +22,7 @@ if TYPE_CHECKING:
 
 
 class NotifyProtocol(Protocol):
-    def __call__(self, msg: Packet, members: list[Player] = []) -> None: ...
+    def __call__(self, msg: Packet, members: list[Player] | None = None) -> None: ...
 
 
 class PlayerLeft(Exception):

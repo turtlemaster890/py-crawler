@@ -1,20 +1,19 @@
+import json
 import sys
 
-from maze import Pos, gen_main_path, maze
-from direction import direction
-import menuHelper
-from party import Party
-import json
+import colorama
+
 import inputController
-from combatHandler import CombatHandler, CombatResult
-from mazeController import mazeController
+import menuHelper
 import saves
-from squad import Squad
 import startMenu
 import terminalDisplay
 import utils
-import colorama
-import sys
+from combatHandler import CombatHandler, CombatResult
+from direction import direction
+from maze import Pos, gen_main_path, maze
+from mazeController import mazeController
+from party import Party
 
 input_to_direction = {
     "u": direction.UP,
@@ -51,23 +50,21 @@ def victory_screen(party: Party) -> bool:
     return c == 0
 
 
-def descend(squad: Squad) -> maze:
-    ...
-    # party.descent_requested = False
-    # party.floor += 1
-    # party.pos = Pos(14, 6)
-    # party.discovered_positions = {party.pos}
-    # for m in party.members:
-    #     m.health = min(m.max_health, m.health + m.max_health // 2)
-    #     m.stamina = m.max_stamina
-    # return gen_main_path(party.pos, 50, 28, 13, party.floor)
+def descend(party: Party) -> maze:
+    party.descent_requested = False
+    party.floor += 1
+    party.squads[0].pos = Pos(14, 6)
+    party.discovered_positions = {party.squads[0].pos}
+    for m in party.members:
+        m.health = min(m.max_health, m.health + m.max_health // 2)
+        m.stamina = m.max_stamina
+    return gen_main_path(party.squads[0].pos, 50, 28, 13, party.floor)
 
 
 def next_floor(party: Party):
-    ...
-    # new_maze = descend(party)
-    # saves.save(new_maze, party)
-    # return new_maze, mazeController(new_maze, 28, 13, party)
+    new_maze = descend(party)
+    saves.save(new_maze, party)
+    return new_maze, mazeController(new_maze, 28, 13, party)
 
 
 def main():
@@ -97,12 +94,10 @@ def main():
             mz, 28, 13, party, party.squads[0].pos, CombatHandler
         )
         current_room = mz[party.squads[0].pos.y][party.squads[0].pos.x]
-        if current_room:
-            # current_room.enter_room(party)
-            if current_room.enemies:
-                combat_handler = CombatHandler(
-                    party, list(party.squads[0].characters), current_room.enemies
-                )
+        if current_room and current_room.enemies:
+            combat_handler = CombatHandler(
+                party, list(party.squads[0].characters), current_room.enemies
+            )
 
         while True:
             while combat_handler:
@@ -111,14 +106,14 @@ def main():
                     won = combat_handler.victory
                     combat_handler = None
                     saves.save(mz, party)
-                    # if won and victory_screen(party):
-                    #     mz, mController = next_floor(party)
+                    if won and victory_screen(party):
+                        mz, mController = next_floor(party)
                 elif result == CombatResult.DEFEAT:
                     print("you lost")
                     sys.exit()
             combat_handler = mController.tick()
-            # if party.descent_requested:
-            #     mz, mController = next_floor(party)
+            if party.descent_requested:
+                mz, mController = next_floor(party)
     finally:
         print("\033[?25h", end="")
 

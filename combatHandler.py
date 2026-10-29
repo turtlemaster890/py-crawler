@@ -1,18 +1,19 @@
+from collections.abc import Callable
+from enum import Enum
+from typing import TYPE_CHECKING
+
 from pynput.keyboard import Key
 
-from actions import CombatActionEntry
-import terminalDisplay
 import inputController
-from typing import TYPE_CHECKING, Callable
-from turnEntry import TurnEntry
+import terminalDisplay
 import utils
-from enum import Enum
+from actions import CombatActionEntry
+from turnEntry import TurnEntry
 
 if TYPE_CHECKING:
-    from player import Player
     from enemy import Enemy
     from party import Party
-    from item import Item
+    from player import Player
 
 
 class CombatResult(Enum):
@@ -115,7 +116,7 @@ class CombatHandler:
         return CombatResult.CONTINUE
 
     def tick_initiative(self):
-        current_av, current_character = (
+        _current_av, current_character = (
             self.turn_order[0].av,
             self.turn_order[0].character,
         )
@@ -288,7 +289,6 @@ def print_turn_order_list_select(
     start = 0
     if realHovered >= maxOptions:
         start = realHovered - maxOptions + (realHovered < len(entries))
-    realOptions = -1
     for i, entry in enumerate(entries):
         if i < start or i  >= start + maxOptions:
             continue

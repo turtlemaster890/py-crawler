@@ -1,21 +1,20 @@
-from typing import Callable
+from collections.abc import Callable
 
-from actions import PartyAction, StartFight
+from pynput.keyboard import Key
+
+import inputController
 import menuHelper
+import saves
+import terminalDisplay
+import utils
+from actions import PartyAction, StartFight
+from combatHandler import CombatHandler
 from direction import direction
 from maze import maze, pretty_print_list
-from Pos import Pos
 from party import Party
-from combatHandler import CombatHandler
-import inputController
-import saves
-from pynput.keyboard import Key
+from Pos import Pos
 from room import Room
-import utils
 from squad import Squad
-
-# from utils import clear
-import terminalDisplay
 
 key_to_direction: dict[Key, direction] = {
     Key.left: direction.LEFT,
@@ -33,14 +32,14 @@ class mazeController:
         height: int,
         party: Party,
         startPos: Pos | None = None,
-        combatHandler: Callable[..., CombatHandler] = CombatHandler,
+        handlerFactory: Callable[..., CombatHandler] = CombatHandler,
     ) -> None:
         self.maze = maze
         self.width: int = width
         self.height: int = height
         self.party: Party = party
         self.active_squad = party.squads[0]
-        self.handler_factory = combatHandler
+        self.handler_factory = handlerFactory
 
         startPos = startPos or self.active_squad.pos
 
@@ -116,7 +115,7 @@ class mazeController:
             key: Key | inputController.KeyCode | None = inputController.getKey()
             # print(key)
             if key in key_to_direction:
-                combat_handler, success, squad = self.handle_move(
+                combat_handler, success, _squad = self.handle_move(
                     key_to_direction[key], self.active_squad
                 )
                 if not success:
