@@ -4,10 +4,8 @@ import threading
 import time
 
 import colorama
-from pynput.keyboard import Key
 
 import combatHandler
-import inputController
 import menuHelper
 import terminalDisplay
 import utils
@@ -38,8 +36,6 @@ from player import Player
 from Pos import Pos
 from room import Room
 from turnEntry import TurnEntry
-
-KEYS = {Key.up: "UP", Key.down: "DOWN", Key.left: "LEFT", Key.right: "RIGHT"}
 
 status = {"funds": 0, "members": []}
 
@@ -249,41 +245,51 @@ def say(text: str):
     last_log = text
     terminalDisplay.contextDisplay.print()
 
+def start():
+    from pynput.keyboard import Key
+    import inputController
+    KEYS = {Key.up: "UP", Key.down: "DOWN", Key.left: "LEFT", Key.right: "RIGHT"}
 
-inputController.start()
+    inputController.start()
 
-colorama.init(autoreset=True)
-utils.clear()
-print("\033[?25l", end="")
+    colorama.init(autoreset=True)
+    utils.clear()
+    print("\033[?25l", end="")
 
-terminalDisplay.contextDisplay.messageProvider = lambda w, h: (
-    utils.boxify(w, h, last_log) if last_log else []
-)
-terminalDisplay.combatDisplay.messageProvider = lambda w, h: (
-    turn_order_lines(turn_rows, w, h) if turn_rows else []
-)
+    terminalDisplay.contextDisplay.messageProvider = lambda w, h: (
+        utils.boxify(w, h, last_log) if last_log else []
+    )
+    terminalDisplay.combatDisplay.messageProvider = lambda w, h: (
+        turn_order_lines(turn_rows, w, h) if turn_rows else []
+    )
 
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    s.connect(("localhost", 63827))
-    ms = MessageSocket(s)
-    inbox = queue.Queue()
-    threading.Thread(target=receiver, args=(ms, inbox), daemon=True).start()
-    server_gone = False
+    host = menuHelper.inputMenu("IP (defaults to global server)") or "ADD-GLOBAL-SERVER-HERE" # todo
     try:
-        while True:
-            if not drain(inbox):
-                server_gone = True
-                break
-            key = inputController.getKey()
-            if key == Key.esc:
-                break
-            if in_game and key in KEYS:
-                ms.send(Move(KEYS[key]))
-            if in_game and key == Key.enter:
-                ms.send(OpenActions())
-            time.sleep(0.001)
-    finally:
-        print("\033[?25h", end="")
-        terminalDisplay.moveCursor(0, 26)
-    if server_gone:
-        print("Server disconnected")
+        port = int(menuHelper.inputMenu("Port: (defaults to 63827)")) or 63827
+    except ValueError:
+        port = 63827
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect((host, port))
+        ms = MessageSocket(s)
+        inbox = queue.Queue()
+        threading.Thread(target=receiver, args=(ms, inbox), daemon=True).start()
+        server_gone = False
+        try:
+            while True:
+                if not drain(inbox):
+                    server_gone = True
+                    break
+                key = inputController.getKey()
+                if key == Key.esc:
+                    break
+                if in_game and key in KEYS:
+                    ms.send(Move(KEYS[key]))
+                if in_game and key == Key.enter:
+                    ms.send(OpenActions())
+                time.sleep(0.001)
+        finally:
+            print("\033[?25h", end="")
+            terminalDisplay.moveCursor(0, 26)
+        if server_gone:
+            print("Server disconnected")
