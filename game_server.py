@@ -159,7 +159,7 @@ def make_handler(party: Party, players: list[Player], enemies: list[Enemy]):
         ),
         pause_seconds=PAUSE,
     )
-    handler.notify = lambda msg, members=fight_members[handler]: (
+    handler.notify = lambda msg, members=handler.players: (
         fight_notify(members, msg) if members else None
     )
     fight_members[handler] = members
