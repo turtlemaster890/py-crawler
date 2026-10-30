@@ -1,8 +1,6 @@
-from typing import Callable
+from collections.abc import Callable
+from typing import Any
 
-from pynput.keyboard import Key, KeyCode
-
-import inputController
 import terminalDisplay
 import utils
 
@@ -12,7 +10,13 @@ def menu(
     options: list[str],
     back: bool = True,
     display: terminalDisplay.DisplayArea = terminalDisplay.contextDisplay,
+    selectionFunction: Callable[[int], Any] = lambda x: None,
+    selectionDestructionFunction: Callable[[], Any] = lambda: None,
 ) -> int:
+    from pynput.keyboard import Key, KeyCode
+
+    import inputController
+
     selected = 0
     lastProvider = display.messageProvider
     display.messageProvider = lambda w, h: show_menu(
@@ -21,6 +25,7 @@ def menu(
 
     while True:
         selected %= len(options) + (1 if back else 0)
+        selectionFunction(selected)
         terminalDisplay.updateDisplays()
         while True:
             key: Key | KeyCode | None = inputController.getKey()
@@ -33,11 +38,16 @@ def menu(
                     terminalDisplay.updateDisplays()
                     return selected
                 display.messageProvider = lastProvider
+                selectionDestructionFunction()
                 terminalDisplay.updateDisplays()
                 return -1
 
 
 def inputMenu(menu_name: str, max_len: int = -1) -> str:
+    from pynput.keyboard import Key, KeyCode
+
+    import inputController
+
     o = ""
     lastProvider: Callable[[int, int], list[str]] | None = (
         terminalDisplay.contextDisplay.messageProvider
@@ -74,13 +84,16 @@ def show_menu(
     back: bool = True,
 ) -> list[str]:
     nameSpace: int = w - 5
-    maxOptions: int = h - 4 - back
+    maxOptions: int = h - 2 - back
+    if title:
+        maxOptions -= 2
     # longestName = max([len(item[0].name) for item in self.items])
     # additionalChars = max(0, longestName - 8)
     out = []
     out.append("┌" + "─" * (w - 2) + "┐")
-    out.append("│" + title.center(w - 2) + "│")
-    out.append("├" + "─" * (w - 2) + "┤")
+    if title:
+        out.append("│" + title.center(w - 2) + "│")
+        out.append("├" + "─" * (w - 2) + "┤")
     start_point = 0
     if selected != -1 and selected >= maxOptions:
         start_point = selected - maxOptions + (selected < len(options))

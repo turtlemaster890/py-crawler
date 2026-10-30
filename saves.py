@@ -1,15 +1,13 @@
-from typing import Callable
-
-from Pos import Pos
-import room
-import utils
 import json
+from collections.abc import Callable
+from pathlib import Path
+
+import room
 import terminalDisplay
-import inputController
-from pynput.keyboard import Key
+import utils
 from maze import maze
 from party import Party
-from pathlib import Path
+from Pos import Pos
 
 # SAVE_LOCATION: Path = utils.getRelativePath(Path("saves/"))
 SAVE_LOCATION = Path.home() / "py-crawler" / "saves"
@@ -19,6 +17,9 @@ save_file: Path = SAVE_LOCATION.joinpath(f"save_{save_index}.json")
 
 
 def select_save_file() -> None:
+    from pynput.keyboard import Key
+
+    import inputController
     global save_file
     save_files: list[Path] = [p for p in SAVE_LOCATION.glob("*.json")]
     save_files.sort(key=lambda x: int(x.name.split("_")[1].removesuffix(".json")))

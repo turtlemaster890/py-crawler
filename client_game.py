@@ -1,11 +1,20 @@
+import queue
 import socket
+import threading
+import time
+
+import colorama
+from pynput.keyboard import Key
+
 import combatHandler
-from enemy import Enemy
+import inputController
 import menuHelper
-from netutil import MessageSocket
+import terminalDisplay
+import utils
 from direction import direction
+from enemy import Enemy
 from maze import pretty_print_list
-from Pos import Pos
+from netutil import MessageSocket
 from packets import (
     CharactersChosen,
     ChooseCharacters,
@@ -26,16 +35,9 @@ from packets import (
     TurnRow,
 )
 from player import Player
+from Pos import Pos
 from room import Room
-import terminalDisplay
-import inputController
-from pynput.keyboard import Key
-import time
 from turnEntry import TurnEntry
-import utils
-import colorama
-import queue
-import threading
 
 KEYS = {Key.up: "UP", Key.down: "DOWN", Key.left: "LEFT", Key.right: "RIGHT"}
 

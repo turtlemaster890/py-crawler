@@ -2,9 +2,7 @@ from collections.abc import Callable
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from pynput.keyboard import Key
-
-import inputController
+import menuHelper
 import terminalDisplay
 import utils
 from actions import CombatActionEntry
@@ -72,33 +70,46 @@ class CombatHandler:
         player: Player,
         options: list[CombatActionEntry],
     ) -> int:
-        selected_option = 0
-        lastProvider = terminalDisplay.contextDisplay.messageProvider
-        terminalDisplay.contextDisplay.messageProvider = (
-            lambda w, h: player.pretty_print_turn_options(
-                options, selected_option, w, h
-            )
+
+        return menuHelper.menu(
+            "",
+            [opt.name for opt in options],
+            False,
+            terminalDisplay.contextDisplay,
+            lambda sel: (
+                terminalDisplay.contextDisplay.print_boxify(options[sel].description)
+                if options[sel].description
+                else None
+            ),
         )
-        lastDescProvider = terminalDisplay.descriptionDisplay.messageProvider
-        terminalDisplay.descriptionDisplay.messageProvider = lambda w, h: (
-            utils.boxify(w, h, options[selected_option].description)  # type: ignore
-            if options[selected_option].description
-            else []
-        )
-        while True:
-            selected_option %= len(options)
-            terminalDisplay.updateDisplays()
-            while True:
-                key = inputController.getKey()
-                if key in utils.key_to_delta:
-                    selected_option += utils.key_to_delta[key]
-                    break
-                if key == Key.enter:
-                    terminalDisplay.contextDisplay.messageProvider = lastProvider
-                    terminalDisplay.descriptionDisplay.messageProvider = (
-                        lastDescProvider
-                    )
-                    return selected_option
+
+        # selected_option = 0
+        # lastProvider = terminalDisplay.contextDisplay.messageProvider
+        # terminalDisplay.contextDisplay.messageProvider = (
+        #     lambda w, h: player.pretty_print_turn_options(
+        #         options, selected_option, w, h
+        #     )
+        # )
+        # lastDescProvider = terminalDisplay.descriptionDisplay.messageProvider
+        # terminalDisplay.descriptionDisplay.messageProvider = lambda w, h: (
+        #     utils.boxify(w, h, options[selected_option].description)  # type: ignore
+        #     if options[selected_option].description
+        #     else []
+        # )
+        # while True:
+        #     selected_option %= len(options)
+        #     terminalDisplay.updateDisplays()
+        #     while True:
+        #         key = inputController.getKey()
+        #         if key in utils.key_to_delta:
+        #             selected_option += utils.key_to_delta[key]
+        #             break
+        #         if key == Key.enter:
+        #             terminalDisplay.contextDisplay.messageProvider = lastProvider
+        #             terminalDisplay.descriptionDisplay.messageProvider = (
+        #                 lastDescProvider
+        #             )
+        #             return selected_option
 
     def combat(self) -> CombatResult:
         if utils.DEBUG_END_COMBAT:
@@ -161,6 +172,10 @@ class CombatHandler:
     def choose_targets(
         self, player: Player, options: list[TurnEntry], count: int, minimum: int
     ) -> list[int]:
+        from pynput.keyboard import Key
+
+        import inputController
+
         hovered = 0
         selected: list[TurnEntry] = []
         terminalDisplay.combatDisplay.messageProvider = (
@@ -213,7 +228,9 @@ class CombatHandler:
         count: int,
         minimum: int,
     ) -> list[str]:
-        return print_turn_order_list_select(w, h, self.turn_order, selected, hovered, options, count, minimum)
+        return print_turn_order_list_select(
+            w, h, self.turn_order, selected, hovered, options, count, minimum
+        )
 
     def announce(self, text: str, typed: bool = False):
         if typed == True:
@@ -231,6 +248,10 @@ class CombatHandler:
 def choose_targets(
     entries: list[TurnEntry], options: list[TurnEntry], count: int, minimum: int
 ) -> list[int]:
+    from pynput.keyboard import Key
+
+    import inputController
+
     hovered = 0
     selected: list[TurnEntry] = []
     lastProvider = terminalDisplay.combatDisplay.messageProvider
@@ -290,7 +311,7 @@ def print_turn_order_list_select(
     if realHovered >= maxOptions:
         start = realHovered - maxOptions + (realHovered < len(entries))
     for i, entry in enumerate(entries):
-        if i < start or i  >= start + maxOptions:
+        if i < start or i >= start + maxOptions:
             continue
         opt = entry in options
         sel = entry in selected
@@ -300,11 +321,7 @@ def print_turn_order_list_select(
             else (
                 " ["
                 if (opt and sel)
-                else (
-                    "> "
-                    if (i == realHovered and opt)
-                    else ("  " if opt else " ")
-                )
+                else ("> " if (i == realHovered and opt) else ("  " if opt else " "))
             )
         )
         sel_extra = "]" if opt and sel else " "

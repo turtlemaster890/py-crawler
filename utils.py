@@ -1,9 +1,8 @@
 import os
-from pathlib import Path
 import textwrap
-import inputController
-from typing import Any, Callable
-from pynput.keyboard import Key
+from collections.abc import Callable
+from pathlib import Path
+from typing import Any
 
 DEBUG_END_COMBAT = False
 DEBUG_WIN_ACTION = True
@@ -33,8 +32,12 @@ def boxify(w: int, h: int, message: str, squish: bool = True) -> list[str]:
 
 
 def wait_for_enter() -> None:
+    from pynput.keyboard import Key, KeyCode
+
+    import inputController
+
     while True:
-        key: Key | inputController.KeyCode | None = inputController.getKey()
+        key: Key | KeyCode | None = inputController.getKey()
         if key == Key.enter:
             return
 
@@ -58,7 +61,13 @@ def printSequences() -> None:
         func[0]()
 
 
-key_to_delta: dict[Key, int] = {Key.up: -1, Key.down: 1}
+def __getattr__(name) -> Any:
+    if name == "key_to_delta":
+        from pynput.keyboard import Key, KeyCode
+
+        _key_to_delta: dict[Key | KeyCode | None, int] = {Key.up: -1, Key.down: 1}
+        globals()[name] = _key_to_delta
+        return _key_to_delta
 
 
 def getRelativePath(filename: str | Path) -> Path:

@@ -1,8 +1,5 @@
 from collections.abc import Callable
 
-from pynput.keyboard import Key
-
-import inputController
 import menuHelper
 import saves
 import terminalDisplay
@@ -15,13 +12,6 @@ from party import Party
 from Pos import Pos
 from room import Room
 from squad import Squad
-
-key_to_direction: dict[Key, direction] = {
-    Key.left: direction.LEFT,
-    Key.right: direction.RIGHT,
-    Key.up: direction.UP,
-    Key.down: direction.DOWN,
-}
 
 
 class mazeController:
@@ -107,6 +97,17 @@ class mazeController:
         return None, False
 
     def tick(self) -> CombatHandler | None:
+        from pynput.keyboard import Key
+
+        import inputController
+
+        key_to_direction: dict[Key, direction] = {
+            Key.left: direction.LEFT,
+            Key.right: direction.RIGHT,
+            Key.up: direction.UP,
+            Key.down: direction.DOWN,
+        }
+
         # clear()
         # pretty_print(self.maze, self.discovered_rooms, self.party.pos)
         # utils.printSequences()
