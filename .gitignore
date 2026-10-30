@@ -222,3 +222,10 @@ __marimo__/
 /pyproject.toml
 /.python-version
 /saves
+
+scratch_combat.py
+scratch_join.py
+*.lnk
+
+# src is for spaces uv, since that seems to be the only way to get python
+src
