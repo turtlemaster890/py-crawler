@@ -1,6 +1,9 @@
 # py-crawler
 Python CLI Dungeon Crawler
 
+<img width="830" height="472" alt="image" src="https://github.com/user-attachments/assets/71147a3e-b370-4f89-9044-b5d0c4cd3176" />
+
+
 ## Description
 A turn-based, terminal roguelike dungeoncrawler. Navigate through randomly generated mazes, fight enemies, and descend into the depths. Play solo or co-op over TCP.
 
