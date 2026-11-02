@@ -72,6 +72,8 @@ def inputMenu(menu_name: str, max_len: int = -1, min_len: int = 1) -> str:
                 elif isinstance(key, KeyCode) and key.char:
                     if len(o) < max_len and max_len != -1:
                         o += key.char
+                    else:
+                        o += key.char
                 break
 
 

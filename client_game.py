@@ -268,15 +268,13 @@ def start():
     )
 
     host = (
-        menuHelper.inputMenu("IP (defaults to gserver)", min_len=0)
-        or "py-crawler.dino.icu"
+        (menuHelper.inputMenu("Host", min_len=0) or "127.0.0.1").strip()
     )
-    port = 63827
-    if all(c in string.digits + "." for c in host):
-        try:
-            port = int(menuHelper.inputMenu("Port: (defaults to 63827)")) or 63827
-        except ValueError:
-            pass
+    # if all(c in string.digits + "." for c in host):
+    try:
+        port = int(menuHelper.inputMenu("Port (default 63827)")) or 63827
+    except ValueError:
+        port = 63827
 
     global ms
     try:
