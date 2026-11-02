@@ -43,7 +43,7 @@ def menu(
                 return -1
 
 
-def inputMenu(menu_name: str, max_len: int = -1) -> str:
+def inputMenu(menu_name: str, max_len: int = -1, min_len: int = 1) -> str:
     from pynput.keyboard import Key, KeyCode
 
     import inputController
@@ -66,7 +66,7 @@ def inputMenu(menu_name: str, max_len: int = -1) -> str:
                 elif key == Key.space:
                     o += " "
                 elif key == Key.enter:
-                    if len(o) > 0:
+                    if len(o) >= min_len:
                         terminalDisplay.contextDisplay.messageProvider = lastProvider
                         return o
                 elif isinstance(key, KeyCode) and key.char:

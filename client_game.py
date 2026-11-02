@@ -1,5 +1,6 @@
 import queue
 import socket
+import string
 import threading
 import time
 
@@ -245,9 +246,12 @@ def say(text: str):
     last_log = text
     terminalDisplay.contextDisplay.print()
 
+
 def start():
     from pynput.keyboard import Key
+
     import inputController
+
     KEYS = {Key.up: "UP", Key.down: "DOWN", Key.left: "LEFT", Key.right: "RIGHT"}
 
     inputController.start()
@@ -263,33 +267,46 @@ def start():
         turn_order_lines(turn_rows, w, h) if turn_rows else []
     )
 
-    host = menuHelper.inputMenu("IP (defaults to global server)") or "ADD-GLOBAL-SERVER-HERE" # todo
-    try:
-        port = int(menuHelper.inputMenu("Port: (defaults to 63827)")) or 63827
-    except ValueError:
-        port = 63827
-
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((host, port))
-        ms = MessageSocket(s)
-        inbox = queue.Queue()
-        threading.Thread(target=receiver, args=(ms, inbox), daemon=True).start()
-        server_gone = False
+    host = (
+        menuHelper.inputMenu("IP (defaults to gserver)", min_len=0)
+        or "py-crawler.dino.icu"
+    )
+    port = 63827
+    if all(c in string.digits + "." for c in host):
         try:
-            while True:
-                if not drain(inbox):
-                    server_gone = True
-                    break
-                key = inputController.getKey()
-                if key == Key.esc:
-                    break
-                if in_game and key in KEYS:
-                    ms.send(Move(KEYS[key]))
-                if in_game and key == Key.enter:
-                    ms.send(OpenActions())
-                time.sleep(0.001)
-        finally:
-            print("\033[?25h", end="")
-            terminalDisplay.moveCursor(0, 26)
-        if server_gone:
-            print("Server disconnected")
+            port = int(menuHelper.inputMenu("Port: (defaults to 63827)")) or 63827
+        except ValueError:
+            pass
+
+    global ms
+    try:
+        # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        # s.connect((host, port))
+        s = socket.create_connection((host, port))
+        s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+
+        with s:
+            ms = MessageSocket(s)
+            inbox = queue.Queue()
+            threading.Thread(target=receiver, args=(ms, inbox), daemon=True).start()
+            server_gone = False
+            try:
+                while True:
+                    if not drain(inbox):
+                        server_gone = True
+                        break
+                    key = inputController.getKey()
+                    if key == Key.esc:
+                        break
+                    if in_game and key in KEYS:
+                        ms.send(Move(KEYS[key]))
+                    if in_game and key == Key.enter:
+                        ms.send(OpenActions())
+                    time.sleep(0.001)
+            finally:
+                print("\033[?25h", end="")
+                terminalDisplay.moveCursor(0, 26)
+            if server_gone:
+                print("Server disconnected")
+    except Exception as e:
+        print(f"\033[?25hFailed to connect to server: {e}")

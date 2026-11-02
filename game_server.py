@@ -20,7 +20,7 @@ def host():
     from maze import Pos, gen_main_path
     from mazeController import mazeController
     from netcombat import NetworkCombatHandler
-    from netgame import make_snapshot, handle_join
+    from netgame import handle_join, make_snapshot
     from netutil import MessageSocket
     from packets import (
         CharactersChosen,
@@ -41,16 +41,13 @@ def host():
     from player import Player
     from squad import Squad
 
-
     class ClientGone(Exception):
         pass
-
 
     _ctx = threading.local()
 
     busy: set[Squad] = set()
     pending: dict[Squad, queue.Queue] = {}
-
 
     def _log(text, typed=False):
         h = getattr(_ctx, "handler", None)
@@ -60,7 +57,6 @@ def host():
         ms = getattr(_ctx, "ms", None)
         if ms is not None:
             ms.send(Log(text, typed))
-
 
     def remote_menu(title, options, back=True):
         ms, squad = _ctx.ms, _ctx.squad
@@ -73,7 +69,6 @@ def host():
                 raise ClientGone
             if (o == -1 and back) or 0 <= o < len(options):
                 return o
-
 
     def roster_packet() -> Roster:
         taken = {c for sq in party.squads for c in sq.characters}
@@ -89,24 +84,25 @@ def host():
             ]
         )
 
-
     menuHelper.menu = remote_menu
 
-
     terminalDisplay.contextDisplay.print_boxify = lambda message: _log(message)
-    terminalDisplay.contextDisplay.type_print = lambda message, *a, **k: _log(message, True)
+    terminalDisplay.contextDisplay.type_print = lambda message, *a, **k: _log(
+        message, True
+    )
     utils.wait_for_enter = lambda: (
         time.sleep(PAUSE)
         if getattr(_ctx, "handler", None) or getattr(_ctx, "ms", None)
         else None
     )
 
+    global controller, mz
+
     START = Pos(14, 6)
     # saves.SAVE_LOCATION = Path(tempfile.mkdtemp())
     saves.SAVE_LOCATION = Path.home() / "py-crawler" / "server-saves"
     # saves.save_file = saves.SAVE_LOCATION / "server_save.json"
     saves.save_file = saves.SAVE_LOCATION / "save_0.json"
-    mz: maze.maze
     party: Party
     try:
         with open(saves.save_file, "r") as f:
@@ -123,15 +119,14 @@ def host():
                 for _ in range(50)
             ],
         )
-        mz: maze.maze = gen_main_path(START, 50, 28, 13)
-    controller: mazeController = mazeController(mz, 28, 13, party)
+        mz = gen_main_path(START, 50, 28, 13)
+    controller = mazeController(mz, 28, 13, party)
     party.squads.clear()
 
     lock = threading.Lock()
     fighting = set()
     clients: dict[MessageSocket, Squad | None] = {}
     PAUSE = 1
-
 
     def fight_notify(members: list[Player], msg: Packet):
         with lock:
@@ -142,7 +137,6 @@ def host():
             ]
         for ms in targets:
             ms.send(msg)
-
 
     def make_handler(party: Party, players: list[Player], enemies: list[Enemy]):
         existing = room_fights.get(id(enemies))
@@ -167,13 +161,11 @@ def host():
         room_fights[id(enemies)] = handler
         return handler
 
-
     controller.handler_factory = make_handler
 
     handlers: dict[NetworkCombatHandler, list[Squad]] = {}
     fight_members: dict[NetworkCombatHandler, list[Player]] = {}
     room_fights: dict[int, NetworkCombatHandler] = {}
-
 
     def register(handler: NetworkCombatHandler, squad: Squad) -> bool:
         fighting.add(squad)
@@ -181,10 +173,8 @@ def host():
         squads.append(squad)
         return len(squads) == 1
 
-
     def in_fight(chars: list[Player]) -> bool:
         return any(c in h.players or c in h.leaving for h in handlers for c in chars)
-
 
     def run_fight(handler: NetworkCombatHandler):
         _ctx.handler = handler
@@ -217,7 +207,6 @@ def host():
                         del room_fights[k]
             broadcast()
 
-
     def descend(party: Party) -> maze.maze:
         party.descent_requested = False
         party.floor += 1
@@ -229,12 +218,12 @@ def host():
         party.discovered_positions = {START}
         return gen_main_path(START, 50, 28, 13, party.floor)
 
-
     def next_floor(party: Party) -> tuple[maze.maze, mazeController]:
         new_maze = descend(party)
         saves.save(new_maze, party)
-        return new_maze, mazeController(mz, 28, 13, party)
-
+        c = mazeController(new_maze, 28, 13, party, START, make_handler)
+        room_fights.clear()
+        return new_maze, c
 
     def run_actions(ms: MessageSocket, squad: Squad):
         global controller, mz
@@ -264,22 +253,23 @@ def host():
             handler.refresh()
         if party.descent_requested:
             mz, controller = next_floor(party)
-
+            broadcast()
 
     # def snapshot_for(ms):
     #     with lock:
 
-
     def broadcast():
-        with lock:
-            roster = roster_packet()
-            for ms, squad in clients.items():
-                if squad is None:
-                    ms.send(roster)
-                    continue
-                squad_index = party.squads.index(squad)
-                ms.send(make_snapshot(controller, squad_index))
-
+        try:
+            with lock:
+                roster = roster_packet()
+                for ms, squad in clients.items():
+                    if squad is None:
+                        ms.send(roster)
+                        continue
+                    squad_index = party.squads.index(squad)
+                    ms.send(make_snapshot(controller, squad_index))
+        except OSError:
+            pass
 
     def serve_client(conn: socket.socket):
         print("a client has connected")
@@ -309,11 +299,7 @@ def host():
                             if squad is not None:
                                 reply = Error("You have already joined")
                             else:
-                                new_squad, error = handle_join(party, chars, START)
-                                if error is not None:
-                                    ms.send(Error(error))
-                                    ms.send(roster_packet())
-                                elif in_fight(
+                                if in_fight(
                                     [
                                         party.members[i]
                                         for i in chars
@@ -323,6 +309,11 @@ def host():
                                     reply = Error(
                                         "That character is still leaving a fight, try again"
                                     )
+                                    continue
+                                new_squad, error = handle_join(party, chars, START)
+                                if error is not None:
+                                    ms.send(Error(error))
+                                    ms.send(roster_packet())
                                 else:
                                     clients[ms] = new_squad
                                     changed = True
@@ -386,11 +377,15 @@ def host():
                 if reply is not None:
                     ms.send(reply)
                 if fight is not None:
-                    threading.Thread(target=run_fight, args=(fight,), daemon=True).start()
+                    threading.Thread(
+                        target=run_fight, args=(fight,), daemon=True
+                    ).start()
                 if joined is not None:
                     joined.refresh()
                 if actions is not None:
-                    threading.Thread(target=run_actions, args=actions, daemon=True).start()
+                    threading.Thread(
+                        target=run_actions, args=actions, daemon=True
+                    ).start()
                 if changed:
                     broadcast()
         finally:
@@ -415,18 +410,38 @@ def host():
             conn.close()
             broadcast()
 
+    import requests
+
+    def public_ip():
+        try:
+            with requests.request("get", url="https://api64.ipify.org", timeout=3) as r:
+                return r.text
+        except OSError:
+            return "Unknown"
+
+    def local_ip():
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as t:
+            try:
+                t.connect(("8.8.8.8", 80))
+                return t.getsockname()[0]
+            except OSError:
+                return "Unknown"
 
     HOST = "::"
     PORT = 63827
     with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
         s.bind((HOST, PORT))
         s.listen()
         s.settimeout(1.0)
-        print(f"listening on {HOST}:{PORT}")
+        print(f"listening on {public_ip()}:{PORT} ({local_ip()}:{PORT} locally)")
         while True:
             try:
                 conn, addr = s.accept()
             except TimeoutError:
                 continue
             conn.settimeout(None)
+            conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            conn.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
             threading.Thread(target=serve_client, args=(conn,), daemon=True).start()
